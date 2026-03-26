@@ -4,5 +4,4 @@
   "installCommand": "npm install --prefix frontend/safeguard",
   "framework": "nextjs",
   "outputDirectory": "frontend/safeguard/.next",
-  "rootDirectory": "frontend/safeguard"
 }
