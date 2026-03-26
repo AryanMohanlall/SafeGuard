@@ -7,11 +7,11 @@ public static class SafeGuardDbContextConfigurer
 {
     public static void Configure(DbContextOptionsBuilder<SafeGuardDbContext> builder, string connectionString)
     {
-        builder.UseSqlServer(connectionString);
+        builder.UseNpgsql(connectionString);
     }
 
     public static void Configure(DbContextOptionsBuilder<SafeGuardDbContext> builder, DbConnection connection)
     {
-        builder.UseSqlServer(connection);
+        builder.UseNpgsql(connection);
     }
 }
