@@ -1,7 +1,3 @@
 {
-  "buildCommand": "cd frontend/safeguard && npm run build",
-  "devCommand": "cd frontend/safeguard && npm run dev",
-  "installCommand": "npm install --prefix frontend/safeguard",
-  "framework": "nextjs",
-  "outputDirectory": "frontend/safeguard/.next"
+  "framework": "nextjs"
 }
