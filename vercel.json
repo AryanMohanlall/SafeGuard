@@ -3,5 +3,5 @@
   "devCommand": "cd frontend/safeguard && npm run dev",
   "installCommand": "npm install --prefix frontend/safeguard",
   "framework": "nextjs",
-  "outputDirectory": "frontend/safeguard/.next",
+  "outputDirectory": "frontend/safeguard/.next"
 }
