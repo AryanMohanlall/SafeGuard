@@ -40,21 +40,27 @@ namespace SafeGuard.Controllers
         [HttpPost]
         public async Task<AuthenticateResultModel> Authenticate([FromBody] AuthenticateModel model)
         {
-            var loginResult = await GetLoginResultAsync(
-                model.UserNameOrEmailAddress,
-                model.Password,
-                GetTenancyNameOrNull()
-            );
-
-            var accessToken = CreateAccessToken(CreateJwtClaims(loginResult.Identity));
-
-            return new AuthenticateResultModel
+            // ABP middleware does not resolve tenant context for unauthenticated requests.
+            // Fall back to tenant 1 (Default tenant) so login works without prior authentication.
+            var tenantId = AbpSession.TenantId ?? 1;
+            using (AbpSession.Use(tenantId, null))
             {
-                AccessToken = accessToken,
-                EncryptedAccessToken = GetEncryptedAccessToken(accessToken),
-                ExpireInSeconds = (int)_configuration.Expiration.TotalSeconds,
-                UserId = loginResult.User.Id
-            };
+                var loginResult = await GetLoginResultAsync(
+                    model.UserNameOrEmailAddress,
+                    model.Password,
+                    GetTenancyNameOrNull()
+                );
+
+                var accessToken = CreateAccessToken(CreateJwtClaims(loginResult.Identity));
+
+                return new AuthenticateResultModel
+                {
+                    AccessToken = accessToken,
+                    EncryptedAccessToken = GetEncryptedAccessToken(accessToken),
+                    ExpireInSeconds = (int)_configuration.Expiration.TotalSeconds,
+                    UserId = loginResult.User.Id
+                };
+            }
         }
 
         private string GetTenancyNameOrNull()

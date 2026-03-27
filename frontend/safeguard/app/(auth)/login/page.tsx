@@ -43,7 +43,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (isSuccess) {
       messageApi.success('Signed in successfully.');
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [isSuccess]);
 
