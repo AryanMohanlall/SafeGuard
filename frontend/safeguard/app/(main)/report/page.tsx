@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Button, DatePicker, Form, Input, Switch } from 'antd';
-import { EnvironmentOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useEffect, useState } from 'react';
+import { Button, DatePicker, Form, Input, Switch, message } from 'antd';
+import { EnvironmentOutlined, FileTextOutlined, LoadingOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
+import { useIncidentAction } from '@/providers/incidents-provider';
 
 const { TextArea } = Input;
 
@@ -17,10 +18,30 @@ interface IncidentFormValues {
   reportedAt: dayjs.Dayjs;
 }
 
+type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied';
+
 const IncidentPage = () => {
   const { styles } = useStyles();
+  const { create } = useIncidentAction();
   const [form] = Form.useForm<IncidentFormValues>();
   const [anonymous, setAnonymous] = useState(false);
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    setGeoStatus('requesting');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setGeoStatus('granted');
+      },
+      () => {
+        setGeoStatus('denied');
+      }
+    );
+  }, []);
 
   const handleReset = () => {
     form.resetFields();
@@ -28,8 +49,27 @@ const IncidentPage = () => {
   };
 
   const handleSubmit = (values: IncidentFormValues) => {
+    create({
+      title: values.title,
+      description: values.description,
+      location: values.location,
+      anonymous: values.anonymous ?? false,
+      occurredAt: values.occurredAt.toISOString(),
+      reportedAt: values.reportedAt.toISOString(),
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
+    });
 
+    message.success('Incident submitted successfully.');
+    handleReset();
   };
+
+  const locationSuffix =
+    geoStatus === 'requesting' ? (
+      <LoadingOutlined style={{ color: '#94a3b8' }} />
+    ) : geoStatus === 'granted' ? (
+      <EnvironmentOutlined style={{ color: '#2563eb' }} title="Location attached" />
+    ) : null;
 
   return (
     <div className={styles.pageWrapper}>
@@ -84,9 +124,17 @@ const IncidentPage = () => {
             name="location"
             label="Location"
             rules={[{ required: true, message: 'Please provide a location.' }]}
+            extra={
+              geoStatus === 'granted'
+                ? 'Your GPS coordinates will be attached to this report.'
+                : geoStatus === 'denied'
+                ? 'Location access denied — coordinates will not be attached.'
+                : undefined
+            }
           >
             <Input
               prefix={<EnvironmentOutlined style={{ color: '#94a3b8' }} />}
+              suffix={locationSuffix}
               placeholder="Address, area, or landmark"
               size="large"
             />

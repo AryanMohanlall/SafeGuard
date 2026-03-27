@@ -50,7 +50,7 @@ export const logoutPending = createAction<IAuthStateContext>(
 
 export const logoutSuccess = createAction<IAuthStateContext>(
   AuthStateEnums.LOGOUT_SUCCESS,
-  () => ({ isPending: false, isSuccess: true, isError: false, isAuthenticated: false, user: undefined })
+  () => ({ isPending: false, isSuccess: false, isError: false, isAuthenticated: false, user: undefined })
 );
 
 export const logoutError = createAction<IAuthStateContext>(

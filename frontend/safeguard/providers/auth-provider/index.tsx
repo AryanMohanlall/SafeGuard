@@ -9,10 +9,12 @@ import {
   registerPending, registerError,
   logoutPending, logoutSuccess, logoutError,
 } from './actions';
+import { useRouter } from 'next/dist/client/components/navigation';
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const instance = getAxiosInstance();
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
+  const router = useRouter();
 
   const login = async (userNameOrEmailAddress: string, password: string) => {
     dispatch(loginPending());
@@ -25,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { accessToken, expireInSeconds, userId } = res.data.result;
       setAuthToken(accessToken);
       dispatch(loginSuccess({ accessToken, expireInSeconds, userId }));
+      router.push('/dashboard');
     } catch {
       dispatch(loginError());
     }
