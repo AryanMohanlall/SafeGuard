@@ -50,10 +50,29 @@ public class ReportAppService
         };
     }
 
+    public async Task<ReportImageDto> GetImageAsync(Guid id)
+    {
+        var report = await Repository.GetAsync(id);
+
+        if (report.ImageFile == null || report.ImageFile.Length == 0)
+        {
+            throw new UserFriendlyException("This report does not have an image attachment.");
+        }
+
+        return new ReportImageDto
+        {
+            Id = report.Id,
+            ImageFile = report.ImageFile,
+            ImageFileName = report.ImageFileName,
+            ImageContentType = report.ImageContentType
+        };
+    }
+
     protected override ReportDto MapToEntityDto(Report entity)
     {
         var dto = base.MapToEntityDto(entity);
         dto.HasAudio = entity.AudioFile != null && entity.AudioFile.Length > 0;
+        dto.HasImage = entity.ImageFile != null && entity.ImageFile.Length > 0;
         return dto;
     }
 }

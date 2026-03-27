@@ -10,4 +10,5 @@ public interface IReportAppService
     : IAsyncCrudAppService<ReportDto, Guid, PagedReportResultRequestDto, CreateReportDto, UpdateReportDto>
 {
     Task<ReportAudioDto> GetAudioAsync(Guid id);
+    Task<ReportImageDto> GetImageAsync(Guid id);
 }

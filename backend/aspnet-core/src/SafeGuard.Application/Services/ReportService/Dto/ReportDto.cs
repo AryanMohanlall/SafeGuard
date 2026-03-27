@@ -14,6 +14,9 @@ public class ReportDto : EntityDto<Guid>
     public bool HasAudio { get; set; }
     public string AudioFileName { get; set; }
     public string AudioContentType { get; set; }
+    public bool HasImage { get; set; }
+    public string ImageFileName { get; set; }
+    public string ImageContentType { get; set; }
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public bool Anonymous { get; set; }

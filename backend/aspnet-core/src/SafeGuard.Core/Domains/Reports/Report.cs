@@ -25,6 +25,14 @@ public class Report : FullAuditedEntity<Guid>
     [MaxLength(128)]
     public string AudioContentType { get; set; }
 
+    public byte[] ImageFile { get; set; }
+
+    [MaxLength(256)]
+    public string ImageFileName { get; set; }
+
+    [MaxLength(128)]
+    public string ImageContentType { get; set; }
+
     [Range(typeof(decimal), "-90", "90")]
     public decimal? Latitude { get; set; }
 
