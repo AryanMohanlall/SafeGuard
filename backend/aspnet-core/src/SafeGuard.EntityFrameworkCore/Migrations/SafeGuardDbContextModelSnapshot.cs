@@ -1580,7 +1580,7 @@ namespace SafeGuard.Migrations
                     b.ToTable("AbpUsers");
                 });
 
-            modelBuilder.Entity("SafeGuard.Domains.Reports.Report", b =>
+            modelBuilder.Entity("SafeGuard.Domains.Incidents.Incident", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -1588,6 +1588,17 @@ namespace SafeGuard.Migrations
 
                     b.Property<bool>("Anonymous")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("AudioContentType")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<byte[]>("AudioFile")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("AudioFileName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp with time zone");
@@ -1602,9 +1613,19 @@ namespace SafeGuard.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("ImageContentType")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<byte[]>("ImageFile")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ImageFileName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -1615,10 +1636,18 @@ namespace SafeGuard.Migrations
                     b.Property<long?>("LastModifierUserId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal?>("Latitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
 
                     b.Property<DateTime>("OccurredAt")
                         .HasColumnType("timestamp with time zone");
@@ -1633,7 +1662,7 @@ namespace SafeGuard.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reports");
+                    b.ToTable("Incidents");
                 });
 
             modelBuilder.Entity("SafeGuard.MultiTenancy.Tenant", b =>

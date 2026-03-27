@@ -1,19 +1,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using Abp.Application.Services.Dto;
-using Abp.AutoMapper;
-using SafeGuard.Domains.Reports;
+using Abp.Domain.Entities.Auditing;
 
-namespace SafeGuard.Services.ReportService.Dto;
+namespace SafeGuard.Domains.Incidents;
 
-[AutoMap(typeof(Report))]
-public class UpdateReportDto : EntityDto<Guid>
+public class Incident : FullAuditedEntity<Guid>
 {
     [Required]
     [MaxLength(256)]
     public string Title { get; set; }
 
-    [Required]
     [MaxLength(4000)]
     public string Description { get; set; }
 

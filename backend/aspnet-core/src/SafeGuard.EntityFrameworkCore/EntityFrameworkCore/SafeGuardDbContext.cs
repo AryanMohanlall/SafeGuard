@@ -2,7 +2,7 @@ using System;
 using Abp.Zero.EntityFrameworkCore;
 using SafeGuard.Authorization.Roles;
 using SafeGuard.Authorization.Users;
-using SafeGuard.Domains.Reports;
+using SafeGuard.Domains.Incidents;
 using SafeGuard.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +12,7 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
 {
     /* Define a DbSet for each entity of the application */
 
-    public DbSet<Report> Reports { get; set; }
+    public DbSet<Incident> Incidents { get; set; }
 
     public SafeGuardDbContext(DbContextOptions<SafeGuardDbContext> options)
         : base(options)
@@ -23,7 +23,7 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Report>(entity =>
+        modelBuilder.Entity<Incident>(entity =>
         {
             entity.Property(e => e.Latitude)
                   .HasPrecision(9, 6);

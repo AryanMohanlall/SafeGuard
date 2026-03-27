@@ -1,9 +1,9 @@
 using System;
 using Abp.Application.Services.Dto;
 
-namespace SafeGuard.Services.ReportService.Dto;
+namespace SafeGuard.Services.IncidentService.Dto;
 
-public class ReportImageDto : EntityDto<Guid>
+public class IncidentImageDto : EntityDto<Guid>
 {
     public byte[] ImageFile { get; set; }
     public string ImageFileName { get; set; }

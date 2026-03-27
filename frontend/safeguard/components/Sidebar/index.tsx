@@ -26,7 +26,7 @@ const navItems = [
   { key: '/incidents',  icon: <WarningOutlined />,   label: 'Incidents' },
   { key: '/cases',      icon: <FolderOutlined />,    label: 'Cases'     },
   { key: '/alerts',     icon: <BellOutlined />,      label: 'Alerts'    },
-  { key: '/report',     icon: <FileAddOutlined />,   label: 'Report'    },
+  { key: '/incident',   icon: <FileAddOutlined />,   label: 'Incident'  },
 ];
 
 export const Sidebar: React.FC = () => {

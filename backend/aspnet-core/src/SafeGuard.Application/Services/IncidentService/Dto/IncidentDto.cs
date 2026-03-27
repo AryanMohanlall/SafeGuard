@@ -1,12 +1,12 @@
 using System;
 using Abp.Application.Services.Dto;
 using Abp.AutoMapper;
-using SafeGuard.Domains.Reports;
+using SafeGuard.Domains.Incidents;
 
-namespace SafeGuard.Services.ReportService.Dto;
+namespace SafeGuard.Services.IncidentService.Dto;
 
-[AutoMap(typeof(Report))]
-public class ReportDto : EntityDto<Guid>
+[AutoMap(typeof(Incident))]
+public class IncidentDto : EntityDto<Guid>
 {
     public string Title { get; set; }
     public string Description { get; set; }

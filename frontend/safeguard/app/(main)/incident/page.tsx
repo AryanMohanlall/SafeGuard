@@ -8,7 +8,7 @@ import { useStyles } from './styles/style';
 
 const { TextArea } = Input;
 
-interface ReportFormValues {
+interface IncidentFormValues {
   title: string;
   description: string;
   location: string;
@@ -17,9 +17,9 @@ interface ReportFormValues {
   reportedAt: dayjs.Dayjs;
 }
 
-const ReportPage = () => {
+const IncidentPage = () => {
   const { styles } = useStyles();
-  const [form] = Form.useForm<ReportFormValues>();
+  const [form] = Form.useForm<IncidentFormValues>();
   const [anonymous, setAnonymous] = useState(false);
 
   const handleReset = () => {
@@ -27,8 +27,8 @@ const ReportPage = () => {
     setAnonymous(false);
   };
 
-  const handleSubmit = (values: ReportFormValues) => {
-    
+  const handleSubmit = (values: IncidentFormValues) => {
+
   };
 
   return (
@@ -137,7 +137,7 @@ const ReportPage = () => {
               <div>
                 <p className={styles.anonymousLabel}>Submit anonymously</p>
                 <p className={styles.anonymousHint}>
-                  Your identity will not be attached to this report
+                  Your identity will not be attached to this incident
                 </p>
               </div>
               <Switch
@@ -162,7 +162,7 @@ const ReportPage = () => {
               htmlType="submit"
               style={{ background: '#2563eb', borderColor: '#2563eb', minWidth: 140 }}
             >
-              Submit Report
+              Submit Incident
             </Button>
           </div>
         </Form>
@@ -171,4 +171,4 @@ const ReportPage = () => {
   );
 };
 
-export default ReportPage;
+export default IncidentPage;

@@ -6,19 +6,27 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SafeGuard.Migrations
 {
     /// <inheritdoc />
-    public partial class AddReport : Migration
+    public partial class AddIncident : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Reports",
+                name: "Incidents",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
-                    Description = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                    Description = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: true),
                     Location = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    AudioFile = table.Column<byte[]>(type: "bytea", nullable: true),
+                    AudioFileName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    AudioContentType = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    ImageFile = table.Column<byte[]>(type: "bytea", nullable: true),
+                    ImageFileName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    ImageContentType = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    Latitude = table.Column<decimal>(type: "numeric(9,6)", precision: 9, scale: 6, nullable: true),
+                    Longitude = table.Column<decimal>(type: "numeric(9,6)", precision: 9, scale: 6, nullable: true),
                     Anonymous = table.Column<bool>(type: "boolean", nullable: false),
                     OccurredAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     ReportedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -32,7 +40,7 @@ namespace SafeGuard.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Reports", x => x.Id);
+                    table.PrimaryKey("PK_Incidents", x => x.Id);
                 });
         }
 
@@ -40,7 +48,7 @@ namespace SafeGuard.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Reports");
+                name: "Incidents");
         }
     }
 }
