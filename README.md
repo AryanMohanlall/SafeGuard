@@ -1,25 +1,5 @@
 # SafeGuard
 
-> **Digitising the Justice System** — An AI-powered platform connecting victims, law enforcement, legal professionals, and the judiciary through a single, intelligent, blockchain-secured ecosystem.
-
----
-
-## Overview
-
-SafeGuard is a comprehensive digital justice platform designed to modernise every facet of the criminal justice lifecycle — from first incident report to final verdict. It bridges the gap between citizens, law enforcement, legal professionals, healthcare providers, and the judiciary through a unified, AI-driven infrastructure.
-
-### The problem
-
-Traditional justice systems suffer from:
-
-- Slow and fragmented incident response across agencies
-- Evidence mismanagement and broken chain of custody
-- Reactive policing with no predictive capability
-- Inaccessible legal support for victims
-- Paper-heavy court preparation that delays justice
-
-### The solution
-
 SafeGuard replaces these pain points with a fully digitised, interoperable platform featuring real-time alerting, blockchain evidence integrity, AI-powered crime prediction, computer vision surveillance, and end-to-end court readiness tooling.
 
 ---
