@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SafeGuard.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using SafeGuard.EntityFrameworkCore;
 namespace SafeGuard.Migrations
 {
     [DbContext(typeof(SafeGuardDbContext))]
-    partial class SafeGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260327124824_AddReport")]
+    partial class AddReport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

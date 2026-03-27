@@ -1,0 +1,30 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using Abp.AutoMapper;
+using SafeGuard.Domains.Reports;
+
+namespace SafeGuard.Services.ReportService.Dto;
+
+[AutoMap(typeof(Report))]
+public class CreateReportDto
+{
+    [Required]
+    [MaxLength(256)]
+    public string Title { get; set; }
+
+    [Required]
+    [MaxLength(4000)]
+    public string Description { get; set; }
+
+    [Required]
+    [MaxLength(512)]
+    public string Location { get; set; }
+
+    public bool Anonymous { get; set; }
+
+    [Required]
+    public DateTime OccurredAt { get; set; }
+
+    [Required]
+    public DateTime ReportedAt { get; set; }
+}

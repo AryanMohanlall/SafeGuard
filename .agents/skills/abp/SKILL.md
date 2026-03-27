@@ -1,5 +1,5 @@
 ---
-name: abp-feature
+name: abp
 description: >
   Use this skill whenever the user wants to add a new feature, entity, module, or service
   to an ASP.NET Boilerplate (ABP) backend API built on .NET with PostgreSQL. Triggers
