@@ -13,7 +13,7 @@ import {
   EyeTwoTone,
 } from '@ant-design/icons';
 import { useAuthAction, useAuthState } from '@/providers/auth-provider';
-import { styles } from './styles/style';
+import { useStyles } from './styles/style';
 
 const { Text } = Typography;
 
@@ -33,6 +33,7 @@ const stats = [
 ];
 
 export default function RegisterPage() {
+  const { styles } = useStyles();
   const [form] = Form.useForm<RegisterFormValues>();
   const [messageApi, contextHolder] = message.useMessage();
   const router = useRouter();
@@ -66,22 +67,22 @@ export default function RegisterPage() {
   return (
     <>
       {contextHolder}
-      <div style={styles.container}>
+      <div className={styles.container}>
         {/* ── Left branding panel ── */}
-        <div style={styles.leftPanel} className="hidden lg:flex">
-          <div style={styles.leftPanelInner}>
-            <SafetyOutlined style={styles.brandIcon} />
-            <h1 style={styles.brandTitle}>SafeGuard</h1>
-            <p style={styles.brandTagline}>
+        <div className={`${styles.leftPanel} hidden lg:flex`}>
+          <div className={styles.leftPanelInner}>
+            <SafetyOutlined style={{ fontSize: 56, color: '#60a5fa', marginBottom: 20 }} />
+            <h1 className={styles.brandTitle}>SafeGuard</h1>
+            <p className={styles.brandTagline}>
               Join thousands of law enforcement professionals, legal experts, and
               judiciary members on the platform that&apos;s digitising justice.
             </p>
-            <div style={styles.divider} />
-            <div style={styles.statGrid}>
+            <div className={styles.divider} />
+            <div className={styles.statGrid}>
               {stats.map((s) => (
-                <div key={s.label} style={styles.statCard}>
-                  <div style={styles.statValue}>{s.value}</div>
-                  <div style={styles.statLabel}>{s.label}</div>
+                <div key={s.label} className={styles.statCard}>
+                  <div className={styles.statValue}>{s.value}</div>
+                  <div className={styles.statLabel}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -89,19 +90,19 @@ export default function RegisterPage() {
         </div>
 
         {/* ── Right form panel ── */}
-        <div style={styles.rightPanel}>
-          <div style={styles.formWrapper}>
+        <div className={styles.rightPanel}>
+          <div className={styles.formWrapper}>
             {/* Mobile brand mark */}
-            <div style={styles.mobileBrand} className="flex lg:hidden">
+            <div className={`${styles.mobileBrand} flex lg:hidden`}>
               <SafetyOutlined style={{ fontSize: 28, color: '#2563eb' }} />
               <span style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
                 SafeGuard
               </span>
             </div>
 
-            <div style={styles.formHeader}>
-              <h2 style={styles.formTitle}>Create an account</h2>
-              <p style={styles.formSubtitle}>Join the SafeGuard platform today</p>
+            <div className={styles.formHeader}>
+              <h2 className={styles.formTitle}>Create an account</h2>
+              <p className={styles.formSubtitle}>Join the SafeGuard platform today</p>
             </div>
 
             <Form
@@ -200,14 +201,14 @@ export default function RegisterPage() {
                   type="primary"
                   htmlType="submit"
                   loading={isPending}
-                  style={styles.submitButton}
+                  className={styles.submitButton}
                 >
                   Create account
                 </Button>
               </Form.Item>
             </Form>
 
-            <div style={styles.signinRow}>
+            <div className={styles.signinRow}>
               <Text type="secondary">Already have an account?&nbsp;</Text>
               <Link href="/login">Sign in</Link>
             </div>

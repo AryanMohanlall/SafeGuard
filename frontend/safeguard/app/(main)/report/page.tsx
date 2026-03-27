@@ -1,0 +1,175 @@
+'use client';
+
+import { useState } from 'react';
+import { Button, DatePicker, Form, Input, Switch } from 'antd';
+import { EnvironmentOutlined, FileTextOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import { useStyles } from './styles/style';
+
+const { TextArea } = Input;
+
+interface ReportFormValues {
+  title: string;
+  description: string;
+  location: string;
+  anonymous: boolean;
+  occurredAt: dayjs.Dayjs;
+  reportedAt: dayjs.Dayjs;
+}
+
+const ReportPage = () => {
+  const { styles } = useStyles();
+  const [form] = Form.useForm<ReportFormValues>();
+  const [anonymous, setAnonymous] = useState(false);
+
+  const handleReset = () => {
+    form.resetFields();
+    setAnonymous(false);
+  };
+
+  const handleSubmit = (values: ReportFormValues) => {
+    // submission logic goes here
+    console.log('Report submitted:', values);
+  };
+
+  return (
+    <div className={styles.pageWrapper}>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Report an Incident</h1>
+        <p className={styles.pageSubtitle}>
+          Submit a report about a crime or suspicious activity. All information is treated with strict confidentiality.
+        </p>
+      </div>
+
+      <div className={styles.card}>
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{
+            anonymous: false,
+            reportedAt: dayjs(),
+          }}
+          onFinish={handleSubmit}
+          requiredMark={false}
+        >
+          {/* Basic Info */}
+          <p className={styles.sectionLabel}>Incident Details</p>
+
+          <Form.Item
+            name="title"
+            label="Title"
+            rules={[{ required: true, message: 'Please provide a title.' }]}
+          >
+            <Input
+              prefix={<FileTextOutlined style={{ color: '#94a3b8' }} />}
+              placeholder="Brief title describing the incident"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: 'Please describe the incident.' }]}
+          >
+            <TextArea
+              placeholder="Provide as much detail as possible about what occurred..."
+              rows={5}
+              showCount
+              maxLength={2000}
+              style={{ resize: 'none' }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="location"
+            label="Location"
+            rules={[{ required: true, message: 'Please provide a location.' }]}
+          >
+            <Input
+              prefix={<EnvironmentOutlined style={{ color: '#94a3b8' }} />}
+              placeholder="Address, area, or landmark"
+              size="large"
+            />
+          </Form.Item>
+
+          <div className={styles.divider} />
+
+          {/* Timing */}
+          <p className={styles.sectionLabel}>Timing</p>
+
+          <div className={styles.dateGrid}>
+            <Form.Item
+              name="occurredAt"
+              label="Date & Time Occurred"
+              rules={[{ required: true, message: 'Please select when the incident occurred.' }]}
+            >
+              <DatePicker
+                showTime
+                format="YYYY-MM-DD HH:mm"
+                placeholder="Select date and time"
+                className={styles.datePickerFull}
+                size="large"
+                disabledDate={(d) => d.isAfter(dayjs())}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="reportedAt"
+              label="Date & Time Reported"
+            >
+              <DatePicker
+                showTime
+                format="YYYY-MM-DD HH:mm"
+                className={styles.datePickerFull}
+                size="large"
+                disabled
+              />
+            </Form.Item>
+          </div>
+
+          <div className={styles.divider} />
+
+          {/* Anonymous */}
+          <p className={styles.sectionLabel}>Privacy</p>
+
+          <Form.Item name="anonymous" valuePropName="checked" noStyle>
+            <div className={styles.anonymousRow}>
+              <div>
+                <p className={styles.anonymousLabel}>Submit anonymously</p>
+                <p className={styles.anonymousHint}>
+                  Your identity will not be attached to this report
+                </p>
+              </div>
+              <Switch
+                checked={anonymous}
+                onChange={(val) => {
+                  setAnonymous(val);
+                  form.setFieldValue('anonymous', val);
+                }}
+                style={{ background: anonymous ? '#2563eb' : undefined }}
+              />
+            </div>
+          </Form.Item>
+
+          {/* Actions */}
+          <div className={styles.submitRow}>
+            <Button size="large" onClick={handleReset}>
+              Clear
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              htmlType="submit"
+              style={{ background: '#2563eb', borderColor: '#2563eb', minWidth: 140 }}
+            >
+              Submit Report
+            </Button>
+          </div>
+        </Form>
+      </div>
+    </div>
+  );
+};
+
+export default ReportPage;

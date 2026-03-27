@@ -15,7 +15,7 @@ import {
   GlobalOutlined,
 } from '@ant-design/icons';
 import { useAuthAction, useAuthState } from '@/providers/auth-provider';
-import { styles } from './styles/style';
+import { useStyles } from './styles/style';
 
 const { Text } = Typography;
 
@@ -33,6 +33,7 @@ const features = [
 ];
 
 export default function LoginPage() {
+  const { styles } = useStyles();
   const [form] = Form.useForm<LoginFormValues>();
   const [messageApi, contextHolder] = message.useMessage();
   const router = useRouter();
@@ -60,21 +61,21 @@ export default function LoginPage() {
   return (
     <>
       {contextHolder}
-      <div style={styles.container}>
+      <div className={styles.container}>
         {/* ── Left branding panel ── */}
-        <div style={styles.leftPanel} className="hidden lg:flex">
-          <div style={styles.leftPanelInner}>
-            <SafetyOutlined style={styles.brandIcon} />
-            <h1 style={styles.brandTitle}>SafeGuard</h1>
-            <p style={styles.brandTagline}>
+        <div className={`${styles.leftPanel} hidden lg:flex`}>
+          <div className={styles.leftPanelInner}>
+            <SafetyOutlined style={{ fontSize: 56, color: '#60a5fa', marginBottom: 20 }} />
+            <h1 className={styles.brandTitle}>SafeGuard</h1>
+            <p className={styles.brandTagline}>
               Digitising the Justice System — connecting victims, law enforcement,
               and the judiciary through one intelligent platform.
             </p>
-            <div style={styles.divider} />
-            <div style={styles.featureList}>
+            <div className={styles.divider} />
+            <div className={styles.featureList}>
               {features.map((f) => (
-                <div key={f.label} style={styles.featureItem}>
-                  <span style={styles.featureIconWrap}>{f.icon}</span>
+                <div key={f.label} className={styles.featureItem}>
+                  <span className={styles.featureIconWrap}>{f.icon}</span>
                   <span>{f.label}</span>
                 </div>
               ))}
@@ -83,19 +84,19 @@ export default function LoginPage() {
         </div>
 
         {/* ── Right form panel ── */}
-        <div style={styles.rightPanel}>
-          <div style={styles.formWrapper}>
+        <div className={styles.rightPanel}>
+          <div className={styles.formWrapper}>
             {/* Mobile brand mark */}
-            <div style={styles.mobileBrand} className="flex lg:hidden">
+            <div className={`${styles.mobileBrand} flex lg:hidden`}>
               <SafetyOutlined style={{ fontSize: 28, color: '#2563eb' }} />
               <span style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
                 SafeGuard
               </span>
             </div>
 
-            <div style={styles.formHeader}>
-              <h2 style={styles.formTitle}>Welcome back</h2>
-              <p style={styles.formSubtitle}>Sign in to your SafeGuard account</p>
+            <div className={styles.formHeader}>
+              <h2 className={styles.formTitle}>Welcome back</h2>
+              <p className={styles.formSubtitle}>Sign in to your SafeGuard account</p>
             </div>
 
             <Form
@@ -151,14 +152,14 @@ export default function LoginPage() {
                   type="primary"
                   htmlType="submit"
                   loading={isPending}
-                  style={styles.submitButton}
+                  className={styles.submitButton}
                 >
                   Sign in
                 </Button>
               </Form.Item>
             </Form>
 
-            <div style={styles.signupRow}>
+            <div className={styles.signupRow}>
               <Text type="secondary">Don&apos;t have an account?&nbsp;</Text>
               <Link href="/register">Create an account</Link>
             </div>

@@ -1,6 +1,6 @@
-import type { CSSProperties } from 'react';
+import { createStyles } from 'antd-style';
 
-export const styles: Record<string, CSSProperties> = {
+export const useStyles = createStyles(() => ({
   container: {
     minHeight: '100vh',
     display: 'flex',
@@ -9,17 +9,17 @@ export const styles: Record<string, CSSProperties> = {
     flex: '0 0 45%',
     background: 'linear-gradient(160deg, #0a0f1e 0%, #0d2149 45%, #0a0f1e 100%)',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     justifyContent: 'center',
     alignItems: 'center',
     padding: '64px 48px',
     color: '#fff',
-    position: 'relative',
+    position: 'relative' as const,
     overflow: 'hidden',
   },
   leftPanelInner: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     width: '100%',
     maxWidth: 340,
@@ -39,7 +39,7 @@ export const styles: Record<string, CSSProperties> = {
   brandTagline: {
     fontSize: 14,
     color: '#94a3b8',
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: 12,
     lineHeight: 1.7,
     maxWidth: 280,
@@ -53,7 +53,7 @@ export const styles: Record<string, CSSProperties> = {
   },
   featureList: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     gap: 16,
     alignSelf: 'stretch',
   },
@@ -109,7 +109,7 @@ export const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
   },
   signupRow: {
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: 24,
     fontSize: 14,
     color: '#64748b',
@@ -120,4 +120,4 @@ export const styles: Record<string, CSSProperties> = {
     gap: 10,
     marginBottom: 32,
   },
-};
+}));
