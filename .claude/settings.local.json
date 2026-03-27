@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(dotnet ef:*)"
+      "Bash(dotnet ef:*)",
+      "Bash(wc -l /c/Users/Aryan/Documents/SafeGuard/frontend/safeguard/app/\\\\\\(auth\\\\\\)/login/page.tsx /c/Users/Aryan/Documents/SafeGuard/frontend/safeguard/app/\\\\\\(auth\\\\\\)/login/styles/style.ts /c/Users/Aryan/Documents/SafeGuard/frontend/safeguard/app/\\\\\\(auth\\\\\\)/register/page.tsx /c/Users/Aryan/Documents/SafeGuard/frontend/safeguard/app/\\\\\\(auth\\\\\\)/register/styles/style.ts)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s -X POST http://localhost:44311/api/services/app/Account/Register -H \"Content-Type: application/json\" -H \"Abp.TenantId: 1\" -d '{\"\"\"\"name\"\"\"\":\"\"\"\"Test\"\"\"\",\"\"\"\"surname\"\"\"\":\"\"\"\"User\"\"\"\",\"\"\"\"userName\"\"\"\":\"\"\"\"testuser@test.com\"\"\"\",\"\"\"\"emailAddress\"\"\"\":\"\"\"\"testuser@test.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Test1234!\"\"\"\"}')",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:44311/api/services/app/Account/Register -H \"Content-Type: application/json\" -H \"Abp.TenantId: 1\" -d '{\"\"name\"\":\"\"Test\"\",\"\"surname\"\":\"\"User\"\",\"\"userName\"\":\"\"testuser@test.com\"\",\"\"emailAddress\"\":\"\"testuser@test.com\"\",\"\"password\"\":\"\"Test1234!\"\"}')",
+      "Bash(curl -s -X POST http://localhost:44311/api/services/app/Account/Register -H \"Content-Type: application/json\" -H \"Abp.TenantId: 1\" --data-raw '{\"\"name\"\":\"\"Test\"\",\"\"surname\"\":\"\"User\"\",\"\"userName\"\":\"\"testuser2@test.com\"\",\"\"emailAddress\"\":\"\"testuser2@test.com\"\",\"\"password\"\":\"\"Test1234X\"\"}')",
+      "Bash(curl -s -X POST http://localhost:44311/api/services/app/Account/Register -H \"Content-Type: application/json\" -H \"Abp.TenantId: Default\" --data-raw '{\"\"name\"\":\"\"Test\"\",\"\"surname\"\":\"\"User\"\",\"\"userName\"\":\"\"testuser2@test.com\"\",\"\"emailAddress\"\":\"\"testuser2@test.com\"\",\"\"password\"\":\"\"Test1234X\"\"}')",
+      "Bash(curl -s -X POST http://localhost:44311/api/services/app/Account/Register -H \"Content-Type: application/json\" -H \"Cookie: Abp.TenancyName=Default\" --data-raw '{\"\"name\"\":\"\"Test\"\",\"\"surname\"\":\"\"User\"\",\"\"userName\"\":\"\"testuser2@test.com\"\",\"\"emailAddress\"\":\"\"testuser2@test.com\"\",\"\"password\"\":\"\"Test1234X\"\"}')",
+      "Bash(curl -s -X POST \"http://localhost:44311/api/services/app/Account/Register?__tenant=Default\" -H \"Content-Type: application/json\" --data-raw '{\"\"name\"\":\"\"Test\"\",\"\"surname\"\":\"\"User\"\",\"\"userName\"\":\"\"testuser2@test.com\"\",\"\"emailAddress\"\":\"\"testuser2@test.com\"\",\"\"password\"\":\"\"Test1234X\"\"}')",
+      "Bash(docker exec:*)"
     ]
   }
 }

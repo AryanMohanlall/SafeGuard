@@ -9,7 +9,7 @@ services:
       ConnectionStrings__Default: "${DB_CONNECTION_STRING}"
       App__ServerRootAddress: "http://localhost:44311/"
       App__ClientRootAddress: "http://localhost:4200/"
-      App__CorsOrigins: "http://localhost:4200"
+      App__CorsOrigins: "http://localhost:4200,http://localhost:3000"
       TZ: "America/Toronto"
       Kestrel__Endpoints__Http__Url: "http://+:80"
     ports:
