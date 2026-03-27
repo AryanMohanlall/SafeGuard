@@ -20,6 +20,20 @@ public class CreateReportDto
     [MaxLength(512)]
     public string Location { get; set; }
 
+    public byte[] AudioFile { get; set; }
+
+    [MaxLength(256)]
+    public string AudioFileName { get; set; }
+
+    [MaxLength(128)]
+    public string AudioContentType { get; set; }
+
+    [Range(typeof(decimal), "-90", "90")]
+    public decimal? Latitude { get; set; }
+
+    [Range(typeof(decimal), "-180", "180")]
+    public decimal? Longitude { get; set; }
+
     public bool Anonymous { get; set; }
 
     [Required]

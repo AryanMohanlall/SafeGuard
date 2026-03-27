@@ -11,6 +11,11 @@ public class ReportDto : EntityDto<Guid>
     public string Title { get; set; }
     public string Description { get; set; }
     public string Location { get; set; }
+    public bool HasAudio { get; set; }
+    public string AudioFileName { get; set; }
+    public string AudioContentType { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
     public bool Anonymous { get; set; }
     public DateTime OccurredAt { get; set; }
     public DateTime ReportedAt { get; set; }

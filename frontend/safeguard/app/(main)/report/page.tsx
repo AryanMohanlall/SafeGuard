@@ -28,8 +28,7 @@ const ReportPage = () => {
   };
 
   const handleSubmit = (values: ReportFormValues) => {
-    // submission logic goes here
-    console.log('Report submitted:', values);
+    
   };
 
   return (

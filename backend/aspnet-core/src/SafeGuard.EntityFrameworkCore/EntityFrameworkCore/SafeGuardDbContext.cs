@@ -25,6 +25,12 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
 
         modelBuilder.Entity<Report>(entity =>
         {
+            entity.Property(e => e.Latitude)
+                  .HasPrecision(9, 6);
+
+            entity.Property(e => e.Longitude)
+                  .HasPrecision(9, 6);
+
             entity.Property(e => e.OccurredAt)
                   .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
 
