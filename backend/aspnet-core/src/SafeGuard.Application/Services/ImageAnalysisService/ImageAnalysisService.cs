@@ -5,19 +5,16 @@ using System.Threading.Tasks;
 using Abp.Dependency;
 using Azure;
 using Azure.AI.Vision.ImageAnalysis;
-using Microsoft.Extensions.Configuration;
 
 namespace SafeGuard.Services.ImageAnalysisService;
 
 public class ImageAnalysisService : IImageAnalysisService, ITransientDependency
 {
-    private readonly string _apiKey;
-    private readonly string _endpoint;
+    private readonly AzureComputerVisionConfiguration _config;
 
-    public ImageAnalysisService(IConfiguration configuration)
+    public ImageAnalysisService(AzureComputerVisionConfiguration config)
     {
-        _apiKey = configuration["AzureComputerVision:ApiKey"];
-        _endpoint = configuration["AzureComputerVision:Endpoint"];
+        _config = config;
     }
 
     public async Task<string> AnalyzeImageAsync(byte[] imageBytes)
@@ -25,44 +22,51 @@ public class ImageAnalysisService : IImageAnalysisService, ITransientDependency
         if (imageBytes == null || imageBytes.Length == 0)
             return null;
 
-        if (string.IsNullOrWhiteSpace(_apiKey) || string.IsNullOrWhiteSpace(_endpoint))
+        if (string.IsNullOrWhiteSpace(_config.ApiKey) || string.IsNullOrWhiteSpace(_config.Endpoint))
             return null;
 
-        var client = new ImageAnalysisClient(new Uri(_endpoint), new AzureKeyCredential(_apiKey));
-
-        var result = await client.AnalyzeAsync(
-            BinaryData.FromBytes(imageBytes),
-            VisualFeatures.Objects | VisualFeatures.Tags
-        );
-
-        var detectedItems = new List<object>();
-
-        if (result.Value.Objects?.Values != null)
+        try
         {
-            foreach (var obj in result.Value.Objects.Values)
-            {
-                detectedItems.Add(new
-                {
-                    name = obj.Tags[0].Name,
-                    confidence = Math.Round(obj.Tags[0].Confidence, 2),
-                    source = "object"
-                });
-            }
-        }
+            var client = new ImageAnalysisClient(new Uri(_config.Endpoint), new AzureKeyCredential(_config.ApiKey));
 
-        if (result.Value.Tags?.Values != null)
+            var result = await client.AnalyzeAsync(
+                BinaryData.FromBytes(imageBytes),
+                VisualFeatures.Objects | VisualFeatures.Tags
+            );
+
+            var detectedItems = new List<object>();
+
+            if (result.Value.Objects?.Values != null)
+            {
+                foreach (var obj in result.Value.Objects.Values)
+                {
+                    detectedItems.Add(new
+                    {
+                        name = obj.Tags[0].Name,
+                        confidence = Math.Round(obj.Tags[0].Confidence, 2),
+                        source = "object"
+                    });
+                }
+            }
+
+            if (result.Value.Tags?.Values != null)
+            {
+                foreach (var tag in result.Value.Tags.Values)
+                {
+                    detectedItems.Add(new
+                    {
+                        name = tag.Name,
+                        confidence = Math.Round(tag.Confidence, 2),
+                        source = "tag"
+                    });
+                }
+            }
+
+            return JsonSerializer.Serialize(detectedItems);
+        }
+        catch
         {
-            foreach (var tag in result.Value.Tags.Values)
-            {
-                detectedItems.Add(new
-                {
-                    name = tag.Name,
-                    confidence = Math.Round(tag.Confidence, 2),
-                    source = "tag"
-                });
-            }
+            return null;
         }
-
-        return JsonSerializer.Serialize(detectedItems);
     }
 }

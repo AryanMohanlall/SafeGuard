@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import {
   Button,
@@ -31,6 +31,7 @@ import {
   FileImageOutlined,
   FileTextOutlined,
   PlusOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
@@ -102,6 +103,19 @@ const IncidentsPage = () => {
   const imageUrlRef = useRef<string | null>(null);
 
   const [form] = Form.useForm<IncidentFormValues>();
+
+  const detectedObjects = useMemo(() => {
+    if (!activeIncident?.detectedObjects) return [];
+    try {
+      const parsed: { name: string; confidence: number; source: string }[] =
+        JSON.parse(activeIncident.detectedObjects);
+      return parsed
+        .filter((o) => o.confidence >= 0.5)
+        .sort((a, b) => b.confidence - a.confidence);
+    } catch {
+      return [];
+    }
+  }, [activeIncident?.detectedObjects]);
 
   useEffect(() => {
     fetchAll({ skipCount: 0, maxResultCount: pageSize });
@@ -278,6 +292,11 @@ const IncidentsPage = () => {
         <Space size={4}>
           {record.hasAudio && <Tag color="blue">Audio</Tag>}
           {record.hasImage && <Tag color="purple">Image</Tag>}
+          {record.detectedObjects && (
+            <Tooltip title="AI analysed">
+              <Tag color="green" icon={<RobotOutlined />} />
+            </Tooltip>
+          )}
           {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>—</span>}
         </Space>
       ),
@@ -481,6 +500,24 @@ const IncidentsPage = () => {
                     {imageLoading ? 'Loading…' : `Load · ${activeIncident.imageFileName}`}
                   </Button>
                 )}
+              </div>
+            )}
+            {detectedObjects.length > 0 && (
+              <div className={styles.detailField}>
+                <p className={styles.detailLabel}>
+                  <RobotOutlined style={{ marginRight: 6 }} />
+                  AI Detected Objects
+                </p>
+                <Space size={[4, 6]} wrap style={{ marginTop: 4 }}>
+                  {detectedObjects.map((obj, i) => (
+                    <Tag
+                      key={`${obj.name}-${i}`}
+                      color={obj.source === 'object' ? 'blue' : 'default'}
+                    >
+                      {obj.name} · {Math.round(obj.confidence * 100)}%
+                    </Tag>
+                  ))}
+                </Space>
               </div>
             )}
           </div>

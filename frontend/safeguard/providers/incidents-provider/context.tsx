@@ -19,6 +19,7 @@ export interface IIncident {
   reportedAt: string;
   creationTime: string;
   creatorUserId: number | null;
+  detectedObjects: string | null;
 }
 
 export interface ICreateIncidentInput {

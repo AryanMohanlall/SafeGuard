@@ -10,6 +10,8 @@ services:
       App__ServerRootAddress: "http://localhost:44311/"
       App__ClientRootAddress: "http://localhost:4200/"
       App__CorsOrigins: "http://localhost:4200,http://localhost:3000"
+      AzureComputerVision__ApiKey: "${AzureComputerVision__ApiKey}"
+      AzureComputerVision__Endpoint: "${AzureComputerVision__Endpoint}"
       TZ: "America/Toronto"
       Kestrel__Endpoints__Http__Url: "http://+:80"
     ports:
