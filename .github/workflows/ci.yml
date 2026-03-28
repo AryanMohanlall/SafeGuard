@@ -7,7 +7,7 @@ on:
     branches: [main, dev]
 
 jobs:
-  backend-tests:
+  backend:
     name: Backend
     runs-on: ubuntu-latest
 
@@ -27,7 +27,7 @@ jobs:
         run: dotnet test --no-restore --verbosity normal
         working-directory: backend/aspnet-core
 
-  frontend-lint:
+  frontend:
     name: Frontend
     runs-on: ubuntu-latest
 
@@ -52,3 +52,21 @@ jobs:
       - name: Type Check
         run: npx tsc --noEmit
         working-directory: frontend/safeguard
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend/safeguard
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
+        working-directory: frontend/safeguard
+        env:
+          CI: "true"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/safeguard/playwright-report/
+          retention-days: 7

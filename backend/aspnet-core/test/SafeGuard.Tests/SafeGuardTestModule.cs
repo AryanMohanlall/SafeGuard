@@ -7,6 +7,7 @@ using Abp.TestBase;
 using Abp.Zero.Configuration;
 using Abp.Zero.EntityFrameworkCore;
 using SafeGuard.EntityFrameworkCore;
+using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Tests.DependencyInjection;
 using Castle.MicroKernel.Registration;
 using NSubstitute;
@@ -43,6 +44,12 @@ public class SafeGuardTestModule : AbpModule
         RegisterFakeService<AbpZeroDbMigrator<SafeGuardDbContext>>();
 
         Configuration.ReplaceService<IEmailSender, NullEmailSender>(DependencyLifeStyle.Transient);
+
+        IocManager.IocContainer.Register(
+            Component.For<AzureComputerVisionConfiguration>()
+                .Instance(new AzureComputerVisionConfiguration { ApiKey = "", Endpoint = "" })
+                .LifestyleSingleton()
+        );
     }
 
     public override void Initialize()
