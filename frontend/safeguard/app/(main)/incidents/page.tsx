@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Button,
   DatePicker,
   Drawer,
   Form,
+  Image,
   Input,
   InputNumber,
   Popconfirm,
@@ -18,17 +19,29 @@ import {
 } from 'antd';
 import type { TableColumnsType } from 'antd';
 import {
+  AudioOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
+  FileImageOutlined,
+  FileTextOutlined,
   PlusOutlined,
   EnvironmentOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
 import { useIncidentState, useIncidentAction } from '@/providers/incidents-provider';
 import type { IIncident, ICreateIncidentInput, IUpdateIncidentInput } from '@/providers/incidents-provider/context';
+import { getAxiosInstance } from '@/utils/axiosInstance';
+
+const BASE = '/api/services/app/incident';
+
+function base64ToObjectUrl(b64: string, contentType: string): string {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes], { type: contentType }));
+}
 
 const { TextArea } = Input;
 
@@ -56,6 +69,13 @@ const IncidentsPage = () => {
   const [anonymous, setAnonymous] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [imageLoading, setImageLoading] = useState(false);
+  const audioUrlRef = useRef<string | null>(null);
+  const imageUrlRef = useRef<string | null>(null);
 
   const [form] = Form.useForm<IncidentFormValues>();
 
@@ -89,15 +109,56 @@ const IncidentsPage = () => {
     setDrawerOpen(true);
   };
 
+  const revokeMediaUrls = () => {
+    if (audioUrlRef.current) { URL.revokeObjectURL(audioUrlRef.current); audioUrlRef.current = null; }
+    if (imageUrlRef.current) { URL.revokeObjectURL(imageUrlRef.current); imageUrlRef.current = null; }
+    setAudioUrl(null);
+    setImageUrl(null);
+  };
+
   const openView = (incident: IIncident) => {
+    revokeMediaUrls();
     setActiveIncident(incident);
     setDrawerMode('view');
     setDrawerOpen(true);
   };
 
   const closeDrawer = () => {
+    revokeMediaUrls();
     setDrawerOpen(false);
     setActiveIncident(null);
+  };
+
+  const loadAudio = async (id: string) => {
+    if (audioUrl) return;
+    setAudioLoading(true);
+    try {
+      const res = await getAxiosInstance().get(`${BASE}/GetAudio`, { params: { id } });
+      const { audioFile, audioContentType } = res.data.result;
+      const url = base64ToObjectUrl(audioFile, audioContentType || 'audio/mpeg');
+      audioUrlRef.current = url;
+      setAudioUrl(url);
+    } catch {
+      message.error('Failed to load audio.');
+    } finally {
+      setAudioLoading(false);
+    }
+  };
+
+  const loadImage = async (id: string) => {
+    if (imageUrl) return;
+    setImageLoading(true);
+    try {
+      const res = await getAxiosInstance().get(`${BASE}/GetImage`, { params: { id } });
+      const { imageFile, imageContentType } = res.data.result;
+      const url = base64ToObjectUrl(imageFile, imageContentType || 'image/jpeg');
+      imageUrlRef.current = url;
+      setImageUrl(url);
+    } catch {
+      message.error('Failed to load image.');
+    } finally {
+      setImageLoading(false);
+    }
   };
 
   const handleSubmit = async (values: IncidentFormValues) => {
@@ -341,14 +402,40 @@ const IncidentsPage = () => {
             </div>
             {activeIncident.hasAudio && (
               <div className={styles.detailField}>
-                <p className={styles.detailLabel}>Audio</p>
-                <p className={styles.detailValue}>{activeIncident.audioFileName}</p>
+                <p className={styles.detailLabel}>Audio Recording</p>
+                {audioUrl ? (
+                  <audio controls src={audioUrl} style={{ width: '100%', marginTop: 4 }} />
+                ) : (
+                  <Button
+                    icon={<AudioOutlined />}
+                    loading={audioLoading}
+                    onClick={() => loadAudio(activeIncident.id)}
+                    style={{ alignSelf: 'flex-start' }}
+                  >
+                    {audioLoading ? 'Loading…' : `Load · ${activeIncident.audioFileName}`}
+                  </Button>
+                )}
               </div>
             )}
             {activeIncident.hasImage && (
               <div className={styles.detailField}>
                 <p className={styles.detailLabel}>Image</p>
-                <p className={styles.detailValue}>{activeIncident.imageFileName}</p>
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt="Incident image"
+                    style={{ maxWidth: '100%', borderRadius: 8, marginTop: 4 }}
+                  />
+                ) : (
+                  <Button
+                    icon={<FileImageOutlined />}
+                    loading={imageLoading}
+                    onClick={() => loadImage(activeIncident.id)}
+                    style={{ alignSelf: 'flex-start' }}
+                  >
+                    {imageLoading ? 'Loading…' : `Load · ${activeIncident.imageFileName}`}
+                  </Button>
+                )}
               </div>
             )}
           </div>
