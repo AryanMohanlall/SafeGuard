@@ -119,6 +119,7 @@ const IncidentsPage = () => {
 
   useEffect(() => {
     fetchAll({ skipCount: 0, maxResultCount: pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openCreate = () => {

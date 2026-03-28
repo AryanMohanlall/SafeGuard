@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button, Checkbox, Form, Input, message, Typography } from 'antd';
 import {
   LockOutlined,
@@ -36,7 +35,6 @@ export default function LoginPage() {
   const { styles } = useStyles();
   const [form] = Form.useForm<LoginFormValues>();
   const [messageApi, contextHolder] = message.useMessage();
-  const router = useRouter();
 
   const { login } = useAuthAction();
   const { isPending, isSuccess, isError } = useAuthState();
@@ -45,13 +43,13 @@ export default function LoginPage() {
     if (isSuccess) {
       messageApi.success('Signed in successfully.');
     }
-  }, [isSuccess]);
+  }, [isSuccess, messageApi]);
 
   useEffect(() => {
     if (isError) {
       messageApi.error('Invalid credentials. Please try again.');
     }
-  }, [isError]);
+  }, [isError, messageApi]);
 
   const handleSubmit = ({ email, password }: LoginFormValues) => {
     login(email, password);

@@ -50,7 +50,9 @@ const IncidentPage = () => {
   const { create } = useIncidentAction();
   const [form] = Form.useForm<IncidentFormValues>();
   const [anonymous, setAnonymous] = useState(false);
-  const [geoStatus, setGeoStatus] = useState<GeoStatus>('idle');
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>(() =>
+    typeof navigator !== 'undefined' && navigator.geolocation ? 'requesting' : 'idle'
+  );
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>('idle');
@@ -64,7 +66,6 @@ const IncidentPage = () => {
 
   useEffect(() => {
     if (!navigator.geolocation) return;
-    setGeoStatus('requesting');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
@@ -280,6 +281,7 @@ const IncidentPage = () => {
 
               {imagePreviewUrl ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={imagePreviewUrl} alt="preview" className={styles.imagePreview} />
                   <Button icon={<DeleteOutlined />} size="small" danger onClick={clearImage}>
                     Remove

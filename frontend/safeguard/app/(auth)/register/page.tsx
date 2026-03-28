@@ -46,13 +46,13 @@ export default function RegisterPage() {
       messageApi.success('Account created! Redirecting…');
       router.push('/');
     }
-  }, [isSuccess]);
+  }, [isSuccess, messageApi, router]);
 
   useEffect(() => {
     if (isError) {
       messageApi.error('Registration failed. Please try again.');
     }
-  }, [isError]);
+  }, [isError, messageApi]);
 
   const handleSubmit = ({ firstName, lastName, email, password }: RegisterFormValues) => {
     register({
