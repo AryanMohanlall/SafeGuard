@@ -9,6 +9,7 @@ using Abp.Extensions;
 using Abp.Linq.Extensions;
 using Abp.UI;
 using SafeGuard.Domains.Incidents;
+using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Services.IncidentService.Dto;
 
 namespace SafeGuard.Services.IncidentService;
@@ -18,9 +19,52 @@ public class IncidentAppService
     : AsyncCrudAppService<Incident, IncidentDto, Guid, PagedIncidentResultRequestDto, CreateIncidentDto, UpdateIncidentDto>,
       IIncidentAppService
 {
-    public IncidentAppService(IRepository<Incident, Guid> repository)
+    private readonly IImageAnalysisService _imageAnalysisService;
+
+    public IncidentAppService(
+        IRepository<Incident, Guid> repository,
+        IImageAnalysisService imageAnalysisService)
         : base(repository)
     {
+        _imageAnalysisService = imageAnalysisService;
+    }
+
+    public override async Task<IncidentDto> CreateAsync(CreateIncidentDto input)
+    {
+        var dto = await base.CreateAsync(input);
+
+        if (input.ImageFile != null && input.ImageFile.Length > 0)
+        {
+            var detectedObjects = await _imageAnalysisService.AnalyzeImageAsync(input.ImageFile);
+            if (detectedObjects != null)
+            {
+                var incident = await Repository.GetAsync(dto.Id);
+                incident.DetectedObjects = detectedObjects;
+                await Repository.UpdateAsync(incident);
+                dto.DetectedObjects = detectedObjects;
+            }
+        }
+
+        return dto;
+    }
+
+    public override async Task<IncidentDto> UpdateAsync(UpdateIncidentDto input)
+    {
+        var dto = await base.UpdateAsync(input);
+
+        if (input.ImageFile != null && input.ImageFile.Length > 0)
+        {
+            var detectedObjects = await _imageAnalysisService.AnalyzeImageAsync(input.ImageFile);
+            if (detectedObjects != null)
+            {
+                var incident = await Repository.GetAsync(dto.Id);
+                incident.DetectedObjects = detectedObjects;
+                await Repository.UpdateAsync(incident);
+                dto.DetectedObjects = detectedObjects;
+            }
+        }
+
+        return dto;
     }
 
     protected override IQueryable<Incident> CreateFilteredQuery(PagedIncidentResultRequestDto input)

@@ -41,6 +41,8 @@ public class Incident : FullAuditedEntity<Guid>
 
     public bool Anonymous { get; set; }
 
+    public string DetectedObjects { get; set; }
+
     [Required]
     public DateTime OccurredAt { get; set; }
 

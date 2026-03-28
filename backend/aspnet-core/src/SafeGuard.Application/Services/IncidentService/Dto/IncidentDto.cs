@@ -20,6 +20,7 @@ public class IncidentDto : EntityDto<Guid>
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public bool Anonymous { get; set; }
+    public string DetectedObjects { get; set; }
     public DateTime OccurredAt { get; set; }
     public DateTime ReportedAt { get; set; }
     public DateTime CreationTime { get; set; }
