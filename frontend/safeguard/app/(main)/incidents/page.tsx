@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   Button,
   DatePicker,
@@ -10,6 +11,7 @@ import {
   Input,
   InputNumber,
   Popconfirm,
+  Segmented,
   Space,
   Switch,
   Table,
@@ -20,19 +22,23 @@ import {
 import type { TableColumnsType } from 'antd';
 import {
   AudioOutlined,
+  BarsOutlined,
   DeleteOutlined,
   EditOutlined,
+  EnvironmentFilled,
+  EnvironmentOutlined,
   EyeOutlined,
   FileImageOutlined,
   FileTextOutlined,
   PlusOutlined,
-  EnvironmentOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
 import { useIncidentState, useIncidentAction } from '@/providers/incidents-provider';
 import type { IIncident, ICreateIncidentInput, IUpdateIncidentInput } from '@/providers/incidents-provider/context';
 import { getAxiosInstance } from '@/utils/axiosInstance';
+
+const IncidentMap = dynamic(() => import('../../../components/Map/IncidentMap'), { ssr: false });
 
 const BASE = '/api/services/app/incident';
 
@@ -69,6 +75,24 @@ const IncidentsPage = () => {
   const [anonymous, setAnonymous] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
+
+  const [viewMode, setViewMode] = useState<'table' | 'map'>('table');
+  const [mapItems, setMapItems] = useState<IIncident[]>([]);
+  const [mapLoading, setMapLoading] = useState(false);
+
+  const loadMapItems = async () => {
+    setMapLoading(true);
+    try {
+      const res = await getAxiosInstance().get(`${BASE}/GetAll`, {
+        params: { skipCount: 0, maxResultCount: 10000 },
+      });
+      setMapItems(res.data.result.items);
+    } catch {
+      message.error('Failed to load map data.');
+    } finally {
+      setMapLoading(false);
+    }
+  };
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -323,21 +347,42 @@ const IncidentsPage = () => {
       </div>
 
       <div className={styles.card}>
-        <Table<IIncident>
-          columns={columns}
-          dataSource={items}
-          rowKey="id"
-          loading={isPending}
-          pagination={{
-            current: page,
-            pageSize,
-            total: totalCount,
-            onChange: handlePageChange,
-            showSizeChanger: false,
-            showTotal: (total) => `${total} incidents`,
-          }}
-          size="middle"
-        />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <Segmented
+            value={viewMode}
+            onChange={(v) => {
+              const mode = v as 'table' | 'map';
+              setViewMode(mode);
+              if (mode === 'map') loadMapItems();
+            }}
+            options={[
+              { value: 'table', icon: <BarsOutlined />, label: 'Table' },
+              { value: 'map', icon: <EnvironmentFilled />, label: 'Map' },
+            ]}
+          />
+        </div>
+
+        {viewMode === 'table' ? (
+          <Table<IIncident>
+            columns={columns}
+            dataSource={items}
+            rowKey="id"
+            loading={isPending}
+            pagination={{
+              current: page,
+              pageSize,
+              total: totalCount,
+              onChange: handlePageChange,
+              showSizeChanger: false,
+              showTotal: (total) => `${total} incidents`,
+            }}
+            size="middle"
+          />
+        ) : (
+          <div style={{ height: 520 }}>
+            <IncidentMap incidents={mapItems} onSelect={openView} loading={mapLoading} />
+          </div>
+        )}
       </div>
 
       <Drawer
