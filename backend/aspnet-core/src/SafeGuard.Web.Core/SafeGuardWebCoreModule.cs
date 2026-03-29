@@ -5,6 +5,7 @@ using Abp.Modules;
 using Abp.Reflection.Extensions;
 using Abp.Zero.Configuration;
 using SafeGuard.Authentication.JwtBearer;
+using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Configuration;
 using SafeGuard.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
@@ -48,6 +49,7 @@ namespace SafeGuard
                  );
 
             ConfigureTokenAuth();
+            ConfigureAzureComputerVision();
         }
 
         private void ConfigureTokenAuth()
@@ -60,6 +62,14 @@ namespace SafeGuard
             tokenAuthConfig.Audience = _appConfiguration["Authentication:JwtBearer:Audience"];
             tokenAuthConfig.SigningCredentials = new SigningCredentials(tokenAuthConfig.SecurityKey, SecurityAlgorithms.HmacSha256);
             tokenAuthConfig.Expiration = TimeSpan.FromDays(1);
+        }
+
+        private void ConfigureAzureComputerVision()
+        {
+            IocManager.Register<AzureComputerVisionConfiguration>();
+            var config = IocManager.Resolve<AzureComputerVisionConfiguration>();
+            config.ApiKey = _appConfiguration["AzureComputerVision:ApiKey"];
+            config.Endpoint = _appConfiguration["AzureComputerVision:Endpoint"];
         }
 
         public override void Initialize()
