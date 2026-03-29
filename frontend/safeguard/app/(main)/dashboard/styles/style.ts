@@ -19,7 +19,7 @@ export const useStyles = createStyles(({ css }) => ({
 
   pageSubtitle: css`
     font-size: 14px;
-    color: #64748b;
+    color: #243143;
     margin-top: 4px;
     margin-bottom: 0;
   `,

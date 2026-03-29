@@ -96,7 +96,7 @@ export default function Dashboard() {
       { name: 'Image + Audio', value: both,  fill: '#8b5cf6' },
       { name: 'Image only',    value: image, fill: '#06b6d4' },
       { name: 'Audio only',    value: audio, fill: '#10b981' },
-      { name: 'No media',      value: none,  fill: '#cbd5e1' },
+      { name: 'No media',      value: none,  fill: '#060b10' },
     ].filter((d) => d.value > 0);
   }, [incidents]);
 
@@ -104,7 +104,7 @@ export default function Dashboard() {
   const anonData = useMemo(
     () => [
       { name: 'Identified', value: totalCount - anonymousCount, fill: '#2563eb' },
-      { name: 'Anonymous',  value: anonymousCount,              fill: '#e2e8f0' },
+      { name: 'Anonymous',  value: anonymousCount,              fill: '#090e15' },
     ].filter((d) => d.value > 0),
     [totalCount, anonymousCount],
   );
