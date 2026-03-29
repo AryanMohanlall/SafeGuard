@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Spin } from 'antd';
 import { useAuthState } from '@/providers/auth-provider';
@@ -12,34 +12,44 @@ function hasAuthCookie(): boolean {
   return document.cookie.split(';').some((c) => c.trim().startsWith(`${TOKEN_COOKIE}=`));
 }
 
+const spinScreen = (
+  <div style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    background: '#f1f5f9',
+  }}>
+    <Spin size="large" />
+  </div>
+);
+
 export function withAuth<P extends object>(WrappedComponent: React.ComponentType<P>) {
   const AuthGuard: React.FC<P> = (props) => {
     const { isAuthenticated } = useAuthState();
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+      setMounted(true);
+    }, []);
 
     // isAuthenticated is true after login within the same session.
     // hasAuthCookie() catches page refreshes where state resets but the cookie persists.
     const canAccess = isAuthenticated || hasAuthCookie();
 
     useEffect(() => {
-      if (!canAccess) {
+      if (mounted && !canAccess) {
         router.replace('/login');
       }
-    }, [canAccess, router]);
+    }, [mounted, canAccess, router]);
 
-    if (!canAccess) {
-      return (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          background: '#f1f5f9',
-        }}>
-          <Spin size="large" />
-        </div>
-      );
-    }
+    // Keep server and client first-pass identical to avoid hydration mismatch.
+    // hasAuthCookie() always returns false on the server, so we defer the real
+    // check until after mount when document.cookie is available.
+    if (!mounted) return spinScreen;
+
+    if (!canAccess) return spinScreen;
 
     return <WrappedComponent {...props} />;
   };

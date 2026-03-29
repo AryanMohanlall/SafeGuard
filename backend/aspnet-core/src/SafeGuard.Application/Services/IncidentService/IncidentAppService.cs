@@ -76,6 +76,12 @@ public class IncidentAppService
             );
     }
 
+    public override async Task DeleteAsync(EntityDto<Guid> input)
+    {
+        var incident = await Repository.GetAsync(input.Id);
+        await Repository.HardDeleteAsync(incident);
+    }
+
     public async Task<IncidentAudioDto> GetAudioAsync(Guid id)
     {
         var incident = await Repository.GetAsync(id);
