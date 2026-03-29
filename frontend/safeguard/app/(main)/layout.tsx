@@ -3,19 +3,24 @@
 import { Layout } from 'antd';
 import { Sidebar } from '@/components/Sidebar';
 import { withAuth } from '@/hoc/withAuth';
+import { AlertProvider } from '@/providers/alert-provider';
+import { AlertModal } from '@/components/AlertModal';
 
 const { Content } = Layout;
 
 function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sidebar />
-      <Layout style={{ background: '#f1f5f9' }}>
-        <Content style={{ padding: 32, overflowY: 'auto' }}>
-          {children}
-        </Content>
+    <AlertProvider>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sidebar />
+        <Layout style={{ background: '#f1f5f9' }}>
+          <Content style={{ padding: 32, overflowY: 'auto' }}>
+            {children}
+          </Content>
+        </Layout>
       </Layout>
-    </Layout>
+      <AlertModal />
+    </AlertProvider>
   );
 }
 
