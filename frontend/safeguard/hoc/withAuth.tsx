@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { Spin } from 'antd';
 import { useAuthState } from '@/providers/auth-provider';
@@ -24,15 +24,13 @@ const spinScreen = (
   </div>
 );
 
-export function withAuth<P extends object>(WrappedComponent: React.ComponentType<P>) {
+function subscribe() { return () => {}; }
+
+export const withAuth = <P extends object>(WrappedComponent: React.ComponentType<P>) => {
   const AuthGuard: React.FC<P> = (props) => {
     const { isAuthenticated } = useAuthState();
     const router = useRouter();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-      setMounted(true);
-    }, []);
+    const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
     // isAuthenticated is true after login within the same session.
     // hasAuthCookie() catches page refreshes where state resets but the cookie persists.
