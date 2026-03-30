@@ -9,6 +9,8 @@ export const useStyles = createStyles(() => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap' as const,
+    gap: 12,
     marginBottom: 24,
   },
   pageTitle: {
@@ -29,6 +31,9 @@ export const useStyles = createStyles(() => ({
     padding: '24px 28px',
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     border: '1px solid #e2e8f0',
+    '@media (max-width: 640px)': {
+      padding: '16px',
+    },
   },
   tableActions: {
     display: 'flex',
@@ -62,11 +67,17 @@ export const useStyles = createStyles(() => ({
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 16,
+    '@media (max-width: 480px)': {
+      gridTemplateColumns: '1fr',
+    },
   },
   dateGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 16,
+    '@media (max-width: 480px)': {
+      gridTemplateColumns: '1fr',
+    },
   },
   datePickerFull: {
     width: '100%',

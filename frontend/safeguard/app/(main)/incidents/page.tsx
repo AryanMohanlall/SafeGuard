@@ -388,6 +388,7 @@ const IncidentsPage = () => {
             dataSource={items}
             rowKey="id"
             loading={isPending}
+            scroll={{ x: 600 }}
             pagination={{
               current: page,
               pageSize,
@@ -409,7 +410,7 @@ const IncidentsPage = () => {
         title={drawerTitle}
         open={drawerOpen}
         onClose={closeDrawer}
-        width={520}
+        width="min(520px, 100vw)"
         footer={
           drawerMode !== 'view' ? (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>

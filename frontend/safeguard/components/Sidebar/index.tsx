@@ -64,6 +64,8 @@ export const Sidebar: React.FC = () => {
         collapsible
         collapsed={collapsed}
         onCollapse={setCollapsed}
+        breakpoint="lg"
+        onBreakpoint={(broken) => setCollapsed(broken)}
         width={220}
         style={{ background: NAV_BG, display: 'flex', flexDirection: 'column' }}
       >

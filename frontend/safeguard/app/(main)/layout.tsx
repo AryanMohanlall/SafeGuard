@@ -14,7 +14,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       <Layout style={{ minHeight: '100vh' }}>
         <Sidebar />
         <Layout style={{ background: '#f1f5f9' }}>
-          <Content style={{ padding: 32, overflowY: 'auto' }}>
+          <Content style={{ overflowY: 'auto' }} className="p-4 sm:p-6 lg:p-8">
             {children}
           </Content>
         </Layout>
