@@ -4,6 +4,7 @@ import { Layout } from 'antd';
 import { Sidebar } from '@/components/Sidebar';
 import { withAuth } from '@/hoc/withAuth';
 import { AlertProvider } from '@/providers/alert-provider';
+import { CaseProvider } from '@/providers/cases-provider';
 import { AlertModal } from '@/components/AlertModal';
 
 const { Content } = Layout;
@@ -11,6 +12,7 @@ const { Content } = Layout;
 function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <AlertProvider>
+      <CaseProvider>
       <Layout style={{ minHeight: '100vh' }}>
         <Sidebar />
         <Layout style={{ background: '#f1f5f9' }}>
@@ -20,6 +22,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         </Layout>
       </Layout>
       <AlertModal />
+      </CaseProvider>
     </AlertProvider>
   );
 }
