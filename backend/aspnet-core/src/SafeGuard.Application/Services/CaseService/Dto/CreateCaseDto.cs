@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Abp.AutoMapper;
 
@@ -25,7 +26,7 @@ public class CreateCaseDto
     [MaxLength(100)]
     public string Category { get; set; }
 
-    public Guid? IncidentId { get; set; }
+    public List<Guid> IncidentIds { get; set; } = new();
 
     [Required]
     public DateTime OpenedAt { get; set; }

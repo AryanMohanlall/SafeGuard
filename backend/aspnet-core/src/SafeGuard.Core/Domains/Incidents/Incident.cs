@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Abp.Domain.Entities.Auditing;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SafeGuard.Domains.Incidents;
 
@@ -38,6 +39,11 @@ public class Incident : FullAuditedEntity<Guid>
 
     [Range(typeof(decimal), "-180", "180")]
     public decimal? Longitude { get; set; }
+
+    public Guid? CaseId { get; set; }
+
+    [ForeignKey(nameof(CaseId))]
+    public Case.Case Case { get; set; }
 
     public bool Anonymous { get; set; }
 

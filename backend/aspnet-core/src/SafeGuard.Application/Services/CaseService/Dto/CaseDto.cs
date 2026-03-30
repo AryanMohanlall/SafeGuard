@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Abp.Application.Services.Dto;
 using Abp.AutoMapper;
 
@@ -13,7 +14,8 @@ public class CaseDto : EntityDto<Guid>
     public string Status { get; set; }
     public string Severity { get; set; }
     public string Category { get; set; }
-    public Guid? IncidentId { get; set; }
+    public List<Guid> IncidentIds { get; set; } = new();
+    public int IncidentCount { get; set; }
     public DateTime OpenedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
     public DateTime? LastActivityAt { get; set; }

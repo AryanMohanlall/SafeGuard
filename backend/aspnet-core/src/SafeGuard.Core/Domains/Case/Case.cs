@@ -29,9 +29,6 @@ public class Case : FullAuditedEntity<Guid>
     [MaxLength(100)]
     public string Category { get; set; }           // Theft | Assault | Fraud | Homicide | etc.
 
-    // Optional link to an originating incident
-    public Guid? IncidentId { get; set; }
-
     // Key dates
     public DateTime OpenedAt { get; set; }
     public DateTime? ClosedAt { get; set; }
@@ -50,6 +47,7 @@ public class Case : FullAuditedEntity<Guid>
     public string AiSummary { get; set; }          // auto-generated from evidence CV analysis
 
     // Navigation
+    public ICollection<Incidents.Incident> Incidents { get; set; }
     public ICollection<Evidence.Evidence> EvidenceItems { get; set; }
     public ICollection<CaseNote> Notes { get; set; }
     public ICollection<CaseStatusHistory> StatusHistory { get; set; }

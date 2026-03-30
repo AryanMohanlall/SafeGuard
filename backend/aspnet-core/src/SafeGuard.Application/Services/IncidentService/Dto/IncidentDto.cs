@@ -19,6 +19,7 @@ public class IncidentDto : EntityDto<Guid>
     public string ImageContentType { get; set; }
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
+    public Guid? CaseId { get; set; }
     public bool Anonymous { get; set; }
     public string DetectedObjects { get; set; }
     public DateTime OccurredAt { get; set; }

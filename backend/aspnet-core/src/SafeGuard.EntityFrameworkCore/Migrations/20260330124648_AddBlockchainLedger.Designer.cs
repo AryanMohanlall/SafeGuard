@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SafeGuard.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using SafeGuard.EntityFrameworkCore;
 namespace SafeGuard.Migrations
 {
     [DbContext(typeof(SafeGuardDbContext))]
-    partial class SafeGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330124648_AddBlockchainLedger")]
+    partial class AddBlockchainLedger
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1680,6 +1683,9 @@ namespace SafeGuard.Migrations
                     b.Property<DateTime?>("DeletionTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("IncidentId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsCourtReady")
                         .HasColumnType("boolean");
 
@@ -1931,9 +1937,6 @@ namespace SafeGuard.Migrations
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid?>("IncidentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("IpfsCid")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -1986,8 +1989,6 @@ namespace SafeGuard.Migrations
 
                     b.HasIndex("CaseId");
 
-                    b.HasIndex("IncidentId");
-
                     b.ToTable("Evidences");
                 });
 
@@ -2010,9 +2011,6 @@ namespace SafeGuard.Migrations
                     b.Property<string>("AudioFileName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
-
-                    b.Property<Guid?>("CaseId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp with time zone");
@@ -2078,8 +2076,6 @@ namespace SafeGuard.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CaseId");
 
                     b.ToTable("Incidents");
                 });
@@ -2406,23 +2402,6 @@ namespace SafeGuard.Migrations
                         .HasForeignKey("CaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("SafeGuard.Domains.Incidents.Incident", "Incident")
-                        .WithMany()
-                        .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Incident");
-                });
-
-            modelBuilder.Entity("SafeGuard.Domains.Incidents.Incident", b =>
-                {
-                    b.HasOne("SafeGuard.Domains.Case.Case", "Case")
-                        .WithMany("Incidents")
-                        .HasForeignKey("CaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Case");
                 });
 
             modelBuilder.Entity("SafeGuard.MultiTenancy.Tenant", b =>
@@ -2526,8 +2505,6 @@ namespace SafeGuard.Migrations
             modelBuilder.Entity("SafeGuard.Domains.Case.Case", b =>
                 {
                     b.Navigation("EvidenceItems");
-
-                    b.Navigation("Incidents");
 
                     b.Navigation("Notes");
 

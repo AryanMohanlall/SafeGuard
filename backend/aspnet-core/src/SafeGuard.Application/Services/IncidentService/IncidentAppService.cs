@@ -9,6 +9,7 @@ using Abp.Extensions;
 using Abp.Linq.Extensions;
 using Abp.UI;
 using SafeGuard.Domains.Incidents;
+using SafeGuard.Domains.Evidence;
 using SafeGuard.Notifications;
 using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Services.IncidentService.Dto;
@@ -22,15 +23,18 @@ public class IncidentAppService
 {
     private readonly IImageAnalysisService _imageAnalysisService;
     private readonly IIncidentAlertNotifier _alertNotifier;
+    private readonly IIncidentEvidenceService _incidentEvidenceService;
 
     public IncidentAppService(
         IRepository<Incident, Guid> repository,
         IImageAnalysisService imageAnalysisService,
-        IIncidentAlertNotifier alertNotifier)
+        IIncidentAlertNotifier alertNotifier,
+        IIncidentEvidenceService incidentEvidenceService)
         : base(repository)
     {
         _imageAnalysisService = imageAnalysisService;
         _alertNotifier = alertNotifier;
+        _incidentEvidenceService = incidentEvidenceService;
     }
 
     public override async Task<IncidentDto> CreateAsync(CreateIncidentDto input)
@@ -47,6 +51,15 @@ public class IncidentAppService
                 await Repository.UpdateAsync(incident);
                 dto.DetectedObjects = detectedObjects;
             }
+        }
+
+        if (dto.CaseId.HasValue)
+        {
+            var incident = await Repository.GetAsync(dto.Id);
+            await _incidentEvidenceService.SyncIncidentEvidenceAsync(
+                dto.CaseId.Value,
+                incident,
+                AbpSession.UserId);
         }
 
         await _alertNotifier.NotifyAsync(new IncidentAlertDto
@@ -77,6 +90,15 @@ public class IncidentAppService
             }
         }
 
+        if (dto.CaseId.HasValue)
+        {
+            var incident = await Repository.GetAsync(dto.Id);
+            await _incidentEvidenceService.SyncIncidentEvidenceAsync(
+                dto.CaseId.Value,
+                incident,
+                AbpSession.UserId);
+        }
+
         return dto;
     }
 
@@ -86,6 +108,10 @@ public class IncidentAppService
             .WhereIf(
                 !input.Keyword.IsNullOrWhiteSpace(),
                 r => r.Title.Contains(input.Keyword) || r.Location.Contains(input.Keyword)
+            )
+            .WhereIf(
+                input.CaseId.HasValue,
+                r => r.CaseId == input.CaseId.Value
             );
     }
 

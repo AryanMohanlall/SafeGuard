@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Abp.Application.Services.Dto;
 using Abp.AutoMapper;
@@ -26,7 +27,7 @@ public class UpdateCaseDto : EntityDto<Guid>
     [MaxLength(100)]
     public string Category { get; set; }
 
-    public Guid? IncidentId { get; set; }
+    public List<Guid> IncidentIds { get; set; } = new();
 
     public bool IsCourtReady { get; set; }
 

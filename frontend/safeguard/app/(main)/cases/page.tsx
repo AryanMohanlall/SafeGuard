@@ -13,13 +13,20 @@ import {
 } from 'antd';
 import {
   CalendarOutlined,
+  EditOutlined,
   ExclamationCircleOutlined,
+  FileProtectOutlined,
   FolderAddOutlined,
   FolderOutlined,
+  LinkOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
 import { useCaseAction, useCaseState } from '@/providers/cases-provider';
-import type { ICase, ICreateCaseInput } from '@/providers/cases-provider/context';
+import type { ICase, ICreateCaseInput, IUpdateCaseInput } from '@/providers/cases-provider/context';
+import { useEvidenceAction, useEvidenceState } from '@/providers/evidence-provider';
+import type { IEvidence } from '@/providers/evidence-provider/context';
+import { useIncidentAction, useIncidentState } from '@/providers/incidents-provider';
+import type { IIncident } from '@/providers/incidents-provider/context';
 import { useStyles } from './styles/style';
 
 const { TextArea } = Input;
@@ -45,6 +52,15 @@ const STATUS_TAG_COLORS: Record<string, string> = {
 
 function statusLabel(key: string) {
   return PIPELINE_STAGES.find((s) => s.key === key)?.label ?? key;
+}
+
+function getIncidentDetailsForCase(caseItem: ICase, incidents: IIncident[]) {
+  return incidents.filter((incident) => caseItem.incidentIds.includes(incident.id));
+}
+
+function getIncidentTitle(incidentId: string | null | undefined, incidents: IIncident[]) {
+  if (!incidentId) return null;
+  return incidents.find((incident) => incident.id === incidentId)?.title ?? incidentId;
 }
 
 // ── Card ───────────────────────────────────────────────────────
@@ -82,6 +98,11 @@ function CaseCard({
           <p className={styles.caseTitle}>{c.title}</p>
           <div className={styles.caseMeta}>
             {c.category && <Tag style={{ margin: 0, fontSize: 10 }}>{c.category}</Tag>}
+            {c.incidentCount > 0 && (
+              <Tag color="geekblue" style={{ margin: 0, fontSize: 10 }}>
+                {c.incidentCount} incident{c.incidentCount === 1 ? '' : 's'}
+              </Tag>
+            )}
             <span className={styles.caseDate}>
               <CalendarOutlined style={{ marginRight: 3 }} />
               {new Date(c.openedAt).toLocaleDateString()}
@@ -151,17 +172,39 @@ function KanbanColumn({
 export default function CasesPage() {
   const { styles } = useStyles();
   const { items, isPending } = useCaseState();
-  const { fetchAll, create, transitionStatus } = useCaseAction();
+  const { fetchAll, create, update, transitionStatus } = useCaseAction();
+  const { items: evidenceItems, isPending: evidencePending } = useEvidenceState();
+  const { fetchAll: fetchAllEvidence } = useEvidenceAction();
+  const { items: incidentItems } = useIncidentState();
+  const { fetchAll: fetchAllIncidents } = useIncidentAction();
 
   const [selected, setSelected] = useState<ICase | null>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [caseModalOpen, setCaseModalOpen] = useState(false);
+  const [caseModalMode, setCaseModalMode] = useState<'create' | 'edit'>('create');
+  const [editingCase, setEditingCase] = useState<ICase | null>(null);
   const [transitionModal, setTransitionModal] = useState(false);
   const [pendingDrop, setPendingDrop] = useState<{ caseItem: ICase; toStatus: string } | null>(null);
-  const [form] = Form.useForm();
+  const [form] = Form.useForm<ICreateCaseInput>();
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+    fetchAllIncidents({ skipCount: 0, maxResultCount: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    fetchAllEvidence({ caseId: selected.id, skipCount: 0, maxResultCount: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
 
   const casesForStage = (key: string) => items.filter((c) => c.status === key);
+  const selectedIncidentDetails = selected
+    ? getIncidentDetailsForCase(selected, incidentItems)
+    : [];
+  const assignableIncidents = incidentItems.filter(
+    (incident) => !incident.caseId || incident.caseId === editingCase?.id
+  );
 
   // Called when a card is dropped
   const onDragEnd = (result: DropResult) => {
@@ -188,10 +231,56 @@ export default function CasesPage() {
     setPendingDrop(null);
   };
 
-  const handleCreate = (values: ICreateCaseInput) => {
-    create({ ...values, openedAt: new Date().toISOString() });
+  const handleCaseSubmit = (values: ICreateCaseInput) => {
+    if (caseModalMode === 'edit' && editingCase) {
+      const input: IUpdateCaseInput = {
+        id: editingCase.id,
+        title: values.title,
+        summary: values.summary ?? null,
+        status: values.status,
+        severity: values.severity,
+        category: values.category ?? null,
+        incidentIds: values.incidentIds ?? [],
+        isCourtReady: editingCase.isCourtReady,
+        closedAt: editingCase.closedAt,
+        closureReason: editingCase.closureReason,
+      };
+
+      update(editingCase.id, input);
+      setSelected(null);
+    } else {
+      create({
+        ...values,
+        incidentIds: values.incidentIds ?? [],
+        openedAt: new Date().toISOString(),
+      });
+    }
+
     form.resetFields();
-    setCreateOpen(false);
+    setEditingCase(null);
+    setCaseModalOpen(false);
+  };
+
+  const openCreateModal = () => {
+    setCaseModalMode('create');
+    setEditingCase(null);
+    form.resetFields();
+    form.setFieldsValue({ status: 'Draft', incidentIds: [] });
+    setCaseModalOpen(true);
+  };
+
+  const openEditModal = (caseItem: ICase) => {
+    setCaseModalMode('edit');
+    setEditingCase(caseItem);
+    form.setFieldsValue({
+      title: caseItem.title,
+      summary: caseItem.summary ?? undefined,
+      status: caseItem.status,
+      severity: caseItem.severity,
+      category: caseItem.category ?? undefined,
+      incidentIds: caseItem.incidentIds,
+    });
+    setCaseModalOpen(true);
   };
 
   // Drawer manual transition buttons
@@ -213,7 +302,7 @@ export default function CasesPage() {
         <div>
           <h1 className={styles.pageTitle}>Case Management</h1>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
           New Case
         </Button>
       </div>
@@ -275,6 +364,123 @@ export default function CasesPage() {
               <p className={styles.drawerValue}>{new Date(selected.openedAt).toLocaleString()}</p>
             </div>
 
+            <div className={styles.drawerSection}>
+              <p className={styles.drawerLabel}>Linked Incidents</p>
+              {selected.incidentIds.length > 0 ? (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {selectedIncidentDetails.length > 0
+                    ? selectedIncidentDetails.map((incident) => (
+                        <div
+                          key={incident.id}
+                          style={{
+                            border: '1px solid #dbeafe',
+                            background: '#f8fbff',
+                            borderRadius: 10,
+                            padding: '10px 12px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                            <strong style={{ color: '#0f172a' }}>{incident.title}</strong>
+                            <Tag color="geekblue" style={{ margin: 0 }}>
+                              {incident.hasImage || incident.hasAudio ? 'Media attached' : 'No media'}
+                            </Tag>
+                          </div>
+                          <div style={{ fontSize: 13, color: '#475569' }}>{incident.location}</div>
+                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                            Reported {new Date(incident.reportedAt).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                    : selected.incidentIds.map((incidentId) => (
+                        <Tag key={incidentId} color="geekblue">
+                          {incidentId}
+                        </Tag>
+                      ))}
+                </div>
+              ) : (
+                <p className={styles.drawerValue}>No incidents linked yet.</p>
+              )}
+            </div>
+
+            <div className={styles.drawerSection}>
+              <p className={styles.drawerLabel}>Evidence</p>
+              {evidencePending ? (
+                <Spin size="small" />
+              ) : evidenceItems.length > 0 ? (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {evidenceItems.map((evidence: IEvidence) => (
+                    <div
+                      key={evidence.id}
+                      style={{
+                        border: '1px solid #e2e8f0',
+                        background: '#fff',
+                        borderRadius: 10,
+                        padding: '12px 14px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                          marginBottom: 6,
+                        }}
+                      >
+                        <strong style={{ color: '#0f172a' }}>{evidence.fileName}</strong>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <Tag color="purple" icon={<FileProtectOutlined />} style={{ margin: 0 }}>
+                            {evidence.type}
+                          </Tag>
+                          <Tag color="blue" style={{ margin: 0 }}>
+                            {evidence.status}
+                          </Tag>
+                          {evidence.isFlagged && (
+                            <Tag color="red" style={{ margin: 0 }}>Flagged</Tag>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: 13, color: '#475569', display: 'grid', gap: 4 }}>
+                        <div>
+                          <strong>Source Incident:</strong>{' '}
+                          {getIncidentTitle(evidence.incidentId, incidentItems) ?? 'Manual / Unknown'}
+                        </div>
+                        <div>
+                          <strong>Uploaded:</strong> {new Date(evidence.uploadedAt).toLocaleString()}
+                        </div>
+                        <div>
+                          <strong>Hash:</strong>{' '}
+                          <code style={{ fontSize: 12 }}>
+                            {evidence.fileHash ? `${evidence.fileHash.slice(0, 16)}...` : 'Unavailable'}
+                          </code>
+                        </div>
+                        {evidence.manipulationStatus && (
+                          <div>
+                            <strong>Integrity Review:</strong> {evidence.manipulationStatus}
+                            {typeof evidence.manipulationScore === 'number' ? ` (${evidence.manipulationScore.toFixed(2)}%)` : ''}
+                          </div>
+                        )}
+                        {evidence.blockchainTx && (
+                          <div>
+                            <strong>Blockchain Ref:</strong>{' '}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <LinkOutlined />
+                              {evidence.blockchainTx}
+                            </span>
+                          </div>
+                        )}
+                        {evidence.notes && <div><strong>Notes:</strong> {evidence.notes}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.drawerValue}>No evidence has been generated for this case yet.</p>
+              )}
+            </div>
+
             {selected.closedAt && (
               <div className={styles.drawerSection}>
                 <p className={styles.drawerLabel}>Closed</p>
@@ -301,6 +507,13 @@ export default function CasesPage() {
                 <Tag color="cyan" icon={<ExclamationCircleOutlined />}>Court Ready</Tag>
               </div>
             )}
+
+            <div className={styles.drawerSection} style={{ marginTop: 24 }}>
+              <p className={styles.drawerLabel}>Case Actions</p>
+              <Button icon={<EditOutlined />} onClick={() => openEditModal(selected)}>
+                Edit Case
+              </Button>
+            </div>
 
             <div className={styles.drawerSection} style={{ marginTop: 24 }}>
               <p className={styles.drawerLabel}>Move to stage</p>
@@ -345,14 +558,23 @@ export default function CasesPage() {
 
       {/* Create case modal */}
       <Modal
-        open={createOpen}
-        title={<><FolderAddOutlined style={{ marginRight: 8 }} />New Case</>}
-        onCancel={() => { setCreateOpen(false); form.resetFields(); }}
+        open={caseModalOpen}
+        title={
+          <>
+            <FolderAddOutlined style={{ marginRight: 8 }} />
+            {caseModalMode === 'create' ? 'New Case' : 'Edit Case'}
+          </>
+        }
+        onCancel={() => {
+          setCaseModalOpen(false);
+          setEditingCase(null);
+          form.resetFields();
+        }}
         onOk={() => form.submit()}
-        okText="Create"
+        okText={caseModalMode === 'create' ? 'Create' : 'Save Changes'}
         width={540}
       >
-        <Form form={form} layout="vertical" onFinish={handleCreate} style={{ marginTop: 16 }}>
+        <Form form={form} layout="vertical" onFinish={handleCaseSubmit} style={{ marginTop: 16 }}>
           <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>
             <Input placeholder="Brief case title" />
           </Form.Item>
@@ -371,10 +593,20 @@ export default function CasesPage() {
               </Select>
             </Form.Item>
 
-            <Form.Item name="status" label="Initial Status" initialValue="Draft">
+            <Form.Item
+              name="status"
+              label={caseModalMode === 'create' ? 'Initial Status' : 'Status'}
+              initialValue="Draft"
+            >
               <Select>
-                <Select.Option value="Draft">Draft</Select.Option>
-                <Select.Option value="Open">Open</Select.Option>
+                {(caseModalMode === 'create'
+                  ? PIPELINE_STAGES.filter((stage) => stage.key === 'Draft' || stage.key === 'Open')
+                  : PIPELINE_STAGES
+                ).map((stage) => (
+                  <Select.Option key={stage.key} value={stage.key}>
+                    {stage.label}
+                  </Select.Option>
+                ))}
               </Select>
             </Form.Item>
           </div>
@@ -385,6 +617,19 @@ export default function CasesPage() {
                 <Select.Option key={c} value={c}>{c}</Select.Option>
               ))}
             </Select>
+          </Form.Item>
+
+          <Form.Item name="incidentIds" label="Link Incidents">
+            <Select
+              mode="multiple"
+              placeholder="Select one or more incidents"
+              allowClear
+              optionFilterProp="label"
+              options={assignableIncidents.map((incident) => ({
+                value: incident.id,
+                label: `${incident.title} - ${incident.location}`,
+              }))}
+            />
           </Form.Item>
         </Form>
       </Modal>

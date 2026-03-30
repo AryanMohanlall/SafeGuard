@@ -14,6 +14,7 @@ export interface IIncident {
   imageContentType: string | null;
   latitude: number | null;
   longitude: number | null;
+  caseId: string | null;
   anonymous: boolean;
   occurredAt: string;
   reportedAt: string;
@@ -34,6 +35,7 @@ export interface ICreateIncidentInput {
   imageContentType?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  caseId?: string | null;
   anonymous: boolean;
   occurredAt: string;
   reportedAt: string;
@@ -52,6 +54,7 @@ export interface IUpdateIncidentInput {
   imageContentType?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  caseId?: string | null;
   anonymous: boolean;
   occurredAt: string;
   reportedAt: string;

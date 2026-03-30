@@ -2,6 +2,7 @@ using System;
 using Abp.Zero.EntityFrameworkCore;
 using SafeGuard.Authorization.Roles;
 using SafeGuard.Authorization.Users;
+using SafeGuard.Domains.Blockchain;
 using SafeGuard.Domains.Case;
 using SafeGuard.Domains.Incidents;
 using SafeGuard.MultiTenancy;
@@ -23,6 +24,8 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
     public DbSet<EvidenceEntity> Evidences { get; set; }
     public DbSet<ChainOfCustodyEntity> ChainOfCustodies { get; set; }
 
+    public DbSet<LedgerEntry> LedgerEntries { get; set; }
+
     public SafeGuardDbContext(DbContextOptions<SafeGuardDbContext> options)
         : base(options)
     {
@@ -34,6 +37,13 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
 
         modelBuilder.Entity<Incident>(entity =>
         {
+            entity.HasOne(i => i.Case)
+                  .WithMany(c => c.Incidents)
+                  .HasForeignKey(i => i.CaseId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(i => i.CaseId);
+
             entity.Property(e => e.Latitude).HasPrecision(9, 6);
             entity.Property(e => e.Longitude).HasPrecision(9, 6);
             entity.Property(e => e.OccurredAt)
@@ -63,8 +73,26 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
                   .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
         });
 
+        modelBuilder.Entity<LedgerEntry>(entity =>
+        {
+            // Immutable — no updates or deletes should ever be issued against this table.
+            entity.Property(e => e.RecordedAt)
+                  .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+            // Fast lookups by entity and time.
+            entity.HasIndex(e => new { e.EntityType, e.EntityId });
+            entity.HasIndex(e => e.RecordedAt);
+        });
+
         modelBuilder.Entity<EvidenceEntity>(entity =>
         {
+            entity.HasOne(e => e.Incident)
+                  .WithMany()
+                  .HasForeignKey(e => e.IncidentId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.IncidentId);
+
             entity.HasMany(e => e.CustodyLog)
                   .WithOne(c => c.Evidence)
                   .HasForeignKey(c => c.EvidenceId)

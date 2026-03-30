@@ -11,6 +11,11 @@ public class Evidence : FullAuditedEntity<Guid>
     [Required]
     public Guid CaseId { get; set; }
 
+    public Guid? IncidentId { get; set; }
+
+    [ForeignKey(nameof(IncidentId))]
+    public Incidents.Incident Incident { get; set; }
+
     [Required]
     [MaxLength(50)]
     public string Type { get; set; }               // Photo | Video | Audio | Document | Physical | Other

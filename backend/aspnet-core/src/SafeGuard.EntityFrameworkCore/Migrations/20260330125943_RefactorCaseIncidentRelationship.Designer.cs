@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SafeGuard.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using SafeGuard.EntityFrameworkCore;
 namespace SafeGuard.Migrations
 {
     [DbContext(typeof(SafeGuardDbContext))]
-    partial class SafeGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330125943_RefactorCaseIncidentRelationship")]
+    partial class RefactorCaseIncidentRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1931,9 +1934,6 @@ namespace SafeGuard.Migrations
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
 
-                    b.Property<Guid?>("IncidentId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("IpfsCid")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -1985,8 +1985,6 @@ namespace SafeGuard.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CaseId");
-
-                    b.HasIndex("IncidentId");
 
                     b.ToTable("Evidences");
                 });
@@ -2406,13 +2404,6 @@ namespace SafeGuard.Migrations
                         .HasForeignKey("CaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("SafeGuard.Domains.Incidents.Incident", "Incident")
-                        .WithMany()
-                        .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Incident");
                 });
 
             modelBuilder.Entity("SafeGuard.Domains.Incidents.Incident", b =>

@@ -9,7 +9,8 @@ export interface ICase {
   status: string;        // Draft | Open | UnderReview | PendingTrial | Closed | Void
   severity: string;      // Low | Medium | High | Critical
   category: string | null;
-  incidentId: string | null;
+  incidentIds: string[];
+  incidentCount: number;
   openedAt: string;
   closedAt: string | null;
   lastActivityAt: string | null;
@@ -27,7 +28,7 @@ export interface ICreateCaseInput {
   status: string;
   severity: string;
   category?: string | null;
-  incidentId?: string | null;
+  incidentIds?: string[];
   openedAt: string;
 }
 
@@ -38,7 +39,7 @@ export interface IUpdateCaseInput {
   status: string;
   severity: string;
   category?: string | null;
-  incidentId?: string | null;
+  incidentIds?: string[];
   isCourtReady: boolean;
   closedAt?: string | null;
   closureReason?: string | null;
