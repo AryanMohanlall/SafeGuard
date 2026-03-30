@@ -65,11 +65,12 @@ public class IncidentAppService
         await _alertNotifier.NotifyAsync(new IncidentAlertDto
         {
             Id = dto.Id,
+            CreatorUserId = AbpSession.UserId,
             Title = dto.Title,
             Location = dto.Location,
             OccurredAt = dto.OccurredAt,
             Anonymous = dto.Anonymous
-        });
+        }, AbpSession.UserId);
 
         return dto;
     }

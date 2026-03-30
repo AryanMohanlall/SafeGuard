@@ -58,9 +58,17 @@ namespace SafeGuard.Web.Host.Startup
         private static Task QueryStringTokenResolver(MessageReceivedContext context)
         {
             if (!context.HttpContext.Request.Path.HasValue ||
-                !context.HttpContext.Request.Path.Value.StartsWith("/signalr"))
+                (!context.HttpContext.Request.Path.Value.StartsWith("/signalr") &&
+                 !context.HttpContext.Request.Path.Value.StartsWith("/alertHub")))
             {
                 // We are just looking for signalr clients
+                return Task.CompletedTask;
+            }
+
+            var accessToken = context.HttpContext.Request.Query["access_token"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                context.Token = accessToken;
                 return Task.CompletedTask;
             }
 
