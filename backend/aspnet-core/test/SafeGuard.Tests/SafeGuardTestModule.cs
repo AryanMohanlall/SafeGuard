@@ -7,6 +7,7 @@ using Abp.TestBase;
 using Abp.Zero.Configuration;
 using Abp.Zero.EntityFrameworkCore;
 using SafeGuard.EntityFrameworkCore;
+using SafeGuard.Notifications;
 using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Tests.DependencyInjection;
 using Castle.MicroKernel.Registration;
@@ -42,6 +43,7 @@ public class SafeGuardTestModule : AbpModule
         Configuration.Modules.Zero().LanguageManagement.EnableDbLocalization();
 
         RegisterFakeService<AbpZeroDbMigrator<SafeGuardDbContext>>();
+        RegisterFakeService<IIncidentAlertNotifier>();
 
         Configuration.ReplaceService<IEmailSender, NullEmailSender>(DependencyLifeStyle.Transient);
 

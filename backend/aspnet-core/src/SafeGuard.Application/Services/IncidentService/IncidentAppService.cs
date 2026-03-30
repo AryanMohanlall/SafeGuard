@@ -9,6 +9,7 @@ using Abp.Extensions;
 using Abp.Linq.Extensions;
 using Abp.UI;
 using SafeGuard.Domains.Incidents;
+using SafeGuard.Notifications;
 using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Services.IncidentService.Dto;
 
@@ -20,13 +21,16 @@ public class IncidentAppService
       IIncidentAppService
 {
     private readonly IImageAnalysisService _imageAnalysisService;
+    private readonly IIncidentAlertNotifier _alertNotifier;
 
     public IncidentAppService(
         IRepository<Incident, Guid> repository,
-        IImageAnalysisService imageAnalysisService)
+        IImageAnalysisService imageAnalysisService,
+        IIncidentAlertNotifier alertNotifier)
         : base(repository)
     {
         _imageAnalysisService = imageAnalysisService;
+        _alertNotifier = alertNotifier;
     }
 
     public override async Task<IncidentDto> CreateAsync(CreateIncidentDto input)
@@ -44,6 +48,15 @@ public class IncidentAppService
                 dto.DetectedObjects = detectedObjects;
             }
         }
+
+        await _alertNotifier.NotifyAsync(new IncidentAlertDto
+        {
+            Id = dto.Id,
+            Title = dto.Title,
+            Location = dto.Location,
+            OccurredAt = dto.OccurredAt,
+            Anonymous = dto.Anonymous
+        });
 
         return dto;
     }
