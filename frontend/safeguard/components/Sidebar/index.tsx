@@ -11,6 +11,7 @@ import {
   SafetyOutlined,
   LogoutOutlined,
   FileAddOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons';
 import { useAuthAction } from '@/providers/auth-provider';
 import type { CSSProperties } from 'react';
@@ -26,7 +27,8 @@ const navItems = [
   { key: '/incidents',  icon: <WarningOutlined />,   label: 'Incidents' },
   { key: '/cases',      icon: <FolderOutlined />,    label: 'Cases'     },
   { key: '/alerts',     icon: <BellOutlined />,      label: 'Alerts'    },
-  { key: '/report',   icon: <FileAddOutlined />,   label: 'Report'  },
+  { key: '/report',   icon: <FileAddOutlined />,     label: 'Report'  },
+  { key: '/monitor',  icon: <VideoCameraOutlined />, label: 'Monitor' },
 ];
 
 export const Sidebar: React.FC = () => {
