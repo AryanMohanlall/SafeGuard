@@ -42,6 +42,8 @@ public class CreateIncidentDto
     [Range(typeof(decimal), "-180", "180")]
     public decimal? Longitude { get; set; }
 
+    public Guid? CaseId { get; set; }
+
     public bool Anonymous { get; set; }
 
     [Required]

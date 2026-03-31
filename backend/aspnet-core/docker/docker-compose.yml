@@ -12,6 +12,7 @@ services:
       App__CorsOrigins: "http://localhost:4200,http://localhost:3000"
       AzureComputerVision__ApiKey: "${AzureComputerVision__ApiKey}"
       AzureComputerVision__Endpoint: "${AzureComputerVision__Endpoint}"
+      Blockchain__HmacSecret: ${BLOCKCHAIN_HMAC_SECRET}
       TZ: "America/Toronto"
       Kestrel__Endpoints__Http__Url: "http://+:80"
     ports:

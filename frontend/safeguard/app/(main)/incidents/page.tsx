@@ -23,6 +23,7 @@ import type { TableColumnsType } from 'antd';
 import {
   AudioOutlined,
   BarsOutlined,
+  FolderOpenOutlined,
   DeleteOutlined,
   EditOutlined,
   EnvironmentFilled,
@@ -35,6 +36,8 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
+import { useCaseAction, useCaseState } from '@/providers/cases-provider';
+import type { ICase } from '@/providers/cases-provider/context';
 import { useIncidentState, useIncidentAction } from '@/providers/incidents-provider';
 import type { IIncident, ICreateIncidentInput, IUpdateIncidentInput } from '@/providers/incidents-provider/context';
 import { getAxiosInstance } from '@/utils/axiosInstance';
@@ -65,10 +68,17 @@ interface IncidentFormValues {
   reportedAt: dayjs.Dayjs;
 }
 
+function getCaseForIncident(incident: IIncident, cases: ICase[]) {
+  if (!incident.caseId) return null;
+  return cases.find((caseItem) => caseItem.id === incident.caseId) ?? null;
+}
+
 const IncidentsPage = () => {
   const { styles } = useStyles();
   const { items, isPending, totalCount } = useIncidentState();
   const { fetchAll, create, update, remove } = useIncidentAction();
+  const { items: caseItems } = useCaseState();
+  const { fetchAll: fetchAllCases } = useCaseAction();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('create');
@@ -119,6 +129,7 @@ const IncidentsPage = () => {
 
   useEffect(() => {
     fetchAll({ skipCount: 0, maxResultCount: pageSize });
+    fetchAllCases({ skipCount: 0, maxResultCount: 1000 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -208,6 +219,7 @@ const IncidentsPage = () => {
         location: values.location,
         latitude: values.latitude ?? null,
         longitude: values.longitude ?? null,
+        caseId: null,
         anonymous: values.anonymous ?? false,
         occurredAt: values.occurredAt.toISOString(),
         reportedAt: values.reportedAt.toISOString(),
@@ -222,6 +234,7 @@ const IncidentsPage = () => {
         location: values.location,
         latitude: values.latitude ?? null,
         longitude: values.longitude ?? null,
+        caseId: activeIncident.caseId,
         anonymous: values.anonymous ?? false,
         occurredAt: values.occurredAt.toISOString(),
         reportedAt: values.reportedAt.toISOString(),
@@ -244,6 +257,8 @@ const IncidentsPage = () => {
     fetchAll({ skipCount: (newPage - 1) * pageSize, maxResultCount: pageSize });
   };
 
+  const activeCase = activeIncident ? getCaseForIncident(activeIncident, caseItems) : null;
+
   const columns: TableColumnsType<IIncident> = [
     {
       title: 'Title',
@@ -265,6 +280,19 @@ const IncidentsPage = () => {
           {location}
         </span>
       ),
+    },
+    {
+      title: 'Case',
+      key: 'case',
+      width: 160,
+      render: (_: unknown, record: IIncident) => {
+        const linkedCase = getCaseForIncident(record, caseItems);
+        return linkedCase ? (
+          <Tag color="geekblue">{linkedCase.caseNumber}</Tag>
+        ) : (
+          <span style={{ color: '#94a3b8' }}>Unlinked</span>
+        );
+      },
     },
     {
       title: 'Occurred',
@@ -388,6 +416,7 @@ const IncidentsPage = () => {
             dataSource={items}
             rowKey="id"
             loading={isPending}
+            scroll={{ x: 600 }}
             pagination={{
               current: page,
               pageSize,
@@ -409,7 +438,7 @@ const IncidentsPage = () => {
         title={drawerTitle}
         open={drawerOpen}
         onClose={closeDrawer}
-        width={520}
+        width="min(520px, 100vw)"
         footer={
           drawerMode !== 'view' ? (
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
@@ -438,6 +467,12 @@ const IncidentsPage = () => {
             <div className={styles.detailField}>
               <p className={styles.detailLabel}>Location</p>
               <p className={styles.detailValue}>{activeIncident.location}</p>
+            </div>
+            <div className={styles.detailField}>
+              <p className={styles.detailLabel}>Linked Case</p>
+              <p className={styles.detailValue}>
+                {activeCase ? `${activeCase.caseNumber} - ${activeCase.title}` : 'Not linked to a case'}
+              </p>
             </div>
             {(activeIncident.latitude != null || activeIncident.longitude != null) && (
               <div className={styles.detailField}>
@@ -567,6 +602,30 @@ const IncidentsPage = () => {
                 placeholder="Address, area, or landmark"
               />
             </Form.Item>
+
+            <div
+              style={{
+                marginBottom: 16,
+                padding: '12px 14px',
+                borderRadius: 10,
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                color: '#1e3a8a',
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+              }}
+            >
+              <FolderOpenOutlined style={{ marginTop: 2 }} />
+              <div>
+                <div style={{ fontWeight: 600, marginBottom: 2 }}>Case linking is managed from the Cases page</div>
+                <div style={{ fontSize: 13 }}>
+                  {activeCase
+                    ? `This incident is currently linked to ${activeCase.caseNumber}. Editing incident details here will keep that link intact.`
+                    : 'Use the Cases page to attach this incident to a case.'}
+                </div>
+              </div>
+            </div>
 
             <div className={styles.coordRow}>
               <Form.Item name="latitude" label="Latitude">

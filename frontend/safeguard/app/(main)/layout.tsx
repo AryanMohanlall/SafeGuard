@@ -4,6 +4,9 @@ import { Layout } from 'antd';
 import { Sidebar } from '@/components/Sidebar';
 import { withAuth } from '@/hoc/withAuth';
 import { AlertProvider } from '@/providers/alert-provider';
+import { CaseProvider } from '@/providers/cases-provider';
+import { EvidenceProvider } from '@/providers/evidence-provider';
+import { IncidentProvider } from '@/providers/incidents-provider';
 import { AlertModal } from '@/components/AlertModal';
 
 const { Content } = Layout;
@@ -11,15 +14,21 @@ const { Content } = Layout;
 function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <AlertProvider>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Sidebar />
-        <Layout style={{ background: '#f1f5f9' }}>
-          <Content style={{ padding: 32, overflowY: 'auto' }}>
-            {children}
-          </Content>
-        </Layout>
-      </Layout>
-      <AlertModal />
+      <IncidentProvider>
+        <EvidenceProvider>
+          <CaseProvider>
+            <Layout style={{ minHeight: '100vh' }}>
+              <Sidebar />
+              <Layout style={{ background: '#f1f5f9' }}>
+                <Content style={{ overflowY: 'auto' }} className="p-4 sm:p-6 lg:p-8">
+                  {children}
+                </Content>
+              </Layout>
+            </Layout>
+            <AlertModal />
+          </CaseProvider>
+        </EvidenceProvider>
+      </IncidentProvider>
     </AlertProvider>
   );
 }

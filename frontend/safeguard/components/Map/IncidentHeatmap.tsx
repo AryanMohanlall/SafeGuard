@@ -23,11 +23,12 @@ function HeatLayer({ points }: HeatLayerProps) {
       if (cancelled) return;
 
       const layer = (L as unknown as { heatLayer: (pts: [number, number, number][], opts: object) => L.Layer }).heatLayer(points, {
-        radius: 30,
-        blur: 20,
+        radius: 40,
+        blur: 45,
         maxZoom: 17,
         max: 1.0,
-        gradient: { 0.2: '#3b82f6', 0.5: '#f59e0b', 0.8: '#ef4444' },
+        minOpacity: 0.3,
+        gradient: { 0.0: '#fde68a', 0.3: '#f97316', 0.6: '#dc2626', 1.0: '#7f1d1d' },
       });
 
       layer.addTo(map);

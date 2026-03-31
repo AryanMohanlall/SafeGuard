@@ -1,6 +1,7 @@
-﻿using SafeGuard.Models.TokenAuth;
-using SafeGuard.Web.Controllers;
+using SafeGuard.Models.TokenAuth;
+using SafeGuard.Web.Host.Controllers;
 using Shouldly;
+using System.Net;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -17,12 +18,14 @@ public class HomeController_Tests : SafeGuardWebTestBase
             Password = "123qwe"
         });
 
-        //Act
-        var response = await GetResponseAsStringAsync(
-            GetUrl<HomeController>(nameof(HomeController.Index))
+        // Act
+        var response = await GetResponseAsync(
+            GetUrl<HomeController>(nameof(HomeController.Index)),
+            HttpStatusCode.Found
         );
 
-        //Assert
-        response.ShouldNotBeNullOrEmpty();
+        // Assert
+        response.Headers.Location.ShouldNotBeNull();
+        response.Headers.Location!.ToString().ShouldBe("/swagger");
     }
 }

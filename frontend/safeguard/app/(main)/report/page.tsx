@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, DatePicker, Form, Input, Switch, Upload, message } from 'antd';
 import {
   AudioOutlined,
+  CameraOutlined,
   DeleteOutlined,
   EnvironmentOutlined,
   FileTextOutlined,
@@ -28,6 +29,7 @@ interface IncidentFormValues {
 
 type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied';
 type RecordingStatus = 'idle' | 'recording' | 'recorded';
+type CameraStatus = 'idle' | 'active';
 
 const blobToBase64 = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -64,6 +66,11 @@ const IncidentPage = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
+  // Camera state
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>('idle');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -74,6 +81,20 @@ const IncidentPage = () => {
       () => setGeoStatus('denied')
     );
   }, []);
+
+  // Stop camera stream when component unmounts
+  useEffect(() => {
+    return () => {
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  // Attach stream to video element once it mounts after cameraStatus → 'active'
+  useEffect(() => {
+    if (cameraStatus === 'active' && videoRef.current && cameraStreamRef.current) {
+      videoRef.current.srcObject = cameraStreamRef.current;
+    }
+  }, [cameraStatus]);
 
   const startRecording = async () => {
     try {
@@ -115,11 +136,52 @@ const IncidentPage = () => {
     setImagePreviewUrl(null);
   };
 
+  const openCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+      cameraStreamRef.current = stream;
+      setCameraStatus('active');
+    } catch {
+      message.error('Camera access denied.');
+    }
+  };
+
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')!.drawImage(video, 0, 0);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(blob));
+
+      // Stop the stream and return to idle — preview is now shown
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+      cameraStreamRef.current = null;
+      setCameraStatus('idle');
+    }, 'image/jpeg', 0.92);
+  };
+
+  const closeCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+    cameraStreamRef.current = null;
+    setCameraStatus('idle');
+  };
+
   const handleReset = () => {
     form.resetFields();
     setAnonymous(false);
     clearRecording();
     clearImage();
+    closeCamera();
   };
 
   const handleSubmit = async (values: IncidentFormValues) => {
@@ -279,7 +341,8 @@ const IncidentPage = () => {
                 <PictureOutlined /> Photo
               </p>
 
-              {imagePreviewUrl ? (
+              {/* Preview after file pick or camera capture */}
+              {imagePreviewUrl && cameraStatus === 'idle' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={imagePreviewUrl} alt="preview" className={styles.imagePreview} />
@@ -287,20 +350,50 @@ const IncidentPage = () => {
                     Remove
                   </Button>
                 </div>
-              ) : (
-                <Upload
-                  accept="image/*"
-                  showUploadList={false}
-                  beforeUpload={(file) => {
-                    setImageFile(file);
-                    setImagePreviewUrl(URL.createObjectURL(file));
-                    return false;
-                  }}
-                >
-                  <Button icon={<PictureOutlined />} block>
-                    Choose Photo
+              )}
+
+              {/* Live camera viewfinder */}
+              {cameraStatus === 'active' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className={styles.imagePreview}
+                    style={{ maxHeight: 180, background: '#000' }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button icon={<CameraOutlined />} type="primary" onClick={capturePhoto} style={{ flex: 1, background: '#2563eb', borderColor: '#2563eb' }}>
+                      Capture
+                    </Button>
+                    <Button icon={<StopOutlined />} danger onClick={closeCamera}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Buttons when no image and camera is off */}
+              {!imagePreviewUrl && cameraStatus === 'idle' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={(file) => {
+                      setImageFile(file);
+                      setImagePreviewUrl(URL.createObjectURL(file));
+                      return false;
+                    }}
+                  >
+                    <Button icon={<PictureOutlined />} block>
+                      Choose Photo
+                    </Button>
+                  </Upload>
+                  <Button icon={<CameraOutlined />} block onClick={openCamera}>
+                    Take Photo
                   </Button>
-                </Upload>
+                </div>
               )}
             </div>
           </div>

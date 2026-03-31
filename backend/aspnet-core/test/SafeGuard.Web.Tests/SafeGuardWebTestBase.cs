@@ -6,7 +6,7 @@ using Abp.MultiTenancy;
 using Abp.Web.Models;
 using SafeGuard.EntityFrameworkCore;
 using SafeGuard.Models.TokenAuth;
-using SafeGuard.Web.Startup;
+using SafeGuard.Web.Host.Startup;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Microsoft.AspNetCore.Hosting;
@@ -36,7 +36,7 @@ public abstract class SafeGuardWebTestBase : AbpAspNetCoreIntegratedTestBase<Sta
         return base
             .CreateWebHostBuilder()
             .UseContentRoot(ContentRootFolder.Value)
-            .UseSetting(WebHostDefaults.ApplicationKey, typeof(SafeGuardWebMvcModule).Assembly.FullName);
+            .UseSetting(WebHostDefaults.ApplicationKey, typeof(SafeGuardWebHostModule).Assembly.FullName);
     }
 
     #region Get response

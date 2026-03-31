@@ -30,7 +30,7 @@ const AlertsPage = () => {
           renderItem={(alert) => (
             <List.Item key={alert.id} style={{ padding: 0, marginBottom: 12 }}>
               <Card style={{ width: '100%' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                   <div>
                     <Text strong style={{ fontSize: 15 }}>{alert.title}</Text>
                     <div style={{ marginTop: 4, color: '#64748b' }}>

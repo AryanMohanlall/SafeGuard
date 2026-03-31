@@ -121,4 +121,12 @@ export const useStyles = createStyles(() => ({
     gap: 10,
     marginBottom: 32,
   },
+  nameGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '0 16px',
+    '@media (max-width: 480px)': {
+      gridTemplateColumns: '1fr',
+    },
+  },
 }));

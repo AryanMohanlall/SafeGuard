@@ -25,6 +25,9 @@ export const useStyles = createStyles(() => ({
     padding: '32px 36px',
     boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     border: '1px solid #e2e8f0',
+    '@media (max-width: 640px)': {
+      padding: '20px 16px',
+    },
   },
   sectionLabel: {
     fontSize: 11,
@@ -60,6 +63,7 @@ export const useStyles = createStyles(() => ({
   submitRow: {
     display: 'flex',
     justifyContent: 'flex-end',
+    flexWrap: 'wrap' as const,
     gap: 12,
     marginTop: 32,
   },
@@ -67,6 +71,9 @@ export const useStyles = createStyles(() => ({
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 16,
+    '@media (max-width: 480px)': {
+      gridTemplateColumns: '1fr',
+    },
   },
   datePickerFull: {
     width: '100%',
@@ -75,6 +82,9 @@ export const useStyles = createStyles(() => ({
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 16,
+    '@media (max-width: 480px)': {
+      gridTemplateColumns: '1fr',
+    },
   },
   mediaBox: {
     border: '1px solid #e2e8f0',

@@ -112,7 +112,7 @@ export default function RegisterPage() {
               requiredMark={false}
               size="large"
             >
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <div className={styles.nameGrid}>
                 <Form.Item
                   name="firstName"
                   label="First name"

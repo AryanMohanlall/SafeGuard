@@ -18,9 +18,9 @@ namespace SafeGuard.Web.Host.Startup
             {
                 services.AddAuthentication(options =>
                 {
-                    options.DefaultAuthenticateScheme = "JwtBearer";
-                    options.DefaultChallengeScheme = "JwtBearer";
-                }).AddJwtBearer("JwtBearer", options =>
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                }).AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
                 {
                     options.Audience = configuration["Authentication:JwtBearer:Audience"];
 
@@ -58,9 +58,17 @@ namespace SafeGuard.Web.Host.Startup
         private static Task QueryStringTokenResolver(MessageReceivedContext context)
         {
             if (!context.HttpContext.Request.Path.HasValue ||
-                !context.HttpContext.Request.Path.Value.StartsWith("/signalr"))
+                (!context.HttpContext.Request.Path.Value.StartsWith("/signalr") &&
+                 !context.HttpContext.Request.Path.Value.StartsWith("/alertHub")))
             {
                 // We are just looking for signalr clients
+                return Task.CompletedTask;
+            }
+
+            var accessToken = context.HttpContext.Request.Query["access_token"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                context.Token = accessToken;
                 return Task.CompletedTask;
             }
 

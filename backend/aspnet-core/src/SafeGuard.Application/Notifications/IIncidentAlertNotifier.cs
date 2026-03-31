@@ -4,5 +4,5 @@ namespace SafeGuard.Notifications;
 
 public interface IIncidentAlertNotifier
 {
-    Task NotifyAsync(IncidentAlertDto alert);
+    Task NotifyAsync(IncidentAlertDto alert, long? excludedUserId = null);
 }

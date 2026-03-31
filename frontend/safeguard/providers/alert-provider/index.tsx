@@ -2,9 +2,11 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
+import { getAxiosInstance } from '@/utils/axiosInstance';
 
 export interface IncidentAlert {
   id: string;
+  creatorUserId?: number | null;
   title: string;
   location: string;
   occurredAt: string;
@@ -30,8 +32,14 @@ export const AlertProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:44311';
+    const token = getAxiosInstance().defaults.headers.common['Authorization']
+      ?.toString()
+      .replace(/^Bearer\s+/i, '');
+
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${apiUrl}/alertHub`)
+      .withUrl(`${apiUrl}/alertHub`, {
+        accessTokenFactory: () => token ?? '',
+      })
       .withAutomaticReconnect()
       .build();
 

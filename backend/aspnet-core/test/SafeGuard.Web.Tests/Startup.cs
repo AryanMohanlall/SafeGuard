@@ -5,8 +5,7 @@ using SafeGuard.Authentication.JwtBearer;
 using SafeGuard.Configuration;
 using SafeGuard.EntityFrameworkCore;
 using SafeGuard.Identity;
-using SafeGuard.Web.Resources;
-using SafeGuard.Web.Startup;
+using SafeGuard.Web.Host.Startup;
 using Castle.MicroKernel.Registration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -35,8 +34,6 @@ public class Startup
 
         IdentityRegistrar.Register(services);
         AuthConfigurer.Configure(services, _appConfiguration);
-
-        services.AddScoped<IWebResourceManager, WebResourceManager>();
 
         //Configure Abp and Dependency Injection
         return services.AddAbp<SafeGuardWebTestModule>(options =>
