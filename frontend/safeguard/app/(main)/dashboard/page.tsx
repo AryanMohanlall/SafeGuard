@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, Col, Row, Spin, Statistic, theme } from 'antd';
+import { Card, Col, Grid, Row, Spin, Statistic, theme } from 'antd';
 import {
   AlertOutlined,
   EnvironmentOutlined,
@@ -62,6 +62,8 @@ function getPriorityBucket(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' | nul
 export default function Dashboard() {
   const { styles } = useStyles();
   const { token } = theme.useToken();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const [incidents, setIncidents] = useState<IIncident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,7 +224,7 @@ export default function Dashboard() {
         <Col xs={24} lg={14}>
           <Card className={styles.card} style={{ height: '100%' }}>
             <p className={styles.sectionLabel}>Incidents — Last 30 Days</p>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 260}>
               <BarChart data={dailyData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis
@@ -230,7 +232,7 @@ export default function Dashboard() {
                   tick={{ fontSize: 11, fill: '#94a3b8' }}
                   tickLine={false}
                   axisLine={false}
-                  interval={4}
+                  interval={isMobile ? 'preserveStartEnd' : 4}
                 />
                 <YAxis
                   allowDecimals={false}
@@ -266,7 +268,7 @@ export default function Dashboard() {
                       dataKey="value"
                     />
                     <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: isMobile ? 11 : 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </Card>
@@ -286,7 +288,7 @@ export default function Dashboard() {
                       dataKey="value"
                     />
                     <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: isMobile ? 11 : 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </Card>
@@ -302,7 +304,7 @@ export default function Dashboard() {
           Based on AI priority tags across all loaded incidents
         </p>
         {priorityData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={isMobile ? 220 : 180}>
             <PieChart>
               <Pie
                 data={priorityData}
@@ -324,7 +326,7 @@ export default function Dashboard() {
               <Legend
                 iconType="circle"
                 iconSize={8}
-                wrapperStyle={{ fontSize: 12 }}
+                wrapperStyle={{ fontSize: isMobile ? 11 : 12 }}
                 formatter={(_value, entry) => {
                   const d = priorityData.find((p) => p.name === entry.value);
                   return d?.label ?? entry.value;

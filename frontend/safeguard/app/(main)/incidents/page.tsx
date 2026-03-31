@@ -8,9 +8,11 @@ import {
   DatePicker,
   Drawer,
   Form,
+  Grid,
   Image,
   Input,
   InputNumber,
+  Pagination,
   Popconfirm,
   Segmented,
   Space,
@@ -80,6 +82,8 @@ function getCaseForIncident(incident: IIncident, cases: ICase[]) {
 
 const IncidentsPage = () => {
   const { styles } = useStyles();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
   const { items, isPending, totalCount } = useIncidentState();
   const { fetchAll, create, update, remove } = useIncidentAction();
   const { items: caseItems } = useCaseState();
@@ -463,8 +467,8 @@ const IncidentsPage = () => {
       </div>
 
       <div className={styles.card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarMain}>
             <Switch
               checked={sortByAI}
               onChange={handleSortToggle}
@@ -487,6 +491,82 @@ const IncidentsPage = () => {
         </div>
 
         {viewMode === 'table' ? (
+          isMobile ? (
+            <>
+              <div className={styles.mobileList}>
+                {items.map((incident) => {
+                  const linkedCase = getCaseForIncident(incident, caseItems);
+                  return (
+                    <div key={incident.id} className={styles.mobileIncidentCard}>
+                      <div className={styles.mobileIncidentHeader}>
+                        <div>
+                          <p className={styles.mobileIncidentTitle}>{incident.title}</p>
+                          <div style={{ marginTop: 6 }}>
+                            <CaseLikelihoodBadge
+                              probability={incident.caseLikelihood}
+                              priorityTag={incident.priorityTag}
+                            />
+                          </div>
+                        </div>
+                        <Tag color={incident.anonymous ? 'orange' : 'default'}>
+                          {incident.anonymous ? 'Anonymous' : 'Identified'}
+                        </Tag>
+                      </div>
+
+                      <div className={styles.mobileIncidentMeta}>
+                        <span>
+                          <EnvironmentOutlined style={{ color: '#94a3b8', marginRight: 6 }} />
+                          {incident.location}
+                        </span>
+                        <span>{dayjs(incident.occurredAt).format('DD MMM YYYY HH:mm')}</span>
+                        <span>{linkedCase ? linkedCase.caseNumber : 'Not linked to a case'}</span>
+                      </div>
+
+                      <div className={styles.mobileIncidentTags}>
+                        {incident.hasAudio && <Tag color="blue">Audio</Tag>}
+                        {incident.hasImage && <Tag color="purple">Image</Tag>}
+                        {incident.detectedObjects && <Tag color="green" icon={<RobotOutlined />}>AI analysed</Tag>}
+                        {incident.priorityTag === 'LOW' && <Tag color="default">Low priority</Tag>}
+                      </div>
+
+                      <div className={styles.mobileIncidentActions}>
+                        <Button size="small" icon={<EyeOutlined />} onClick={() => openView(incident)}>
+                          View
+                        </Button>
+                        <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(incident)}>
+                          Edit
+                        </Button>
+                        <Popconfirm
+                          title="Delete incident?"
+                          description="This action cannot be undone."
+                          onConfirm={() => handleDelete(incident.id)}
+                          okText="Delete"
+                          okButtonProps={{ danger: true }}
+                          cancelText="Cancel"
+                        >
+                          <Button size="small" danger icon={<DeleteOutlined />}>
+                            Delete
+                          </Button>
+                        </Popconfirm>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className={styles.paginationWrap}>
+                <Pagination
+                  current={page}
+                  pageSize={pageSize}
+                  total={totalCount}
+                  onChange={handlePageChange}
+                  showSizeChanger={false}
+                  size="small"
+                  simple
+                />
+              </div>
+            </>
+          ) : (
           <Table<IIncident>
             columns={columns}
             dataSource={items}
@@ -503,8 +583,9 @@ const IncidentsPage = () => {
             }}
             size="middle"
           />
+          )
         ) : (
-          <div style={{ height: 520 }}>
+          <div className={styles.mapPanel}>
             <IncidentMap incidents={mapItems} onSelect={openView} loading={mapLoading} />
           </div>
         )}
@@ -514,10 +595,10 @@ const IncidentsPage = () => {
         title={drawerTitle}
         open={drawerOpen}
         onClose={closeDrawer}
-        width="min(520px, 100vw)"
+        width={isMobile ? '100%' : 520}
         footer={
           drawerMode !== 'view' ? (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <div className={styles.drawerFooter}>
               <Button onClick={closeDrawer}>Cancel</Button>
               <Button
                 type="primary"
@@ -725,19 +806,7 @@ const IncidentsPage = () => {
               />
             </Form.Item>
 
-            <div
-              style={{
-                marginBottom: 16,
-                padding: '12px 14px',
-                borderRadius: 10,
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                color: '#1e3a8a',
-                display: 'flex',
-                gap: 10,
-                alignItems: 'flex-start',
-              }}
-            >
+            <div className={styles.infoBanner}>
               <FolderOpenOutlined style={{ marginTop: 2 }} />
               <div>
                 <div style={{ fontWeight: 600, marginBottom: 2 }}>Case linking is managed from the Cases page</div>
