@@ -1,5 +1,5 @@
 ﻿using SafeGuard.Models.TokenAuth;
-using SafeGuard.Web.Controllers;
+using SafeGuard.Web.Host.Controllers;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;

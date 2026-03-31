@@ -39,7 +39,7 @@ const CAMERA_SEEDS: CameraSeed[] = [
   },
 ];
 
-const JSON_BASE_PATTERN = /var json_base\s*=\s*(\{.*?\});/s;
+const JSON_BASE_PATTERN = /var json_base\s*=\s*(\{[\s\S]*?\});/;
 
 const decode = (value: string | undefined) => value?.replaceAll('\\/', '/') ?? '';
 const fallbackIfBlank = (value: string | undefined, fallback: string) => {

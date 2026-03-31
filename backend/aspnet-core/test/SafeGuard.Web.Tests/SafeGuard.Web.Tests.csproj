@@ -11,7 +11,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\SafeGuard.Web.Mvc\SafeGuard.Web.Mvc.csproj" />
+    <ProjectReference Include="..\..\src\SafeGuard.Web.Host\SafeGuard.Web.Host.csproj" />
     <ProjectReference Include="..\SafeGuard.Tests\SafeGuard.Tests.csproj" />
   </ItemGroup>
   <ItemGroup>

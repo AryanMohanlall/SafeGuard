@@ -3,13 +3,13 @@ using Abp.AspNetCore.TestBase;
 using Abp.Modules;
 using Abp.Reflection.Extensions;
 using SafeGuard.EntityFrameworkCore;
-using SafeGuard.Web.Startup;
+using SafeGuard.Web.Host.Startup;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
 namespace SafeGuard.Web.Tests;
 
 [DependsOn(
-    typeof(SafeGuardWebMvcModule),
+    typeof(SafeGuardWebHostModule),
     typeof(AbpAspNetCoreTestBaseModule)
 )]
 public class SafeGuardWebTestModule : AbpModule
@@ -32,6 +32,6 @@ public class SafeGuardWebTestModule : AbpModule
     public override void PostInitialize()
     {
         IocManager.Resolve<ApplicationPartManager>()
-            .AddApplicationPartsIfNotAddedBefore(typeof(SafeGuardWebMvcModule).Assembly);
+            .AddApplicationPartsIfNotAddedBefore(typeof(SafeGuardWebHostModule).Assembly);
     }
 }
