@@ -4,6 +4,10 @@ export const useStyles = createStyles(() => ({
   container: {
     minHeight: '100vh',
     display: 'flex',
+    '@media (max-width: 1024px)': {
+      flexDirection: 'column' as const,
+      minHeight: '100dvh',
+    },
   },
   leftPanel: {
     flex: '0 0 45%',
@@ -16,6 +20,9 @@ export const useStyles = createStyles(() => ({
     color: '#fff',
     position: 'relative' as const,
     overflow: 'hidden',
+    '@media (max-width: 1024px)': {
+      display: 'none',
+    },
   },
   leftPanelInner: {
     display: 'flex',
@@ -83,20 +90,37 @@ export const useStyles = createStyles(() => ({
     padding: '48px 32px',
     background: '#f8fafc',
     overflowY: 'auto' as const,
+    '@media (max-width: 768px)': {
+      alignItems: 'flex-start',
+      padding: '32px 20px',
+    },
+    '@media (max-width: 480px)': {
+      padding: '20px 14px 28px',
+    },
   },
   formWrapper: {
     width: '100%',
     maxWidth: 420,
     padding: '8px 0',
+    '@media (max-width: 480px)': {
+      maxWidth: '100%',
+      padding: 0,
+    },
   },
   formHeader: {
     marginBottom: 28,
+    '@media (max-width: 480px)': {
+      marginBottom: 24,
+    },
   },
   formTitle: {
     fontSize: 28,
     fontWeight: 700,
     color: '#0f172a',
     margin: 0,
+    '@media (max-width: 480px)': {
+      fontSize: 24,
+    },
   },
   formSubtitle: {
     fontSize: 14,
@@ -108,6 +132,9 @@ export const useStyles = createStyles(() => ({
     height: 44,
     fontSize: 15,
     fontWeight: 600,
+    '@media (max-width: 480px)': {
+      height: 46,
+    },
   },
   signinRow: {
     textAlign: 'center' as const,
@@ -120,6 +147,20 @@ export const useStyles = createStyles(() => ({
     alignItems: 'center',
     gap: 10,
     marginBottom: 32,
+    '@media (min-width: 1025px)': {
+      display: 'none',
+    },
+    '@media (max-width: 480px)': {
+      marginBottom: 24,
+    },
+  },
+  mobileBrandTitle: {
+    fontSize: 22,
+    fontWeight: 800,
+    color: '#0f172a',
+    '@media (max-width: 480px)': {
+      fontSize: 20,
+    },
   },
   nameGrid: {
     display: 'grid',

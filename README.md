@@ -106,6 +106,26 @@ npm install
 npm run dev
 ```
 
+### Incident Clustering Workflow
+
+SafeGuard now includes a review-first incident clustering flow built on ML.NET KMeans.
+
+1. Train or retrain the clustering model from the CSV:
+
+   ```bash
+   cd backend/aspnet-core/src/SafeGuard.ML.Trainer
+   dotnet run -- cluster-train "C:\Users\Aryan\Downloads\incident-training-data.csv"
+   ```
+
+2. Start the backend and frontend, then open the new `Incident Graph` page in the app.
+
+3. From the graph page you can:
+   - regenerate the model from the CSV
+   - fetch graph-ready linked-incident data
+   - review suggested-case groups before creating or linking real cases
+
+If no CSV path override is supplied, the backend falls back to the configured path or `~/Downloads/incident-training-data.csv`.
+
 ---
 
 ## License

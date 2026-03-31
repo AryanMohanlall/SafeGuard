@@ -60,7 +60,7 @@ export default function LoginPage() {
       {contextHolder}
       <div className={styles.container}>
         {/* ── Left branding panel ── */}
-        <div className={`${styles.leftPanel} hidden lg:flex`}>
+        <div className={styles.leftPanel}>
           <div className={styles.leftPanelInner}>
             <SafetyOutlined style={{ fontSize: 56, color: '#60a5fa', marginBottom: 20 }} />
             <h1 className={styles.brandTitle}>SafeGuard</h1>
@@ -84,11 +84,9 @@ export default function LoginPage() {
         <div className={styles.rightPanel}>
           <div className={styles.formWrapper}>
             {/* Mobile brand mark */}
-            <div className={`${styles.mobileBrand} flex lg:hidden`}>
+            <div className={styles.mobileBrand}>
               <SafetyOutlined style={{ fontSize: 28, color: '#2563eb' }} />
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
-                SafeGuard
-              </span>
+              <span className={styles.mobileBrandTitle}>SafeGuard</span>
             </div>
 
             <div className={styles.formHeader}>
@@ -121,7 +119,7 @@ export default function LoginPage() {
               <Form.Item
                 name="password"
                 label={
-                  <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  <span className={styles.passwordLabel}>
                     Password
                     <Link href="/forgot-password" style={{ fontSize: 13 }}>
                       Forgot password?

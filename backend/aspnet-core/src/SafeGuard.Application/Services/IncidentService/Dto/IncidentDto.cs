@@ -26,4 +26,8 @@ public class IncidentDto : EntityDto<Guid>
     public DateTime ReportedAt { get; set; }
     public DateTime CreationTime { get; set; }
     public long? CreatorUserId { get; set; }
+
+    // Populated at query time by the prediction service — not mapped from the entity.
+    public float? CaseLikelihood { get; set; }
+    public string PriorityTag { get; set; }
 }

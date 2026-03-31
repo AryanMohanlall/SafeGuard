@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abp.Application.Services;
@@ -13,6 +14,8 @@ using SafeGuard.Domains.Evidence;
 using SafeGuard.Notifications;
 using SafeGuard.Services.ImageAnalysisService;
 using SafeGuard.Services.IncidentService.Dto;
+using SafeGuard.Services.IncidentPredictionService;
+using SafeGuard.Services.IncidentPredictionService.Dto;
 
 namespace SafeGuard.Services.IncidentService;
 
@@ -24,17 +27,64 @@ public class IncidentAppService
     private readonly IImageAnalysisService _imageAnalysisService;
     private readonly IIncidentAlertNotifier _alertNotifier;
     private readonly IIncidentEvidenceService _incidentEvidenceService;
+    private readonly IIncidentPredictionService _predictionService;
 
     public IncidentAppService(
         IRepository<Incident, Guid> repository,
         IImageAnalysisService imageAnalysisService,
         IIncidentAlertNotifier alertNotifier,
-        IIncidentEvidenceService incidentEvidenceService)
+        IIncidentEvidenceService incidentEvidenceService,
+        IIncidentPredictionService predictionService)
         : base(repository)
     {
         _imageAnalysisService = imageAnalysisService;
         _alertNotifier = alertNotifier;
         _incidentEvidenceService = incidentEvidenceService;
+        _predictionService = predictionService;
+    }
+
+    public override async Task<PagedResultDto<IncidentDto>> GetAllAsync(PagedIncidentResultRequestDto input)
+    {
+        var result = await base.GetAllAsync(input);
+
+        await Task.WhenAll(result.Items.Select(EnrichWithPredictionAsync));
+
+        if (input.SortByCaseLikelihood)
+        {
+            var sorted = result.Items
+                .OrderByDescending(i => i.CaseLikelihood ?? 0f)
+                .ToList();
+            return new PagedResultDto<IncidentDto>(result.TotalCount, sorted);
+        }
+
+        return result;
+    }
+
+    private async Task EnrichWithPredictionAsync(IncidentDto incident)
+    {
+        try
+        {
+            var prediction = await _predictionService.PredictAsync(new IncidentPredictionRequestDto
+            {
+                Title = incident.Title,
+                Description = incident.Description,
+                Location = incident.Location,
+                Anonymous = incident.Anonymous,
+                HasAudio = incident.HasAudio,
+                HasImage = incident.HasImage,
+                DetectedObjects = incident.DetectedObjects,
+                OccurredAt = incident.OccurredAt,
+                ReportedAt = incident.ReportedAt
+            });
+            incident.CaseLikelihood = prediction.Probability;
+            incident.PriorityTag = prediction.PriorityTag;
+        }
+        catch (Exception ex)
+        {
+            incident.CaseLikelihood = null;
+            incident.PriorityTag = null;
+            Logger.Warn($"ML prediction failed for incident {incident.Id}.", ex);
+        }
     }
 
     public override async Task<IncidentDto> CreateAsync(CreateIncidentDto input)
@@ -72,6 +122,8 @@ public class IncidentAppService
             Anonymous = dto.Anonymous
         }, AbpSession.UserId);
 
+        await EnrichWithPredictionAsync(dto);
+
         return dto;
     }
 
@@ -99,6 +151,8 @@ public class IncidentAppService
                 incident,
                 AbpSession.UserId);
         }
+
+        await EnrichWithPredictionAsync(dto);
 
         return dto;
     }

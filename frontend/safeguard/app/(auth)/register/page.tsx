@@ -69,7 +69,7 @@ export default function RegisterPage() {
       {contextHolder}
       <div className={styles.container}>
         {/* ── Left branding panel ── */}
-        <div className={`${styles.leftPanel} hidden lg:flex`}>
+        <div className={styles.leftPanel}>
           <div className={styles.leftPanelInner}>
             <SafetyOutlined style={{ fontSize: 56, color: '#60a5fa', marginBottom: 20 }} />
             <h1 className={styles.brandTitle}>SafeGuard</h1>
@@ -93,11 +93,9 @@ export default function RegisterPage() {
         <div className={styles.rightPanel}>
           <div className={styles.formWrapper}>
             {/* Mobile brand mark */}
-            <div className={`${styles.mobileBrand} flex lg:hidden`}>
+            <div className={styles.mobileBrand}>
               <SafetyOutlined style={{ fontSize: 28, color: '#2563eb' }} />
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
-                SafeGuard
-              </span>
+              <span className={styles.mobileBrandTitle}>SafeGuard</span>
             </div>
 
             <div className={styles.formHeader}>

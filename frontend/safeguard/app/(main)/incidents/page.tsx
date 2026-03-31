@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import {
+  Alert,
   Button,
   DatePicker,
   Drawer,
   Form,
+  Grid,
   Image,
   Input,
   InputNumber,
+  Pagination,
   Popconfirm,
   Segmented,
   Space,
@@ -41,10 +44,14 @@ import type { ICase } from '@/providers/cases-provider/context';
 import { useIncidentState, useIncidentAction } from '@/providers/incidents-provider';
 import type { IIncident, ICreateIncidentInput, IUpdateIncidentInput } from '@/providers/incidents-provider/context';
 import { getAxiosInstance } from '@/utils/axiosInstance';
+import { CaseLikelihoodBadge } from '@/components/safeguard/CaseLikelihoodBadge';
 
 const IncidentMap = dynamic(() => import('../../../components/Map/IncidentMap'), { ssr: false });
 
 const BASE = '/api/services/app/incident';
+
+// Module-level set — survives navigation within the session without persistence.
+const dismissedBanners = new Set<string>();
 
 function base64ToObjectUrl(b64: string, contentType: string): string {
   const binary = atob(b64);
@@ -75,6 +82,8 @@ function getCaseForIncident(incident: IIncident, cases: ICase[]) {
 
 const IncidentsPage = () => {
   const { styles } = useStyles();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
   const { items, isPending, totalCount } = useIncidentState();
   const { fetchAll, create, update, remove } = useIncidentAction();
   const { items: caseItems } = useCaseState();
@@ -87,9 +96,14 @@ const IncidentsPage = () => {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
+  const [sortByAI, setSortByAI] = useState(false);
+
   const [viewMode, setViewMode] = useState<'table' | 'map'>('table');
   const [mapItems, setMapItems] = useState<IIncident[]>([]);
   const [mapLoading, setMapLoading] = useState(false);
+
+  // Track dismissed banners for this session (re-render when set changes).
+  const [, forceUpdate] = useState(0);
 
   const loadMapItems = async () => {
     setMapLoading(true);
@@ -127,11 +141,24 @@ const IncidentsPage = () => {
     }
   }, [activeIncident?.detectedObjects]);
 
+  const fetchPage = (p: number, sort = sortByAI) => {
+    fetchAll({
+      skipCount: (p - 1) * pageSize,
+      maxResultCount: pageSize,
+      sortByCaseLikelihood: sort,
+    });
+  };
+
   useEffect(() => {
-    fetchAll({ skipCount: 0, maxResultCount: pageSize });
+    fetchPage(1, false);
     fetchAllCases({ skipCount: 0, maxResultCount: 1000 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleSortToggle = (val: boolean) => {
+    setSortByAI(val);
+    fetchPage(page, val);
+  };
 
   const openCreate = () => {
     form.resetFields();
@@ -243,21 +270,48 @@ const IncidentsPage = () => {
       message.success('Incident updated.');
     }
     closeDrawer();
-    fetchAll({ skipCount: (page - 1) * pageSize, maxResultCount: pageSize });
+    fetchPage(page);
   };
 
   const handleDelete = (id: string) => {
     remove(id);
     message.success('Incident deleted.');
-    fetchAll({ skipCount: (page - 1) * pageSize, maxResultCount: pageSize });
+    fetchPage(page);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchAll({ skipCount: (newPage - 1) * pageSize, maxResultCount: pageSize });
+    fetchPage(newPage);
+  };
+
+  const handleOpenCase = async (incident: IIncident) => {
+    try {
+      await getAxiosInstance().post('/api/services/app/case/Create', {
+        title: `Case: ${incident.title}`,
+        status: 'Open',
+        severity: 'High',
+        incidentIds: [incident.id],
+      });
+      message.success('Case created and linked to this incident.');
+      dismissedBanners.add(incident.id);
+      forceUpdate((n) => n + 1);
+    } catch {
+      message.error('Failed to create case.');
+    }
+  };
+
+  const handleDismissBanner = (incidentId: string) => {
+    dismissedBanners.add(incidentId);
+    forceUpdate((n) => n + 1);
   };
 
   const activeCase = activeIncident ? getCaseForIncident(activeIncident, caseItems) : null;
+
+  const showAiBanner =
+    activeIncident != null &&
+    (activeIncident.caseLikelihood ?? 0) >= 0.75 &&
+    activeIncident.caseId == null &&
+    !dismissedBanners.has(activeIncident.id);
 
   const columns: TableColumnsType<IIncident> = [
     {
@@ -265,8 +319,15 @@ const IncidentsPage = () => {
       dataIndex: 'title',
       key: 'title',
       ellipsis: true,
-      render: (title: string) => (
-        <span style={{ fontWeight: 500, color: '#1e293b' }}>{title}</span>
+      render: (title: string, record: IIncident) => (
+        <span style={{ fontWeight: 500, color: '#1e293b' }}>
+          {title}
+          {record.priorityTag === 'LOW' && (
+            <Tag style={{ marginLeft: 8, fontSize: 11 }} color="default">
+              Low priority
+            </Tag>
+          )}
+        </span>
       ),
     },
     {
@@ -328,6 +389,17 @@ const IncidentsPage = () => {
           )}
           {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>—</span>}
         </Space>
+      ),
+    },
+    {
+      title: 'Case likelihood',
+      key: 'caseLikelihood',
+      width: 130,
+      render: (_: unknown, record: IIncident) => (
+        <CaseLikelihoodBadge
+          probability={record.caseLikelihood}
+          priorityTag={record.priorityTag}
+        />
       ),
     },
     {
@@ -395,7 +467,15 @@ const IncidentsPage = () => {
       </div>
 
       <div className={styles.card}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarMain}>
+            <Switch
+              checked={sortByAI}
+              onChange={handleSortToggle}
+              size="small"
+            />
+            <span style={{ fontSize: 13, color: '#475569' }}>Sort by AI priority</span>
+          </div>
           <Segmented
             value={viewMode}
             onChange={(v) => {
@@ -411,12 +491,88 @@ const IncidentsPage = () => {
         </div>
 
         {viewMode === 'table' ? (
+          isMobile ? (
+            <>
+              <div className={styles.mobileList}>
+                {items.map((incident) => {
+                  const linkedCase = getCaseForIncident(incident, caseItems);
+                  return (
+                    <div key={incident.id} className={styles.mobileIncidentCard}>
+                      <div className={styles.mobileIncidentHeader}>
+                        <div>
+                          <p className={styles.mobileIncidentTitle}>{incident.title}</p>
+                          <div style={{ marginTop: 6 }}>
+                            <CaseLikelihoodBadge
+                              probability={incident.caseLikelihood}
+                              priorityTag={incident.priorityTag}
+                            />
+                          </div>
+                        </div>
+                        <Tag color={incident.anonymous ? 'orange' : 'default'}>
+                          {incident.anonymous ? 'Anonymous' : 'Identified'}
+                        </Tag>
+                      </div>
+
+                      <div className={styles.mobileIncidentMeta}>
+                        <span>
+                          <EnvironmentOutlined style={{ color: '#94a3b8', marginRight: 6 }} />
+                          {incident.location}
+                        </span>
+                        <span>{dayjs(incident.occurredAt).format('DD MMM YYYY HH:mm')}</span>
+                        <span>{linkedCase ? linkedCase.caseNumber : 'Not linked to a case'}</span>
+                      </div>
+
+                      <div className={styles.mobileIncidentTags}>
+                        {incident.hasAudio && <Tag color="blue">Audio</Tag>}
+                        {incident.hasImage && <Tag color="purple">Image</Tag>}
+                        {incident.detectedObjects && <Tag color="green" icon={<RobotOutlined />}>AI analysed</Tag>}
+                        {incident.priorityTag === 'LOW' && <Tag color="default">Low priority</Tag>}
+                      </div>
+
+                      <div className={styles.mobileIncidentActions}>
+                        <Button size="small" icon={<EyeOutlined />} onClick={() => openView(incident)}>
+                          View
+                        </Button>
+                        <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(incident)}>
+                          Edit
+                        </Button>
+                        <Popconfirm
+                          title="Delete incident?"
+                          description="This action cannot be undone."
+                          onConfirm={() => handleDelete(incident.id)}
+                          okText="Delete"
+                          okButtonProps={{ danger: true }}
+                          cancelText="Cancel"
+                        >
+                          <Button size="small" danger icon={<DeleteOutlined />}>
+                            Delete
+                          </Button>
+                        </Popconfirm>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className={styles.paginationWrap}>
+                <Pagination
+                  current={page}
+                  pageSize={pageSize}
+                  total={totalCount}
+                  onChange={handlePageChange}
+                  showSizeChanger={false}
+                  size="small"
+                  simple
+                />
+              </div>
+            </>
+          ) : (
           <Table<IIncident>
             columns={columns}
             dataSource={items}
             rowKey="id"
             loading={isPending}
-            scroll={{ x: 600 }}
+            scroll={{ x: 700 }}
             pagination={{
               current: page,
               pageSize,
@@ -427,8 +583,9 @@ const IncidentsPage = () => {
             }}
             size="middle"
           />
+          )
         ) : (
-          <div style={{ height: 520 }}>
+          <div className={styles.mapPanel}>
             <IncidentMap incidents={mapItems} onSelect={openView} loading={mapLoading} />
           </div>
         )}
@@ -438,10 +595,10 @@ const IncidentsPage = () => {
         title={drawerTitle}
         open={drawerOpen}
         onClose={closeDrawer}
-        width="min(520px, 100vw)"
+        width={isMobile ? '100%' : 520}
         footer={
           drawerMode !== 'view' ? (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <div className={styles.drawerFooter}>
               <Button onClick={closeDrawer}>Cancel</Button>
               <Button
                 type="primary"
@@ -456,6 +613,41 @@ const IncidentsPage = () => {
       >
         {drawerMode === 'view' && activeIncident ? (
           <div className={styles.detailRow}>
+            {showAiBanner && (
+              <Alert
+                type="warning"
+                showIcon
+                message="AI assessment — High likelihood of case"
+                description={
+                  <>
+                    This incident has a{' '}
+                    <strong>{Math.round((activeIncident.caseLikelihood ?? 0) * 100)}%</strong>{' '}
+                    likelihood of requiring a formal case based on the report content, location,
+                    and detected objects.
+                  </>
+                }
+                action={
+                  <Space direction="vertical" size={6}>
+                    <Button
+                      size="small"
+                      type="primary"
+                      danger
+                      onClick={() => handleOpenCase(activeIncident)}
+                    >
+                      Open case
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => handleDismissBanner(activeIncident.id)}
+                    >
+                      Dismiss
+                    </Button>
+                  </Space>
+                }
+                style={{ marginBottom: 8 }}
+              />
+            )}
+
             <div className={styles.detailField}>
               <p className={styles.detailLabel}>Title</p>
               <p className={styles.detailValue}>{activeIncident.title}</p>
@@ -500,6 +692,17 @@ const IncidentsPage = () => {
                 {dayjs(activeIncident.reportedAt).format('DD MMM YYYY HH:mm')}
               </p>
             </div>
+            {activeIncident.caseLikelihood != null && (
+              <div className={styles.detailField}>
+                <p className={styles.detailLabel}>AI Case Likelihood</p>
+                <div style={{ marginTop: 2 }}>
+                  <CaseLikelihoodBadge
+                    probability={activeIncident.caseLikelihood}
+                    priorityTag={activeIncident.priorityTag}
+                  />
+                </div>
+              </div>
+            )}
             {activeIncident.hasAudio && (
               <div className={styles.detailField}>
                 <p className={styles.detailLabel}>Audio Recording</p>
@@ -603,19 +806,7 @@ const IncidentsPage = () => {
               />
             </Form.Item>
 
-            <div
-              style={{
-                marginBottom: 16,
-                padding: '12px 14px',
-                borderRadius: 10,
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                color: '#1e3a8a',
-                display: 'flex',
-                gap: 10,
-                alignItems: 'flex-start',
-              }}
-            >
+            <div className={styles.infoBanner}>
               <FolderOpenOutlined style={{ marginTop: 2 }} />
               <div>
                 <div style={{ fontWeight: 600, marginBottom: 2 }}>Case linking is managed from the Cases page</div>

@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SafeGuard.Application\SafeGuard.Application.csproj" />
     <ProjectReference Include="..\SafeGuard.EntityFrameworkCore\SafeGuard.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\SafeGuard.ML\SafeGuard.ML.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
