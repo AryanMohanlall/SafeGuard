@@ -13,6 +13,8 @@ using SafeGuard.Tests.DependencyInjection;
 using Castle.MicroKernel.Registration;
 using NSubstitute;
 using System;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 
 namespace SafeGuard.Tests;
 
@@ -50,6 +52,19 @@ public class SafeGuardTestModule : AbpModule
         IocManager.IocContainer.Register(
             Component.For<AzureComputerVisionConfiguration>()
                 .Instance(new AzureComputerVisionConfiguration { ApiKey = "", Endpoint = "" })
+                .LifestyleSingleton()
+        );
+
+        var testConfiguration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Blockchain:HmacSecret"] = "test-ledger-secret"
+            })
+            .Build();
+
+        IocManager.IocContainer.Register(
+            Component.For<IConfiguration>()
+                .Instance(testConfiguration)
                 .LifestyleSingleton()
         );
     }
