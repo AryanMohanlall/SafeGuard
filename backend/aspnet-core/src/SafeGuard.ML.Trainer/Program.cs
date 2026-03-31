@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using SafeGuard.ML.IncidentClustering;
 using SafeGuard.ML.IncidentPrediction;
 using SafeGuard.ML.Trainer.TrainingData;
 
@@ -13,6 +14,9 @@ switch (command)
         break;
     case "train":
         RunTrain(args, solutionRoot);
+        break;
+    case "cluster-train":
+        RunClusterTrain(args, solutionRoot);
         break;
     default:
         ShowUsage();
@@ -99,11 +103,57 @@ static void RunTrain(string[] args, string solutionRoot)
     Console.WriteLine($"Positive recall: {result.PositiveRecall:P2}");
 }
 
+static void RunClusterTrain(string[] args, string solutionRoot)
+{
+    var csvPath = args.Length > 1
+        ? args[1]
+        : Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads",
+            "incident-training-data.csv");
+
+    var modelPath = args.Length > 2
+        ? args[2]
+        : Path.Combine(
+            solutionRoot,
+            "src",
+            "SafeGuard.Web.Host",
+            "App_Data",
+            "ML",
+            "incident-clustering-model.zip");
+
+    var clusterCount = args.Length > 3 && int.TryParse(args[3], out var parsedClusterCount)
+        ? parsedClusterCount
+        : 6;
+
+    if (!Path.IsPathRooted(csvPath))
+    {
+        csvPath = Path.Combine(solutionRoot, csvPath);
+    }
+
+    if (!Path.IsPathRooted(modelPath))
+    {
+        modelPath = Path.Combine(solutionRoot, modelPath);
+    }
+
+    Console.WriteLine($"Training incident clustering model from '{csvPath}'");
+    Console.WriteLine($"Saving trained model to '{modelPath}'");
+    Console.WriteLine($"Using {clusterCount} clusters");
+
+    var trainer = new IncidentClusteringTrainer();
+    var result = trainer.TrainAndSave(csvPath, modelPath, clusterCount);
+
+    Console.WriteLine("Clustering training complete.");
+    Console.WriteLine($"Records read: {result.RecordsRead}");
+    Console.WriteLine($"Clusters: {result.ClusterCount}");
+}
+
 static void ShowUsage()
 {
     Console.WriteLine("Usage:");
     Console.WriteLine("  generate [outputCsvPath] [rowCount]");
     Console.WriteLine("  train [inputCsvPath] [outputModelPath] [labelColumnName]");
+    Console.WriteLine("  cluster-train [inputCsvPath] [outputModelPath] [clusterCount]");
 }
 
 static string ResolveSolutionRoot(string startDirectory)

@@ -12,6 +12,7 @@ import {
   LogoutOutlined,
   FileAddOutlined,
   VideoCameraOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 import { useAuthAction } from '@/providers/auth-provider';
 import type { CSSProperties } from 'react';
@@ -26,6 +27,7 @@ const navItems = [
   { key: '/dashboard',  icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/incidents',  icon: <WarningOutlined />,   label: 'Incidents' },
   { key: '/cases',      icon: <FolderOutlined />,    label: 'Cases'     },
+  { key: '/incident-graph', icon: <ApartmentOutlined />, label: 'Incident Graph' },
   { key: '/alerts',     icon: <BellOutlined />,      label: 'Alerts'    },
   { key: '/report',   icon: <FileAddOutlined />,     label: 'Report'  },
   { key: '/monitor',  icon: <VideoCameraOutlined />, label: 'Monitor' },
