@@ -69,7 +69,8 @@ export const useStyles = createStyles(({ css }) => ({
     width: 100%;
     height: 100%;
     display: block;
-    object-fit: contain;
+    object-fit: cover;
+    background: #020617;
   `,
 
   overlay: css`
@@ -135,6 +136,17 @@ export const useStyles = createStyles(({ css }) => ({
     font-size: 11px;
     color: #64748b;
     margin-top: 2px;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  `,
+
+  cameraSource: css`
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+    margin-bottom: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -171,6 +183,17 @@ export const useStyles = createStyles(({ css }) => ({
     margin-bottom: 0;
   `,
 
+  expandedMeta: css`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 6px;
+    margin-bottom: 0;
+  `,
+
   errorOverlay: css`
     position: absolute;
     inset: 0;
@@ -182,5 +205,14 @@ export const useStyles = createStyles(({ css }) => ({
     background: rgba(6, 11, 16, 0.9);
     color: #64748b;
     font-size: 13px;
+  `,
+
+  inlineLink: css`
+    color: #93c5fd;
+    text-decoration: none;
+
+    &:hover {
+      color: #bfdbfe;
+    }
   `,
 }));

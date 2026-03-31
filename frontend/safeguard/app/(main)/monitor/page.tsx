@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Badge, Button, Tooltip } from 'antd';
+import Hls from 'hls.js';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Badge, Button, Skeleton, Tooltip } from 'antd';
 import {
   EnvironmentOutlined,
   ExpandAltOutlined,
+  GlobalOutlined,
+  LinkOutlined,
   ShrinkOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons';
@@ -14,76 +18,185 @@ interface Camera {
   id: string;
   name: string;
   location: string;
-  youtubeId: string;
+  sourceName: string;
+  sourceUrl: string;
+  streamUrl: string;
+  thumbnailUrl: string;
 }
 
-export const DEMO_CAMERAS: Camera[] = [
-  {
-    id: '1',
-    name: 'Times Square — New York',
-    location: 'Manhattan, New York, USA',
-    youtubeId: 'fqrmtJanigE', // Times Square New York | LIVE
-  },
-  {
-    id: '2',
-    name: 'City Intersection — Tokyo',
-    location: 'Shibuya, Tokyo, Japan',
-    youtubeId: 'UCWs8rt4ofGmdV4N6KQpP10Q', // SHIBUYA SKY Official Live Feed
-  },
-  {
-    id: '3',
-    name: 'Harbour View — Sydney',
-    location: 'Sydney, Australia',
-    youtubeId: 'hS5-S3Is0I0', // Sydney Live Camera (Opera House/Bridge)
-  },
-  {
-    id: '4',
-    name: 'City Centre — London',
-    location: 'Westminster, London, UK',
-    youtubeId: 'crQbi3kFAXI', // Westminster/Big Ben Live Stream
-  },
-];
-
-interface YoutubePlayerProps {
-  youtubeId: string;
+interface StreamPlayerProps {
+  camera: Camera;
 }
 
-function YoutubePlayer({ youtubeId }: YoutubePlayerProps) {
+function StreamPlayer({ camera }: StreamPlayerProps) {
+  const { styles } = useStyles();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const canUseNativeHls =
+    typeof document !== 'undefined' &&
+    document.createElement('video').canPlayType('application/vnd.apple.mpegurl') !== '';
+  const supportsPlayback = canUseNativeHls || Hls.isSupported();
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    video.muted = true;
+    video.playsInline = true;
+
+    if (canUseNativeHls) {
+      video.src = camera.streamUrl;
+      return () => {
+        video.removeAttribute('src');
+        video.load();
+      };
+    }
+
+    if (!supportsPlayback) {
+      return;
+    }
+
+    const hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: true,
+    });
+
+    hls.loadSource(camera.streamUrl);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.ERROR, (_, data) => {
+      if (data.fatal) {
+        setHasError(true);
+        hls.destroy();
+      }
+    });
+
+    return () => {
+      hls.destroy();
+    };
+  }, [camera.streamUrl, canUseNativeHls, supportsPlayback]);
+
+  return (
+    <>
+      <video
+        ref={videoRef}
+        className={styles.video}
+        poster={camera.thumbnailUrl}
+        autoPlay
+        muted
+        playsInline
+        controls
+      />
+      {(hasError || !supportsPlayback) && (
+        <div className={styles.errorOverlay}>
+          <span>
+            {supportsPlayback ? 'Live stream unavailable right now.' : 'This browser cannot play this live stream.'}
+          </span>
+          <Link href={camera.sourceUrl} target="_blank" rel="noreferrer" className={styles.inlineLink}>
+            Open on {camera.sourceName}
+          </Link>
+        </div>
+      )}
+    </>
+  );
+}
+
+function CameraSkeleton() {
   const { styles } = useStyles();
 
   return (
-    <iframe
-      className={styles.video}
-      src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1`}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      style={{ border: 'none' }}
-    />
+    <div className={styles.feedCard}>
+      <div className={styles.videoWrapper}>
+        <Skeleton.Image active style={{ width: '100%', height: '100%' }} />
+      </div>
+      <div className={styles.cardFooter}>
+        <div style={{ width: '100%' }}>
+          <Skeleton active title={{ width: '70%' }} paragraph={{ rows: 1, width: ['50%'] }} />
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default function MonitorPage() {
   const { styles } = useStyles();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<Camera[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const expandedCamera = DEMO_CAMERAS.find((c) => c.id === expandedId);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStreams = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+
+        const response = await fetch('/api/monitor/streams', { cache: 'no-store' });
+
+        if (!response.ok) {
+          throw new Error('Unable to load camera feeds.');
+        }
+
+        const data = (await response.json()) as { cameras: Camera[] };
+
+        if (!isMounted) {
+          return;
+        }
+
+        setCameras(data.cameras);
+        setExpandedId((current) => current ?? data.cameras[0]?.id ?? null);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setLoadError(error instanceof Error ? error.message : 'Unable to load camera feeds.');
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadStreams();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const expandedCamera = expandedId ? cameras.find((camera) => camera.id === expandedId) ?? null : null;
 
   return (
     <div className={styles.pageWrapper}>
-      {/* Header */}
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>Live Monitor</h1>
-          <p className={styles.pageSubtitle}>Real-time live feeds across monitored zones.</p>
+          <p className={styles.pageSubtitle}>
+            Real public street cameras and city feeds sourced from live webcam providers.
+          </p>
         </div>
         <Badge
-          count={`${DEMO_CAMERAS.length} live`}
+          count={`${cameras.length || 0} live`}
           style={{ background: '#16a34a', fontSize: 12, fontWeight: 600 }}
         />
       </div>
 
-      {/* Expanded single-camera view */}
-      {expandedCamera && (
+      {loadError && (
+        <Alert
+          type="error"
+          showIcon
+          message="Camera feeds could not be loaded."
+          description={loadError}
+          style={{ marginBottom: 20 }}
+        />
+      )}
+
+      {!isLoading && expandedCamera && (
         <div className={styles.expandedView}>
           <div className={styles.expandedHeader}>
             <div>
@@ -91,6 +204,19 @@ export default function MonitorPage() {
               <p className={styles.expandedLocation}>
                 <EnvironmentOutlined style={{ marginRight: 4 }} />
                 {expandedCamera.location}
+              </p>
+              <p className={styles.expandedMeta}>
+                <GlobalOutlined style={{ marginRight: 4 }} />
+                Source: {expandedCamera.sourceName}
+                <Link
+                  href={expandedCamera.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.inlineLink}
+                >
+                  <LinkOutlined style={{ marginRight: 4 }} />
+                  Open source feed
+                </Link>
               </p>
             </div>
             <Tooltip title="Close expanded view">
@@ -107,68 +233,75 @@ export default function MonitorPage() {
               <span className={styles.liveDot} />
               Live
             </div>
-            <YoutubePlayer key={`expanded-${expandedCamera.id}`} youtubeId={expandedCamera.youtubeId} />
+            <StreamPlayer
+              key={`expanded-${expandedCamera.id}-${expandedCamera.streamUrl}`}
+              camera={expandedCamera}
+            />
           </div>
         </div>
       )}
 
-      {/* Camera grid */}
       <div className={styles.grid}>
-        {DEMO_CAMERAS.map((camera) => {
-          const isExpanded = camera.id === expandedId;
+        {isLoading
+          ? Array.from({ length: 4 }, (_, index) => <CameraSkeleton key={index} />)
+          : cameras.map((camera) => {
+              const isExpanded = camera.id === expandedId;
 
-          return (
-            <div
-              key={camera.id}
-              className={`${styles.feedCard} ${isExpanded ? styles.feedCardActive : ''}`}
-            >
-              <div className={styles.videoWrapper}>
-                <div className={styles.liveBadge}>
-                  <span className={styles.liveDot} />
-                  Live
+              return (
+                <div
+                  key={camera.id}
+                  className={`${styles.feedCard} ${isExpanded ? styles.feedCardActive : ''}`}
+                >
+                  <div className={styles.videoWrapper}>
+                    <div className={styles.liveBadge}>
+                      <span className={styles.liveDot} />
+                      Live
+                    </div>
+
+                    <Tooltip title={isExpanded ? 'Collapse' : 'Expand'}>
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={isExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />}
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          zIndex: 10,
+                          color: '#fff',
+                          background: 'rgba(0,0,0,0.5)',
+                          border: 'none',
+                        }}
+                        onClick={() => setExpandedId(isExpanded ? null : camera.id)}
+                      />
+                    </Tooltip>
+
+                    <StreamPlayer key={`${camera.id}-${camera.streamUrl}`} camera={camera} />
+                  </div>
+
+                  <div className={styles.cardFooter}>
+                    <div style={{ minWidth: 0 }}>
+                      <p className={styles.cameraName}>
+                        <VideoCameraOutlined style={{ marginRight: 6, color: '#475569' }} />
+                        {camera.name}
+                      </p>
+                      <p className={styles.cameraLocation}>
+                        <EnvironmentOutlined style={{ marginRight: 4 }} />
+                        {camera.location}
+                      </p>
+                      <p className={styles.cameraSource}>
+                        <GlobalOutlined style={{ marginRight: 4 }} />
+                        {camera.sourceName}
+                      </p>
+                    </div>
+                    <Badge
+                      status="success"
+                      text={<span style={{ fontSize: 11, color: '#94a3b8' }}>Live</span>}
+                    />
+                  </div>
                 </div>
-
-                {/* Expand button */}
-                <Tooltip title={isExpanded ? 'Collapse' : 'Expand'}>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={isExpanded ? <ShrinkOutlined /> : <ExpandAltOutlined />}
-                    style={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      zIndex: 10,
-                      color: '#fff',
-                      background: 'rgba(0,0,0,0.5)',
-                      border: 'none',
-                    }}
-                    onClick={() => setExpandedId(isExpanded ? null : camera.id)}
-                  />
-                </Tooltip>
-
-                <YoutubePlayer key={camera.id} youtubeId={camera.youtubeId} />
-              </div>
-
-              <div className={styles.cardFooter}>
-                <div style={{ minWidth: 0 }}>
-                  <p className={styles.cameraName}>
-                    <VideoCameraOutlined style={{ marginRight: 6, color: '#475569' }} />
-                    {camera.name}
-                  </p>
-                  <p className={styles.cameraLocation}>
-                    <EnvironmentOutlined style={{ marginRight: 4 }} />
-                    {camera.location}
-                  </p>
-                </div>
-                <Badge
-                  status="success"
-                  text={<span style={{ fontSize: 11, color: '#94a3b8' }}>Live</span>}
-                />
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
       </div>
     </div>
   );
