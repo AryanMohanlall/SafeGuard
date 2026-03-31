@@ -28,13 +28,15 @@ static void RunGenerate(string[] args, string solutionRoot)
     var outputPath = args.Length > 1
         ? args[1]
         : Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads",
+            solutionRoot,
+            "src",
+            "SafeGuard.ML.Trainer",
+            "TrainingData",
             "incident-training-data.csv");
 
     var count = args.Length > 2 && int.TryParse(args[2], out var parsedCount)
         ? parsedCount
-        : 1000;
+        : 10000;
 
     if (count <= 0)
     {
@@ -62,9 +64,11 @@ static void RunTrain(string[] args, string solutionRoot)
     var csvPath = args.Length > 1
         ? args[1]
         : Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads",
-            "MOCK_DATA.csv");
+            solutionRoot,
+            "src",
+            "SafeGuard.ML.Trainer",
+            "TrainingData",
+            "incident-training-data.csv");
 
     var modelPath = args.Length > 2
         ? args[2]

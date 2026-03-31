@@ -17,16 +17,28 @@ public class IncidentPredictionTrainer
         _reader = new CsvIncidentTrainingReader();
     }
 
+    private IEstimator<ITransformer> HashText(string outputCol, string inputCol, int numberOfBits = 14)
+    {
+        var norm = $"{outputCol}_norm";
+        var tokens = $"{outputCol}_tokens";
+        var keys = $"{outputCol}_keys";
+        return _mlContext.Transforms.Text.NormalizeText(norm, inputCol)
+            .Append(_mlContext.Transforms.Text.TokenizeIntoWords(tokens, norm))
+            .Append(_mlContext.Transforms.Conversion.MapValueToKey(keys, tokens))
+            .Append(_mlContext.Transforms.Text.ProduceHashedNgrams(outputCol, keys, numberOfBits: numberOfBits));
+    }
+
     public IncidentPredictionTrainingResult TrainAndSave(string csvPath, string modelPath, string labelColumnName)
     {
         var rows = _reader.Read(csvPath, labelColumnName);
         var data = _mlContext.Data.LoadFromEnumerable(rows);
         var split = _mlContext.Data.TrainTestSplit(data, testFraction: 0.2);
 
-        var pipeline = _mlContext.Transforms.Text.FeaturizeText("TitleFeatures", nameof(IncidentPredictionRequestDto.Title))
-            .Append(_mlContext.Transforms.Text.FeaturizeText("DescriptionFeatures", nameof(IncidentPredictionRequestDto.Description)))
-            .Append(_mlContext.Transforms.Text.FeaturizeText("LocationFeatures", nameof(IncidentPredictionRequestDto.Location)))
-            .Append(_mlContext.Transforms.Text.FeaturizeText("DetectedObjectsFeatures", nameof(IncidentPredictionRequestDto.DetectedObjects)))
+        var pipeline = HashText("TitleFeatures", nameof(IncidentPredictionRequestDto.Title))
+            .Append(HashText("DescriptionFeatures", nameof(IncidentPredictionRequestDto.Description)))
+            .Append(HashText("LocationFeatures", nameof(IncidentPredictionRequestDto.Location)))
+            .Append(HashText("DetectedObjectsFeatures", nameof(IncidentPredictionRequestDto.DetectedObjects)))
+            .Append(HashText("CrimeCategoryFeatures", nameof(IncidentPredictionRequestDto.CrimeCategory)))
             .Append(_mlContext.Transforms.Conversion.ConvertType("AnonymousValue", nameof(IncidentTrainingRecord.Anonymous), DataKind.Single))
             .Append(_mlContext.Transforms.Conversion.ConvertType("HasAudioValue", nameof(IncidentTrainingRecord.HasAudio), DataKind.Single))
             .Append(_mlContext.Transforms.Conversion.ConvertType("HasImageValue", nameof(IncidentTrainingRecord.HasImage), DataKind.Single))
@@ -36,19 +48,18 @@ public class IncidentPredictionTrainer
                 "DescriptionFeatures",
                 "LocationFeatures",
                 "DetectedObjectsFeatures",
+                "CrimeCategoryFeatures",
                 "AnonymousValue",
                 "HasAudioValue",
                 "HasImageValue",
                 nameof(IncidentTrainingRecord.OccurredHour),
+                nameof(IncidentTrainingRecord.DayOfWeek),
+                nameof(IncidentTrainingRecord.IsWeekend),
+                nameof(IncidentTrainingRecord.IsNighttime),
                 nameof(IncidentTrainingRecord.ReportDelayHours)))
             .Append(_mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(
                 labelColumnName: nameof(IncidentTrainingRecord.Label),
-                featureColumnName: "Features"))
-            .Append(_mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(
-                    labelColumnName: nameof(IncidentTrainingRecord.Label),
-                    featureColumnName: "Features",
-                    // Weight the minority class higher so the model can't just say "always true"
-                    exampleWeightColumnName: null));
+                featureColumnName: "Features"));
 
         var model = pipeline.Fit(split.TrainSet);
         var predictions = model.Transform(split.TestSet);
