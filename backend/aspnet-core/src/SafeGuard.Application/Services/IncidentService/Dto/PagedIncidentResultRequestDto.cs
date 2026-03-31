@@ -7,4 +7,5 @@ public class PagedIncidentResultRequestDto : PagedResultRequestDto
 {
     public string Keyword { get; set; }
     public Guid? CaseId { get; set; }
+    public bool SortByCaseLikelihood { get; set; }
 }

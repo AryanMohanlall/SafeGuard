@@ -21,6 +21,8 @@ export interface IIncident {
   creationTime: string;
   creatorUserId: number | null;
   detectedObjects: string | null;
+  caseLikelihood?: number;
+  priorityTag?: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export interface ICreateIncidentInput {

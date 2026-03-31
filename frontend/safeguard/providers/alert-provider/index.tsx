@@ -44,18 +44,22 @@ export const AlertProvider = ({ children }: { children: React.ReactNode }) => {
       .build();
 
     connection.on('NewIncident', (alert: IncidentAlert) => {
-      setAlerts(prev => [alert, ...prev]);
+      setAlerts((prev) => [alert, ...prev]);
       setPending(alert);
     });
 
-    connection.start().catch(() => {
-      // Hub unreachable in dev without backend — fail silently
+    const startPromise = connection.start().catch(() => {
+      // Ignore startup failures in development and backend-offline cases.
     });
 
     connectionRef.current = connection;
 
     return () => {
-      connection.stop();
+      void startPromise.finally(() => {
+        void connection.stop().catch(() => {
+          // Ignore shutdown races during React dev remounts.
+        });
+      });
     };
   }, []);
 

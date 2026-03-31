@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, Col, Row, Spin, Statistic } from 'antd';
+import { Card, Col, Row, Spin, Statistic, theme } from 'antd';
 import {
   AlertOutlined,
   EnvironmentOutlined,
@@ -13,6 +13,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   Pie,
   PieChart,
@@ -38,8 +39,29 @@ const IncidentHeatmap = dynamic(() => import('../../../components/Map/IncidentHe
 
 const BASE = '/api/services/app/incident';
 
+function getPriorityBucket(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' | null {
+  if (incident.priorityTag === 'HIGH' || incident.priorityTag === 'MEDIUM' || incident.priorityTag === 'LOW') {
+    return incident.priorityTag;
+  }
+
+  if (incident.caseLikelihood == null) {
+    return null;
+  }
+
+  if (incident.caseLikelihood >= 0.75) {
+    return 'HIGH';
+  }
+
+  if (incident.caseLikelihood >= 0.25) {
+    return 'MEDIUM';
+  }
+
+  return 'LOW';
+}
+
 export default function Dashboard() {
   const { styles } = useStyles();
+  const { token } = theme.useToken();
 
   const [incidents, setIncidents] = useState<IIncident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +121,25 @@ export default function Dashboard() {
       { name: 'No media',      value: none,  fill: '#060b10' },
     ].filter((d) => d.value > 0);
   }, [incidents]);
+
+  // ── AI priority distribution ───────────────────────────────────────────────
+  const priorityData = useMemo(() => {
+    let high = 0, medium = 0, low = 0;
+    incidents.forEach((i) => {
+      const priority = getPriorityBucket(i);
+      if (priority === 'HIGH') high++;
+      else if (priority === 'MEDIUM') medium++;
+      else if (priority === 'LOW') low++;
+    });
+    const total = high + medium + low;
+    if (total === 0) return [];
+    const pct = (n: number) => Math.round((n / total) * 100);
+    return [
+      { name: 'High',   value: high,   fill: token.colorError,           label: `High   ${high}  (${pct(high)}%)` },
+      { name: 'Medium', value: medium, fill: token.colorWarning,         label: `Medium ${medium}  (${pct(medium)}%)` },
+      { name: 'Low',    value: low,    fill: token.colorTextQuaternary,  label: `Low    ${low}  (${pct(low)}%)` },
+    ].filter((d) => d.value > 0);
+  }, [incidents, token]);
 
   // ── Anonymous vs Identified pie ────────────────────────────────────────────
   const anonData = useMemo(
@@ -253,6 +294,61 @@ export default function Dashboard() {
           </Row>
         </Col>
       </Row>
+
+      {/* AI priority distribution */}
+      <Card className={styles.card} style={{ marginBottom: 24 }}>
+        <p className={styles.sectionLabel}>AI priority distribution</p>
+        <p style={{ fontSize: 12, color: '#94a3b8', marginTop: -12, marginBottom: 16 }}>
+          Based on AI priority tags across all loaded incidents
+        </p>
+        {priorityData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie
+                data={priorityData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={75}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {priorityData.map((entry, index) => (
+                  <Cell key={index} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                formatter={(value: number, name: string) => [value, name]}
+              />
+              <Legend
+                iconType="circle"
+                iconSize={8}
+                wrapperStyle={{ fontSize: 12 }}
+                formatter={(_value, entry) => {
+                  const d = priorityData.find((p) => p.name === entry.value);
+                  return d?.label ?? entry.value;
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div
+            style={{
+              minHeight: 180,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px dashed #cbd5e1',
+              borderRadius: 12,
+              color: '#64748b',
+              fontSize: 14,
+            }}
+          >
+            No AI priority data available for the loaded incidents yet.
+          </div>
+        )}
+      </Card>
 
       {/* Heatmap */}
       <Card className={styles.card}>

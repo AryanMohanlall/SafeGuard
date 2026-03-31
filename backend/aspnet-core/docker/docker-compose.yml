@@ -1,9 +1,8 @@
 services:
-
   abp_host:
     build:
-      context: ..
-      dockerfile: src/SafeGuard.Web.Host/Dockerfile
+      context: ../
+      dockerfile: ./src/SafeGuard.Web.Host/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: "Staging"
       ConnectionStrings__Default: "${DB_CONNECTION_STRING}"
