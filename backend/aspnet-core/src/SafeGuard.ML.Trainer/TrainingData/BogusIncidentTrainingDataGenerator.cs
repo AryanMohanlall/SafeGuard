@@ -70,7 +70,7 @@ public class BogusIncidentTrainingDataGenerator
         new("Pretoria CBD",                ["Vermeulen Street","Paul Kruger Street","Church Street"],               -25.7479, 28.1878, 0.03),
         new("Mamelodi, Pretoria",          ["Tsamaya Road","Solomon Mahlangu Drive","Zone 7 Road"],                 -25.7174, 28.3978, 0.04),
         new("Soshanguve, Pretoria",        ["Block H Road","Soshanguve Highway","Zone 3 Road"],                     -25.5281, 28.0956, 0.05),
-        new("Gqeberha CBD",               ["Govan Mbeki Avenue","Cape Road","Strand Street"],                      -33.9608, 25.6022, 0.03),
+        new("Gqeberha CBD",                ["Govan Mbeki Avenue","Cape Road","Strand Street"],                      -33.9608, 25.6022, 0.03),
         new("Bloemfontein CBD",            ["President Brand Street","Maitland Street","Henry Street"],             -29.1210, 26.2041, 0.03),
         new("Kimberley CBD",               ["Dutoitspan Road","Lyndhurst Road","Jones Street"],                     -28.7282, 24.7499, 0.03),
         new("Polokwane CBD",               ["Schoeman Street","Bodenstein Street","Grobler Street"],                -23.9045, 29.4689, 0.03),
@@ -116,93 +116,116 @@ public class BogusIncidentTrainingDataGenerator
 
     public IReadOnlyList<GeneratedIncidentTrainingRow> Generate(int count)
     {
-        var rows = new List<GeneratedIncidentTrainingRow>(count);
+        var target      = count / 2;
+        var positives   = 0;
+        var negatives   = 0;
+        var rows        = new List<GeneratedIncidentTrainingRow>(count);
+        var maxAttempts = count * 20;
+        var attempts    = 0;
 
-        for (int i = 0; i < count; i++)
+        while (rows.Count < count && attempts < maxAttempts)
         {
-            var crime   = SampleCrimeByWeight();
-            var loc     = Locations[Rng.Next(Locations.Length)];
-            var street  = loc.Streets[Rng.Next(loc.Streets.Length)];
-            var n       = Rng.Next(2, 6);
+            attempts++;
+            var row = GenerateSingleRow();
 
-            string Fill(string t) => t
-                .Replace("{street}",   street)
-                .Replace("{loc}",      loc.Name)
-                .Replace("{vehicle}",  Vehicles[Rng.Next(Vehicles.Length)])
-                .Replace("{target}",   Targets[Rng.Next(Targets.Length)])
-                .Replace("{stolen}",   Stolen[Rng.Next(Stolen.Length)])
-                .Replace("{injuries}", Injuries[Rng.Next(Injuries.Length)])
-                .Replace("{outcome}",  Outcomes[Rng.Next(Outcomes.Length)])
-                .Replace("{dir}",      Directions[Rng.Next(Directions.Length)])
-                .Replace("{count}",    n.ToString());
-
-            var lat = Math.Round(loc.Lat + (Rng.NextDouble() - 0.5) * 2 * loc.Radius, 6);
-            var lng = Math.Round(loc.Lng + (Rng.NextDouble() - 0.5) * 2 * loc.Radius, 6);
-
-            var tg       = Templates.TryGetValue(crime.Category, out var t) ? t : Templates["theft_general"];
-            var tmpl     = tg[Rng.Next(tg.Length)];
-            var desc     = tmpl.Descriptions[Rng.Next(tmpl.Descriptions.Length)];
-
-            var objCount = Rng.Next(1, Math.Min(4, tmpl.Objects.Length + 1));
-            var objects  = tmpl.Objects.OrderBy(_ => Rng.Next()).Take(objCount).ToArray();
-
-            var occurred     = DateTime.UtcNow.AddDays(-Rng.Next(0, 548)).AddHours(-Rng.Next(0, 24)).AddMinutes(-Rng.Next(0, 60));
-            var reportDelay  = TimeSpan.FromMinutes(Rng.Next(5, 360));
-            var reported     = occurred + reportDelay;
-            var created      = reported.AddMinutes(Rng.Next(0, 60));
-            var hasModified  = Rng.NextDouble() > 0.6;
-            var isDeleted    = Rng.NextDouble() < 0.02;
-            var anonymous    = Rng.NextDouble() < 0.28;
-            var hasImage     = Rng.NextDouble() < 0.55;
-
-            var row = new GeneratedIncidentTrainingRow
+            if (row.Label && positives < target)
             {
-                Id                   = Guid.NewGuid(),
-                Title                = Fill(tmpl.Title),
-                Description          = Fill(desc),
-                Location             = $"{street}, {loc.Name}",
-                AudioFile            = string.Empty,
-                AudioFileName        = string.Empty,
-                AudioContentType     = string.Empty,
-                ImageFile            = string.Empty,
-                ImageFileName        = string.Empty,
-                ImageContentType     = string.Empty,
-                Latitude             = (decimal)lat,
-                Longitude            = (decimal)lng,
-                CaseId               = Rng.NextDouble() < 0.45 ? Guid.NewGuid() : null,
-                Anonymous            = anonymous,
-                DetectedObjects      = JsonSerializer.Serialize(objects),
-                OccurredAt           = occurred,
-                ReportedAt           = reported,
-                CreationTime         = created,
-                CreatorId            = Guid.NewGuid(),
-                LastModificationTime = hasModified ? created.AddHours(Rng.Next(1, 72)) : null,
-                LastModifierId       = hasModified ? Guid.NewGuid() : null,
-                IsDeleted            = isDeleted,
-                DeleterId            = isDeleted ? Guid.NewGuid() : null,
-                DeletionTime         = isDeleted ? created.AddDays(Rng.Next(1, 30)) : null,
-                ConcurrencyStamp     = Guid.NewGuid(),
-                CrimeCategory        = crime.Category,
-            };
-
-            row.CaseOpened   = SampleCaseOpened(crime, row, reportDelay, anonymous, hasImage);
-            row.CaseResolved = row.CaseOpened && SampleCaseResolved(crime);
-            row.Label        = row.CaseOpened;
-            rows.Add(row);
+                rows.Add(row);
+                positives++;
+            }
+            else if (!row.Label && negatives < target)
+            {
+                rows.Add(row);
+                negatives++;
+            }
         }
 
-        return rows;
+        // Shuffle so positives and negatives are not grouped together
+        return rows.OrderBy(_ => Rng.Next()).ToList();
+    }
+
+    private GeneratedIncidentTrainingRow GenerateSingleRow()
+    {
+        var crime   = SampleCrimeByWeight();
+        var loc     = Locations[Rng.Next(Locations.Length)];
+        var street  = loc.Streets[Rng.Next(loc.Streets.Length)];
+        var n       = Rng.Next(2, 6);
+
+        string Fill(string t) => t
+            .Replace("{street}",   street)
+            .Replace("{loc}",      loc.Name)
+            .Replace("{vehicle}",  Vehicles[Rng.Next(Vehicles.Length)])
+            .Replace("{target}",   Targets[Rng.Next(Targets.Length)])
+            .Replace("{stolen}",   Stolen[Rng.Next(Stolen.Length)])
+            .Replace("{injuries}", Injuries[Rng.Next(Injuries.Length)])
+            .Replace("{outcome}",  Outcomes[Rng.Next(Outcomes.Length)])
+            .Replace("{dir}",      Directions[Rng.Next(Directions.Length)])
+            .Replace("{count}",    n.ToString());
+
+        var lat = Math.Round(loc.Lat + (Rng.NextDouble() - 0.5) * 2 * loc.Radius, 6);
+        var lng = Math.Round(loc.Lng + (Rng.NextDouble() - 0.5) * 2 * loc.Radius, 6);
+
+        var tg       = Templates.TryGetValue(crime.Category, out var t) ? t : Templates["theft_general"];
+        var tmpl     = tg[Rng.Next(tg.Length)];
+        var desc     = tmpl.Descriptions[Rng.Next(tmpl.Descriptions.Length)];
+
+        var objCount = Rng.Next(1, Math.Min(4, tmpl.Objects.Length + 1));
+        var objects  = tmpl.Objects.OrderBy(_ => Rng.Next()).Take(objCount).ToArray();
+
+        var occurred    = DateTime.UtcNow.AddDays(-Rng.Next(0, 548)).AddHours(-Rng.Next(0, 24)).AddMinutes(-Rng.Next(0, 60));
+        var reportDelay = TimeSpan.FromMinutes(Rng.Next(5, 360));
+        var reported    = occurred + reportDelay;
+        var created     = reported.AddMinutes(Rng.Next(0, 60));
+        var hasModified = Rng.NextDouble() > 0.6;
+        var isDeleted   = Rng.NextDouble() < 0.02;
+        var anonymous   = Rng.NextDouble() < 0.28;
+        var hasImage    = Rng.NextDouble() < 0.55;
+
+        var row = new GeneratedIncidentTrainingRow
+        {
+            Id                   = Guid.NewGuid(),
+            Title                = Fill(tmpl.Title),
+            Description          = Fill(desc),
+            Location             = $"{street}, {loc.Name}",
+            AudioFile            = string.Empty,
+            AudioFileName        = string.Empty,
+            AudioContentType     = string.Empty,
+            ImageFile            = string.Empty,
+            ImageFileName        = string.Empty,
+            ImageContentType     = string.Empty,
+            Latitude             = (decimal)lat,
+            Longitude            = (decimal)lng,
+            CaseId               = Rng.NextDouble() < 0.45 ? Guid.NewGuid() : null,
+            Anonymous            = anonymous,
+            DetectedObjects      = JsonSerializer.Serialize(objects),
+            OccurredAt           = occurred,
+            ReportedAt           = reported,
+            CreationTime         = created,
+            CreatorId            = Guid.NewGuid(),
+            LastModificationTime = hasModified ? created.AddHours(Rng.Next(1, 72)) : null,
+            LastModifierId       = hasModified ? Guid.NewGuid() : null,
+            IsDeleted            = isDeleted,
+            DeleterId            = isDeleted ? Guid.NewGuid() : null,
+            DeletionTime         = isDeleted ? created.AddDays(Rng.Next(1, 30)) : null,
+            ConcurrencyStamp     = Guid.NewGuid(),
+            CrimeCategory        = crime.Category,
+        };
+
+        row.CaseOpened   = SampleCaseOpened(crime, row, reportDelay, anonymous, hasImage);
+        row.CaseResolved = row.CaseOpened && SampleCaseResolved(crime);
+        row.Label        = row.CaseOpened;
+        return row;
     }
 
     private static bool SampleCaseOpened(CrimeStats crime, GeneratedIncidentTrainingRow row,
         TimeSpan reportDelay, bool anonymous, bool hasImage)
     {
         var logOdds = Math.Log(crime.CaseOpenRate / (1.0 - crime.CaseOpenRate));
-        if (reportDelay.TotalHours <= 1)        logOdds += 1.4;
-        else if (reportDelay.TotalHours <= 6)   logOdds += 0.8;
-        else if (reportDelay.TotalHours > 48)   logOdds -= 1.2;
-        if (hasImage)     logOdds += 0.7;
-        if (!anonymous)   logOdds += 0.5;
+        if (reportDelay.TotalHours <= 1)      logOdds += 1.4;
+        else if (reportDelay.TotalHours <= 6) logOdds += 0.8;
+        else if (reportDelay.TotalHours > 48) logOdds -= 1.2;
+        if (hasImage)        logOdds += 0.7;
+        if (!anonymous)      logOdds += 0.5;
         if (crime.IsViolent) logOdds += 0.6;
         var hour = row.OccurredAt.Hour;
         if (hour >= 22 || hour <= 4) logOdds -= 0.3;
@@ -215,13 +238,14 @@ public class BogusIncidentTrainingDataGenerator
     {
         var logOdds = Math.Log(crime.DetectionRate / (1.0 - crime.DetectionRate));
         if (crime.Category is "drug_related" or "illegal_firearms") logOdds += 0.5;
-        if (crime.IsViolent)      logOdds += 0.3;
+        if (crime.IsViolent)            logOdds += 0.3;
         if (crime.Category == "murder") logOdds += 0.4;
         logOdds += Gaussian(0, 1.0);
         return Rng.NextDouble() < Sigmoid(logOdds);
     }
 
     private static double Sigmoid(double x) => 1.0 / (1.0 + Math.Exp(-x));
+
     private static double Gaussian(double mean, double std)
     {
         var u1 = 1.0 - Rng.NextDouble();

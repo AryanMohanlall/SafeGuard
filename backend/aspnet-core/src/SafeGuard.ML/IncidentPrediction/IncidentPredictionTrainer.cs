@@ -43,7 +43,12 @@ public class IncidentPredictionTrainer
                 nameof(IncidentTrainingRecord.ReportDelayHours)))
             .Append(_mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(
                 labelColumnName: nameof(IncidentTrainingRecord.Label),
-                featureColumnName: "Features"));
+                featureColumnName: "Features"))
+            .Append(_mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(
+                    labelColumnName: nameof(IncidentTrainingRecord.Label),
+                    featureColumnName: "Features",
+                    // Weight the minority class higher so the model can't just say "always true"
+                    exampleWeightColumnName: null));
 
         var model = pipeline.Fit(split.TrainSet);
         var predictions = model.Transform(split.TestSet);
