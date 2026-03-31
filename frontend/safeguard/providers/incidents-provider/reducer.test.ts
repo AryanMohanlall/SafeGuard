@@ -33,6 +33,7 @@ const mockIncident: IIncident = {
   imageContentType: null,
   latitude: null,
   longitude: null,
+  caseId: null,
   anonymous: false,
   occurredAt: '2026-03-01T10:00:00Z',
   reportedAt: '2026-03-01T10:05:00Z',
