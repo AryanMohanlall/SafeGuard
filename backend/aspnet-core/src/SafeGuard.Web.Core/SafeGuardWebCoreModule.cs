@@ -5,14 +5,18 @@ using Abp.Modules;
 using Abp.Reflection.Extensions;
 using Abp.Zero.Configuration;
 using SafeGuard.Authentication.JwtBearer;
+using SafeGuard.ML.IncidentPrediction;
 using SafeGuard.Services.ImageAnalysisService;
+using SafeGuard.Services.IncidentPredictionService;
 using SafeGuard.Configuration;
+using Castle.MicroKernel.Registration;
 using SafeGuard.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.IO;
 using System.Text;
 
 namespace SafeGuard
@@ -50,6 +54,7 @@ namespace SafeGuard
 
             ConfigureTokenAuth();
             ConfigureAzureComputerVision();
+            ConfigureIncidentPrediction();
         }
 
         private void ConfigureTokenAuth()
@@ -70,6 +75,35 @@ namespace SafeGuard
             var config = IocManager.Resolve<AzureComputerVisionConfiguration>();
             config.ApiKey = _appConfiguration["AzureComputerVision:ApiKey"];
             config.Endpoint = _appConfiguration["AzureComputerVision:Endpoint"];
+        }
+
+        private void ConfigureIncidentPrediction()
+        {
+            var configuredPath = _appConfiguration["ML:IncidentPrediction:ModelPath"];
+            var modelPath = string.IsNullOrWhiteSpace(configuredPath)
+                ? Path.Combine(_env.ContentRootPath, "App_Data", "ML", "incident-prediction-model.zip")
+                : configuredPath;
+
+            if (!Path.IsPathRooted(modelPath))
+            {
+                modelPath = Path.Combine(_env.ContentRootPath, modelPath);
+            }
+
+            var directory = Path.GetDirectoryName(modelPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var config = new IncidentPredictionModelConfiguration
+            {
+                ModelPath = modelPath
+            };
+
+            IocManager.IocContainer.Register(
+                Component.For<IncidentPredictionModelConfiguration>().Instance(config),
+                Component.For<IIncidentPredictionService>().ImplementedBy<MlNetIncidentPredictionService>().LifestyleSingleton()
+            );
         }
 
         public override void Initialize()
