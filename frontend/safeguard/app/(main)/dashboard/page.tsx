@@ -321,7 +321,7 @@ export default function Dashboard() {
               </Pie>
               <Tooltip
                 contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
-                formatter={(value: number, name: string) => [value, name]}
+                formatter={(value, name) => [typeof value === 'number' ? value : 0, String(name ?? '')]}
               />
               <Legend
                 iconType="circle"

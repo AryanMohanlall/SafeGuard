@@ -9,11 +9,14 @@ using Abp.Zero.EntityFrameworkCore;
 using SafeGuard.EntityFrameworkCore;
 using SafeGuard.Notifications;
 using SafeGuard.Services.ImageAnalysisService;
+using SafeGuard.Services.IncidentPredictionService;
+using SafeGuard.Services.IncidentPredictionService.Dto;
 using SafeGuard.Tests.DependencyInjection;
 using Castle.MicroKernel.Registration;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
 namespace SafeGuard.Tests;
@@ -46,6 +49,7 @@ public class SafeGuardTestModule : AbpModule
 
         RegisterFakeService<AbpZeroDbMigrator<SafeGuardDbContext>>();
         RegisterFakeService<IIncidentAlertNotifier>();
+        IocManager.RegisterIfNot<IIncidentPredictionService, TestIncidentPredictionService>(DependencyLifeStyle.Singleton);
 
         Configuration.ReplaceService<IEmailSender, NullEmailSender>(DependencyLifeStyle.Transient);
 
@@ -81,5 +85,25 @@ public class SafeGuardTestModule : AbpModule
                 .UsingFactoryMethod(() => Substitute.For<TService>())
                 .LifestyleSingleton()
         );
+    }
+
+    private sealed class TestIncidentPredictionService : IIncidentPredictionService, ISingletonDependency
+    {
+        public Task<IncidentPredictionResultDto> PredictAsync(IncidentPredictionRequestDto input)
+        {
+            var probability = input switch
+            {
+                { HasImage: true } => 0.8f,
+                { Anonymous: true } => 0.45f,
+                _ => 0.2f
+            };
+
+            return Task.FromResult(new IncidentPredictionResultDto
+            {
+                IsHighPriority = probability >= 0.75f,
+                Probability = probability,
+                Score = probability - 0.5f
+            });
+        }
     }
 }
