@@ -96,6 +96,15 @@ export const useStyles = createStyles(({ css }) => ({
     transform: translateY(-2px);
   `,
 
+  nodeCardConnected: css`
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 18px 36px rgba(15, 23, 42, 0.14);
+  `,
+
+  nodeCardDimmed: css`
+    opacity: 0.38;
+    filter: saturate(0.72);
+  `,
+
   nodeType: css`
     font-size: 11px;
     font-weight: 700;

@@ -86,6 +86,30 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
     [edges, selectedNode],
   );
 
+  const connectedEdgeIds = useMemo(
+    () =>
+      new Set(
+        selectedNodeId
+          ? edges
+              .filter((edge) => edge.source === selectedNodeId || edge.target === selectedNodeId)
+              .map((edge) => edge.id)
+          : [],
+      ),
+    [edges, selectedNodeId],
+  );
+
+  const connectedNodeIds = useMemo(
+    () =>
+      new Set(
+        selectedNodeId
+          ? edges
+              .filter((edge) => edge.source === selectedNodeId || edge.target === selectedNodeId)
+              .flatMap((edge) => [edge.source, edge.target])
+          : [],
+      ),
+    [edges, selectedNodeId],
+  );
+
   const layout = useMemo(() => {
     const positions = new Map<string, NodePosition>();
     const groupedNodes = Array.from(
@@ -199,6 +223,33 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
       resizeObserver.disconnect();
     };
   }, [canvasHeight, canvasWidth]);
+
+  useEffect(() => {
+    if (!selectedNodeId) {
+      return;
+    }
+
+    const viewport = viewportRef.current;
+    const point = layout.positions.get(selectedNodeId);
+    if (!viewport || !point) {
+      return;
+    }
+
+    const nextLeft = Math.max(
+      Math.min(point.x * scale - viewport.clientWidth / 2, canvasWidth - viewport.clientWidth),
+      0,
+    );
+    const nextTop = Math.max(
+      Math.min(point.y * scale - viewport.clientHeight / 2, canvasHeight - viewport.clientHeight),
+      0,
+    );
+
+    viewport.scrollTo({
+      left: nextLeft,
+      top: nextTop,
+      behavior: 'smooth',
+    });
+  }, [canvasHeight, canvasWidth, layout.positions, scale, selectedNodeId]);
 
   const clampScale = (value: number) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, Number(value.toFixed(2))));
 
@@ -365,6 +416,8 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
                       : edge.type === 'case-incident'
                         ? '#f59e0b'
                         : '#94a3b8';
+                  const isConnected = connectedEdgeIds.has(edge.id);
+                  const isDimmed = selectedNodeId !== null && !isConnected;
 
                   return (
                     <line
@@ -374,9 +427,9 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
                       x2={target.x}
                       y2={target.y - CARD_HEIGHT / 2}
                       stroke={stroke}
-                      strokeWidth={edge.type === 'cluster-suggestion' ? 3 : 2}
+                      strokeWidth={isConnected ? 4 : edge.type === 'cluster-suggestion' ? 3 : 2}
                       strokeDasharray={edge.type === 'suggestion-incident' ? '6 6' : undefined}
-                      opacity={0.85}
+                      opacity={isDimmed ? 0.18 : isConnected ? 1 : 0.85}
                     />
                   );
                 })}
@@ -390,13 +443,17 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
 
                 const typeStyle = TYPE_STYLES[node.type] ?? TYPE_STYLES.incident;
                 const isSelected = node.id === selectedNodeId;
+                const isConnected = connectedNodeIds.has(node.id);
+                const isDimmed = selectedNodeId !== null && !isSelected && !isConnected;
 
                 return (
                   <button
                     key={node.id}
                     type="button"
                     data-graph-node="true"
-                    className={`${styles.nodeCard} ${isSelected ? styles.nodeCardSelected : ''}`}
+                    className={`${styles.nodeCard} ${isSelected ? styles.nodeCardSelected : ''} ${
+                      isConnected ? styles.nodeCardConnected : ''
+                    } ${isDimmed ? styles.nodeCardDimmed : ''}`}
                     onClick={() => setSelectedNodeId(node.id)}
                     style={{
                       left: point.x - CARD_WIDTH / 2,
