@@ -57,9 +57,13 @@ public class IncidentPredictionTrainer
                 nameof(IncidentTrainingRecord.IsWeekend),
                 nameof(IncidentTrainingRecord.IsNighttime),
                 nameof(IncidentTrainingRecord.ReportDelayHours)))
-            .Append(_mlContext.BinaryClassification.Trainers.SdcaLogisticRegression(
+            .Append(_mlContext.BinaryClassification.Trainers.LightGbm(
                 labelColumnName: nameof(IncidentTrainingRecord.Label),
-                featureColumnName: "Features"));
+                featureColumnName: "Features",
+                numberOfLeaves: 31,
+                numberOfIterations: 100,
+                minimumExampleCountPerLeaf: 10,
+                learningRate: 0.1));
 
         var model = pipeline.Fit(split.TrainSet);
         var predictions = model.Transform(split.TestSet);

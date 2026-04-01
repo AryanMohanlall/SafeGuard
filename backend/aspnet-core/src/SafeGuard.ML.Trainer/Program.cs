@@ -36,7 +36,7 @@ static void RunGenerate(string[] args, string solutionRoot)
 
     var count = args.Length > 2 && int.TryParse(args[2], out var parsedCount)
         ? parsedCount
-        : 10000;
+        : 25000;
 
     if (count <= 0)
     {
