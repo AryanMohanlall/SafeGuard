@@ -55,11 +55,11 @@ const LOADSHEDDING_ZONES: [number, number][][] = [
   ],
 ];
 
-const ROADBLOCKS = [
-  { id: 'roadblock-1', label: 'Police roadblock - N1 Northbound', latitude: -25.9843, longitude: 28.1154 },
-  { id: 'roadblock-2', label: 'Police roadblock - M1 South off-ramp', latitude: -26.1784, longitude: 28.0471 },
-  { id: 'roadblock-3', label: 'Police roadblock - N3 Heidelberg corridor', latitude: -26.2467, longitude: 28.1297 },
-  { id: 'roadblock-4', label: 'Police roadblock - N2 Airport approach', latitude: -29.9658, longitude: 30.9482 },
+const ROADBLOCKS: RoadblockMarker[] = [
+  { id: 'roadblock-1', label: 'Police roadblock - N1 Northbound', latitude: -25.9843, longitude: 28.1154, source: 'fallback' },
+  { id: 'roadblock-2', label: 'Police roadblock - M1 South off-ramp', latitude: -26.1784, longitude: 28.0471, source: 'fallback' },
+  { id: 'roadblock-3', label: 'Police roadblock - N3 Heidelberg corridor', latitude: -26.2467, longitude: 28.1297, source: 'fallback' },
+  { id: 'roadblock-4', label: 'Police roadblock - N2 Airport approach', latitude: -29.9658, longitude: 30.9482, source: 'fallback' },
 ];
 
 export type ResponderStatus = 'Available' | 'En Route' | 'On Scene';
@@ -86,6 +86,21 @@ export interface DispatchRoute {
   distanceKm: number;
 }
 
+export interface MapBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
+
+export interface RoadblockMarker {
+  id: string;
+  label: string;
+  latitude: number;
+  longitude: number;
+  source: 'overpass' | 'fallback';
+}
+
 export interface FocusTarget {
   id: string;
   latitude: number;
@@ -101,8 +116,10 @@ export interface AlertsMapProps {
   centerTrigger: number;
   showLoadsheddingZones: boolean;
   showRoadblocks: boolean;
+  roadblocks: RoadblockMarker[];
   onDispatch: (incidentId: string) => void;
   onFocusHandled: () => void;
+  onBoundsChange: (bounds: MapBounds) => void;
   priorityColors: {
     high: string;
     medium: string;
@@ -205,11 +222,13 @@ function FocusController({
   centerTrigger,
   onFocusHandled,
   markerRefs,
+  onBoundsChange,
 }: {
   focusTarget: FocusTarget | null;
   centerTrigger: number;
   onFocusHandled: () => void;
   markerRefs: MutableRefObject<Record<string, L.CircleMarker>>;
+  onBoundsChange: (bounds: MapBounds) => void;
 }) {
   const map = useMap();
 
@@ -231,6 +250,27 @@ function FocusController({
     map.flyTo(JOHANNESBURG_CENTER, DEFAULT_ZOOM, { duration: 0.8 });
   }, [centerTrigger, map]);
 
+  useEffect(() => {
+    const emitBounds = () => {
+      const bounds = map.getBounds();
+      onBoundsChange({
+        south: bounds.getSouth(),
+        west: bounds.getWest(),
+        north: bounds.getNorth(),
+        east: bounds.getEast(),
+      });
+    };
+
+    emitBounds();
+    map.on('moveend', emitBounds);
+    map.on('zoomend', emitBounds);
+
+    return () => {
+      map.off('moveend', emitBounds);
+      map.off('zoomend', emitBounds);
+    };
+  }, [map, onBoundsChange]);
+
   return null;
 }
 
@@ -242,8 +282,10 @@ export default function AlertsMap({
   centerTrigger,
   showLoadsheddingZones,
   showRoadblocks,
+  roadblocks,
   onDispatch,
   onFocusHandled,
+  onBoundsChange,
   priorityColors,
   mapColors,
 }: AlertsMapProps) {
@@ -297,6 +339,7 @@ export default function AlertsMap({
         centerTrigger={centerTrigger}
         onFocusHandled={onFocusHandled}
         markerRefs={markerRefs}
+        onBoundsChange={onBoundsChange}
       />
 
       {showLoadsheddingZones &&
@@ -340,7 +383,7 @@ export default function AlertsMap({
             }}
           >
             <Popup>
-              <Space direction="vertical" size={8}>
+              <Space orientation="vertical" size={8}>
                 <div>
                   <div style={{ fontWeight: 700 }}>{incident.title}</div>
                   <Text style={{ color: mapColors.popupMutedText }}>{incident.location}</Text>
@@ -372,7 +415,7 @@ export default function AlertsMap({
           icon={createResponderIcon(responder, mapColors)}
         >
           <Popup>
-            <Space direction="vertical" size={6}>
+            <Space orientation="vertical" size={6}>
               <div style={{ fontWeight: 700 }}>
                 {responder.rank} {responder.name}
               </div>
@@ -405,14 +448,19 @@ export default function AlertsMap({
       ))}
 
       {showRoadblocks &&
-        ROADBLOCKS.map((roadblock) => (
+        (roadblocks.length > 0 ? roadblocks : ROADBLOCKS).map((roadblock) => (
           <Marker
             key={roadblock.id}
             position={[roadblock.latitude, roadblock.longitude]}
             icon={createRoadblockIcon(mapColors.roadblock)}
           >
             <Popup>
-              <div style={{ fontWeight: 700 }}>{roadblock.label}</div>
+              <Space orientation="vertical" size={4}>
+                <div style={{ fontWeight: 700 }}>{roadblock.label}</div>
+                <Text style={{ color: mapColors.popupMutedText }}>
+                  {roadblock.source === 'overpass' ? 'Live OSM / Overpass data' : 'Fallback operational marker'}
+                </Text>
+              </Space>
             </Popup>
           </Marker>
         ))}

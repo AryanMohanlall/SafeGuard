@@ -32,6 +32,8 @@ import type {
   AlertsMapProps,
   DispatchRoute,
   FocusTarget,
+  MapBounds,
+  RoadblockMarker,
   Responder,
   ResponderStatus,
 } from '@/components/safeguard/AlertsMap';
@@ -190,6 +192,13 @@ function buildCaseLookup(cases: ICase[]) {
   return new Map(cases.map((item) => [item.id, item]));
 }
 
+const DEFAULT_MAP_BOUNDS: MapBounds = {
+  south: -26.35,
+  west: 27.85,
+  north: -25.95,
+  east: 28.25,
+};
+
 export default function AlertsDispatchPage() {
   const { styles, cx } = useStyles();
   const router = useRouter();
@@ -207,12 +216,52 @@ export default function AlertsDispatchPage() {
   const [centerTrigger, setCenterTrigger] = useState(0);
   const [showLoadsheddingZones, setShowLoadsheddingZones] = useState(false);
   const [showRoadblocks, setShowRoadblocks] = useState(false);
+  const [mapBounds, setMapBounds] = useState<MapBounds>(DEFAULT_MAP_BOUNDS);
+  const [roadblocks, setRoadblocks] = useState<RoadblockMarker[]>([]);
 
   useEffect(() => {
     fetchIncidents({ skipCount: 0, maxResultCount: 1000 });
     fetchCases({ skipCount: 0, maxResultCount: 100, sorting: 'lastActivityAt DESC' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!showRoadblocks) return;
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      const params = new URLSearchParams({
+        south: mapBounds.south.toString(),
+        west: mapBounds.west.toString(),
+        north: mapBounds.north.toString(),
+        east: mapBounds.east.toString(),
+      });
+
+      try {
+        const response = await fetch(`/api/alerts/roadblocks?${params.toString()}`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          setRoadblocks([]);
+          return;
+        }
+
+        const payload = (await response.json()) as { roadblocks?: RoadblockMarker[] };
+        setRoadblocks(payload.roadblocks ?? []);
+      } catch {
+        if (!controller.signal.aborted) {
+          setRoadblocks([]);
+        }
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [mapBounds, showRoadblocks]);
 
   const caseLookup = useMemo(() => buildCaseLookup(cases), [cases]);
 
@@ -326,8 +375,10 @@ export default function AlertsDispatchPage() {
     centerTrigger,
     showLoadsheddingZones,
     showRoadblocks,
+    roadblocks,
     onDispatch: handleDispatch,
     onFocusHandled: () => setFocusTarget(null),
+    onBoundsChange: setMapBounds,
     priorityColors: {
       high: token.colorError,
       medium: token.colorWarning,
