@@ -54,4 +54,6 @@ public class Incident : FullAuditedEntity<Guid>
 
     [Required]
     public DateTime ReportedAt { get; set; }
+
+    public System.Collections.Generic.ICollection<Dispatches.Dispatch> Dispatches { get; set; }
 }

@@ -9,7 +9,6 @@ import {
   CompassOutlined,
   EnvironmentOutlined,
   SendOutlined,
-  ThunderboltOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
 import {
@@ -18,6 +17,7 @@ import {
   Button,
   Card,
   Collapse,
+  message,
   Space,
   Statistic,
   Tag,
@@ -25,6 +25,8 @@ import {
   Typography,
 } from 'antd';
 import { useCaseAction, useCaseState } from '@/providers/cases-provider';
+import { useDispatchAction, useDispatchState } from '@/providers/dispatch-provider';
+import type { IDispatch } from '@/providers/dispatch-provider/context';
 import type { ICase } from '@/providers/cases-provider/context';
 import { useIncidentAction, useIncidentState } from '@/providers/incidents-provider';
 import type { IIncident } from '@/providers/incidents-provider/context';
@@ -37,6 +39,7 @@ import type {
   Responder,
   ResponderStatus,
 } from '@/components/safeguard/AlertsMap';
+import { getAxiosInstance } from '@/utils/axiosInstance';
 import { useStyles } from './styles/style';
 
 const { Text, Title } = Typography;
@@ -58,75 +61,11 @@ const AlertsMap = dynamic(() => import('@/components/safeguard/AlertsMap'), {
 });
 
 const ACTIVE_CASE_STATUSES = new Set(['Draft', 'Open', 'UnderReview', 'PendingTrial']);
+const ACTIVE_DISPATCH_STATUSES = new Set(['Dispatched', 'EnRoute', 'OnScene']);
 
-const INITIAL_RESPONDERS: Responder[] = [
-  {
-    id: 'responder-1',
-    rank: 'Sgt.',
-    name: 'Themba Dlamini',
-    sector: 'Sandton sector',
-    status: 'Available',
-    latitude: -26.1076,
-    longitude: 28.0567,
-    initials: 'TD',
-    lastUpdatedMinutes: 4,
-  },
-  {
-    id: 'responder-2',
-    rank: 'Cst.',
-    name: 'Priya Naidoo',
-    sector: 'Rosebank sector',
-    status: 'En Route',
-    latitude: -26.1459,
-    longitude: 28.0404,
-    initials: 'PN',
-    lastUpdatedMinutes: 7,
-  },
-  {
-    id: 'responder-3',
-    rank: 'Sgt.',
-    name: 'Johan van der Berg',
-    sector: 'Soweto sector',
-    status: 'Available',
-    latitude: -26.2678,
-    longitude: 27.8585,
-    initials: 'JV',
-    lastUpdatedMinutes: 2,
-  },
-  {
-    id: 'responder-4',
-    rank: 'Cst.',
-    name: 'Nomvula Khumalo',
-    sector: 'Midrand sector',
-    status: 'Available',
-    latitude: -25.9992,
-    longitude: 28.1263,
-    initials: 'NK',
-    lastUpdatedMinutes: 11,
-  },
-  {
-    id: 'responder-5',
-    rank: 'Lt.',
-    name: 'Farouk Hendricks',
-    sector: 'CBD sector',
-    status: 'On Scene',
-    latitude: -26.2041,
-    longitude: 28.0473,
-    initials: 'FH',
-    lastUpdatedMinutes: 1,
-  },
-  {
-    id: 'responder-6',
-    rank: 'Cst.',
-    name: 'Lerato Molefe',
-    sector: 'Randburg sector',
-    status: 'Available',
-    latitude: -26.0934,
-    longitude: 27.9946,
-    initials: 'LM',
-    lastUpdatedMinutes: 6,
-  },
-];
+type OperationalResponder = Responder & {
+  officialUserId: number;
+};
 
 function derivePriority(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' {
   if (incident.priorityTag) {
@@ -150,10 +89,9 @@ function getResponderTagColor(status: ResponderStatus) {
   return 'error';
 }
 
-function getStatusLabel(route: DispatchRoute | undefined, responders: Responder[]): 'Unassigned' | 'Dispatched' | 'On Scene' {
-  if (!route) return 'Unassigned';
-  const responder = responders.find((item) => item.id === route.responderId);
-  return responder?.status === 'On Scene' ? 'On Scene' : 'Dispatched';
+function getStatusLabel(dispatch: IDispatch | undefined): 'Unassigned' | 'Dispatched' | 'On Scene' {
+  if (!dispatch) return 'Unassigned';
+  return dispatch.status === 'OnScene' ? 'On Scene' : 'Dispatched';
 }
 
 function getStatusColor(status: 'Unassigned' | 'Dispatched' | 'On Scene') {
@@ -203,18 +141,18 @@ export default function AlertsDispatchPage() {
   const { styles, cx } = useStyles();
   const router = useRouter();
   const { token } = theme.useToken();
+  const [messageApi, contextHolder] = message.useMessage();
+  const axiosInstance = getAxiosInstance();
 
   const { items: incidents, isPending: incidentsPending } = useIncidentState();
   const { fetchAll: fetchIncidents } = useIncidentAction();
   const { items: cases, isPending: casesPending } = useCaseState();
   const { fetchAll: fetchCases } = useCaseAction();
-
-  const [responders, setResponders] = useState<Responder[]>(INITIAL_RESPONDERS);
-  const [routes, setRoutes] = useState<DispatchRoute[]>([]);
+  const { items: dispatches, isPending: dispatchesPending } = useDispatchState();
+  const { create: createDispatch, fetchAll: fetchDispatches, transitionStatus } = useDispatchAction();
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
   const focusSequenceRef = useRef(0);
   const [centerTrigger, setCenterTrigger] = useState(0);
-  const [showLoadsheddingZones, setShowLoadsheddingZones] = useState(false);
   const [showRoadblocks, setShowRoadblocks] = useState(false);
   const [mapBounds, setMapBounds] = useState<MapBounds>(DEFAULT_MAP_BOUNDS);
   const [roadblocks, setRoadblocks] = useState<RoadblockMarker[]>([]);
@@ -222,46 +160,43 @@ export default function AlertsDispatchPage() {
   useEffect(() => {
     fetchIncidents({ skipCount: 0, maxResultCount: 1000 });
     fetchCases({ skipCount: 0, maxResultCount: 100, sorting: 'lastActivityAt DESC' });
+    fetchDispatches({ skipCount: 0, maxResultCount: 1000 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!showRoadblocks) return;
+    if (!showRoadblocks) {
+      setRoadblocks([]);
+      return;
+    }
 
-    const controller = new AbortController();
+    let cancelled = false;
     const timeoutId = window.setTimeout(async () => {
-      const params = new URLSearchParams({
-        south: mapBounds.south.toString(),
-        west: mapBounds.west.toString(),
-        north: mapBounds.north.toString(),
-        east: mapBounds.east.toString(),
-      });
-
       try {
-        const response = await fetch(`/api/alerts/roadblocks?${params.toString()}`, {
-          signal: controller.signal,
-          cache: 'no-store',
+        const res = await axiosInstance.get('/api/services/app/roadblock/GetLive', {
+          params: {
+            south: mapBounds.south,
+            west: mapBounds.west,
+            north: mapBounds.north,
+            east: mapBounds.east,
+          },
         });
 
-        if (!response.ok) {
-          setRoadblocks([]);
-          return;
+        if (!cancelled) {
+          setRoadblocks(res.data.result?.items ?? []);
         }
-
-        const payload = (await response.json()) as { roadblocks?: RoadblockMarker[] };
-        setRoadblocks(payload.roadblocks ?? []);
       } catch {
-        if (!controller.signal.aborted) {
+        if (!cancelled) {
           setRoadblocks([]);
         }
       }
     }, 350);
 
     return () => {
-      controller.abort();
+      cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [mapBounds, showRoadblocks]);
+  }, [axiosInstance, mapBounds, showRoadblocks]);
 
   const caseLookup = useMemo(() => buildCaseLookup(cases), [cases]);
 
@@ -290,13 +225,111 @@ export default function AlertsDispatchPage() {
       .slice(0, 5);
   }, [cases]);
 
-  const availableCount = responders.filter((item) => item.status === 'Available').length;
-  const enRouteCount = responders.filter((item) => item.status === 'En Route').length;
+  const activeDispatches = useMemo(() => {
+    const latestByIncident = new Map<string, IDispatch>();
+
+    [...dispatches]
+      .filter((dispatch) => ACTIVE_DISPATCH_STATUSES.has(dispatch.status))
+      .sort((left, right) => new Date(right.assignedAt).getTime() - new Date(left.assignedAt).getTime())
+      .forEach((dispatch) => {
+        if (!latestByIncident.has(dispatch.incidentId)) {
+          latestByIncident.set(dispatch.incidentId, dispatch);
+        }
+      });
+
+    return [...latestByIncident.values()];
+  }, [dispatches]);
+
+  const dispatchByIncidentId = useMemo(
+    () => new Map(activeDispatches.map((dispatch) => [dispatch.incidentId, dispatch])),
+    [activeDispatches],
+  );
+
+  const dispatchRoutes = useMemo<DispatchRoute[]>(
+    () =>
+      activeDispatches
+        .filter(
+          (dispatch) =>
+            dispatch.responderLatitude != null &&
+            dispatch.responderLongitude != null &&
+            dispatch.incidentLatitudeSnapshot != null &&
+            dispatch.incidentLongitudeSnapshot != null,
+        )
+        .map((dispatch) => ({
+          incidentId: dispatch.incidentId,
+          responderId: dispatch.officialUserId?.toString() ?? dispatch.responderExternalId,
+          responderLatitude: dispatch.responderLatitude as number,
+          responderLongitude: dispatch.responderLongitude as number,
+          incidentLatitude: dispatch.incidentLatitudeSnapshot as number,
+          incidentLongitude: dispatch.incidentLongitudeSnapshot as number,
+          distanceKm: dispatch.estimatedDistanceKm ?? 0,
+        })),
+    [activeDispatches],
+  );
+
+  const operationalResponders = useMemo<OperationalResponder[]>(() => {
+    const latestByResponder = new Map<number, IDispatch>();
+
+    [...dispatches]
+      .filter(
+        (dispatch) =>
+          dispatch.responderLatitude != null &&
+          dispatch.responderLongitude != null &&
+          dispatch.officialUserId != null,
+      )
+      .sort((left, right) => {
+        const leftDate = new Date(left.clearedAt ?? left.onSceneAt ?? left.enRouteAt ?? left.assignedAt).getTime();
+        const rightDate = new Date(right.clearedAt ?? right.onSceneAt ?? right.enRouteAt ?? right.assignedAt).getTime();
+        return rightDate - leftDate;
+      })
+      .forEach((dispatch) => {
+        if (!latestByResponder.has(dispatch.officialUserId as number)) {
+          latestByResponder.set(dispatch.officialUserId as number, dispatch);
+        }
+      });
+
+    const statusByResponderId = new Map<number, ResponderStatus>();
+
+    for (const dispatch of activeDispatches) {
+      if (dispatch.officialUserId == null) continue;
+      const nextStatus: ResponderStatus = dispatch.status === 'OnScene' ? 'On Scene' : 'En Route';
+      statusByResponderId.set(dispatch.officialUserId, nextStatus);
+    }
+
+    return [...latestByResponder.values()].map((dispatch) => {
+      const lastUpdatedAt = dispatch.clearedAt ?? dispatch.onSceneAt ?? dispatch.enRouteAt ?? dispatch.assignedAt;
+      const nameParts = dispatch.responderName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2);
+      const initials = nameParts.map((part) => part[0]?.toUpperCase() ?? '').join('') || 'NA';
+
+      return {
+        id: dispatch.officialUserId!.toString(),
+        officialUserId: dispatch.officialUserId as number,
+        rank: dispatch.responderRank,
+        name: dispatch.responderName,
+        sector: dispatch.responderSector ?? 'Unassigned sector',
+        status: statusByResponderId.get(dispatch.officialUserId as number) ?? 'Available',
+        latitude: dispatch.responderLatitude as number,
+        longitude: dispatch.responderLongitude as number,
+        initials,
+        lastUpdatedMinutes: Math.max(
+          0,
+          Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 60000),
+        ),
+      };
+    });
+  }, [activeDispatches, dispatches]);
+
+  const availableCount = operationalResponders.filter((item) => item.status === 'Available').length;
+  const enRouteCount = operationalResponders.filter((item) => item.status === 'En Route').length;
   const highPriorityUnassigned = queueIncidents.filter((incident) => {
     const isHigh = derivePriority(incident) === 'HIGH';
-    const hasRoute = routes.some((route) => route.incidentId === incident.id);
+    const hasRoute = dispatchByIncidentId.has(incident.id);
     return isHigh && !hasRoute;
   }).length;
+  const canDispatch = operationalResponders.some((item) => item.status === 'Available');
 
   const focusIncident = (incident: IIncident) => {
     if (incident.latitude == null || incident.longitude == null) return;
@@ -310,18 +343,24 @@ export default function AlertsDispatchPage() {
     });
   };
 
-  const handleDispatch = (incidentId: string) => {
+  const handleDispatch = async (incidentId: string) => {
     const incident = incidents.find((item) => item.id === incidentId);
-    if (!incident || incident.latitude == null || incident.longitude == null) return;
+    if (!incident || incident.latitude == null || incident.longitude == null) {
+      messageApi.error('This incident is missing coordinates, so it cannot be dispatched from the map.');
+      return;
+    }
 
-    const currentRoute = routes.find((item) => item.incidentId === incidentId);
-    if (currentRoute) {
+    const currentDispatch = dispatchByIncidentId.get(incidentId);
+    if (currentDispatch) {
       focusIncident(incident);
       return;
     }
 
-    const availableResponders = responders.filter((item) => item.status === 'Available');
-    if (availableResponders.length === 0) return;
+    const availableResponders = operationalResponders.filter((item) => item.status === 'Available');
+    if (availableResponders.length === 0) {
+      messageApi.error('No available officials can be dispatched yet. Add or migrate dispatch-linked officials first.');
+      return;
+    }
 
     const nearestResponder = availableResponders.reduce((closest, candidate) => {
       const candidateDistance = haversineKm(
@@ -338,28 +377,39 @@ export default function AlertsDispatchPage() {
       return candidateDistance < closest.distance
         ? { responder: candidate, distance: candidateDistance }
         : closest;
-    }, null as { responder: Responder; distance: number } | null);
+    }, null as { responder: OperationalResponder; distance: number } | null);
 
-    if (!nearestResponder) return;
+    if (!nearestResponder) {
+      messageApi.error('Unable to determine the nearest official for this incident.');
+      return;
+    }
 
-    const route: DispatchRoute = {
+    const created = await createDispatch({
       incidentId,
-      responderId: nearestResponder.responder.id,
+      caseId: incident.caseId,
+      officialUserId: nearestResponder.responder.officialUserId,
+      status: 'EnRoute',
+      responderExternalId: nearestResponder.responder.id,
+      responderRank: nearestResponder.responder.rank,
+      responderName: nearestResponder.responder.name,
+      responderSector: nearestResponder.responder.sector,
       responderLatitude: nearestResponder.responder.latitude,
       responderLongitude: nearestResponder.responder.longitude,
-      incidentLatitude: incident.latitude,
-      incidentLongitude: incident.longitude,
-      distanceKm: Number(nearestResponder.distance.toFixed(1)),
-    };
+      incidentLatitudeSnapshot: incident.latitude,
+      incidentLongitudeSnapshot: incident.longitude,
+      estimatedDistanceKm: Number(nearestResponder.distance.toFixed(1)),
+      assignedAt: new Date().toISOString(),
+      enRouteAt: new Date().toISOString(),
+      assignmentSource: 'Manual',
+      notes: 'Created from Alerts & Dispatch board',
+    });
 
-    setRoutes((current) => [...current, route]);
-    setResponders((current) =>
-      current.map((item) =>
-        item.id === nearestResponder.responder.id
-          ? { ...item, status: 'En Route', lastUpdatedMinutes: 0 }
-          : item,
-        ),
-    );
+    if (!created) {
+      messageApi.error('Dispatch creation failed. Check that the database migration is applied and the user has the Offical role.');
+      return;
+    }
+
+    messageApi.success('Dispatch created.');
     focusIncident(incident);
   };
 
@@ -369,11 +419,10 @@ export default function AlertsDispatchPage() {
 
   const mapProps: AlertsMapProps = {
     incidents: queueIncidents,
-    responders,
-    routes,
+    responders: operationalResponders,
+    routes: dispatchRoutes,
     focusTarget,
     centerTrigger,
-    showLoadsheddingZones,
     showRoadblocks,
     roadblocks,
     onDispatch: handleDispatch,
@@ -389,8 +438,6 @@ export default function AlertsDispatchPage() {
       responderText: token.colorWhite,
       routeBlue: token.colorInfo,
       roadblock: token.colorWarning,
-      roadsheddingFill: token.colorErrorBg,
-      roadsheddingStroke: token.colorError,
       popupButton: token.colorPrimary,
       popupButtonText: token.colorWhite,
       popupMutedText: token.colorTextSecondary,
@@ -401,6 +448,7 @@ export default function AlertsDispatchPage() {
 
   return (
     <div className={styles.page}>
+      {contextHolder}
       <div className={cx(styles.panel, styles.leftPanel)}>
         <div className={styles.leftScroll}>
           <div className={styles.headerBlock}>
@@ -410,11 +458,18 @@ export default function AlertsDispatchPage() {
             <Text type="secondary">
               Live command view for active incidents, responder availability, and field constraints.
             </Text>
+            {!canDispatch && (
+              <div>
+                <Text type="warning">
+                  Dispatching is currently unavailable because no available dispatch-linked officials were found.
+                </Text>
+              </div>
+            )}
           </div>
 
           <div className={styles.statsGrid}>
             <Card size="small" className={styles.statCard}>
-              <Statistic title="Active incidents" value={queueIncidents.length} loading={incidentsPending} />
+              <Statistic title="Active incidents" value={queueIncidents.length} loading={incidentsPending || dispatchesPending} />
             </Card>
             <Card size="small" className={styles.statCard}>
               <Statistic
@@ -449,9 +504,10 @@ export default function AlertsDispatchPage() {
             ) : (
               <div>
                 {queueIncidents.map((incident) => {
-                  const route = routes.find((item) => item.incidentId === incident.id);
+                  const dispatch = dispatchByIncidentId.get(incident.id);
+                  const route = dispatchRoutes.find((item) => item.incidentId === incident.id);
                   const priority = derivePriority(incident);
-                  const statusLabel = getStatusLabel(route, responders);
+                  const statusLabel = getStatusLabel(dispatch);
                   const hasCoordinates = incident.latitude != null && incident.longitude != null;
 
                   return (
@@ -496,7 +552,7 @@ export default function AlertsDispatchPage() {
                               type="primary"
                               icon={<SendOutlined />}
                               onClick={() => handleDispatch(incident.id)}
-                              disabled={!hasCoordinates || !!route}
+                              disabled={!hasCoordinates || !!route || !canDispatch}
                             >
                               {route ? 'Dispatched' : 'Dispatch'}
                             </Button>
@@ -510,9 +566,12 @@ export default function AlertsDispatchPage() {
             )}
           </Card>
 
-          <Card title="Available responders" className={styles.sectionCard}>
+          <Card title="Responders" className={styles.sectionCard}>
             <div>
-              {responders.map((responder) => (
+              {operationalResponders.length === 0 ? (
+                <Text type="secondary">No responders available from dispatch history yet.</Text>
+              ) : (
+                operationalResponders.map((responder) => (
                 <div key={responder.id} className={styles.listItem}>
                   <Card size="small" className={styles.responderCard}>
                     <div className={styles.responderRow}>
@@ -537,7 +596,8 @@ export default function AlertsDispatchPage() {
                     </div>
                   </Card>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </Card>
 
@@ -588,13 +648,6 @@ export default function AlertsDispatchPage() {
             <Space orientation="vertical" size={10} style={{ width: '100%' }}>
               <Text strong>Map controls</Text>
               <Button
-                icon={<ThunderboltOutlined />}
-                onClick={() => setShowLoadsheddingZones((value) => !value)}
-                type={showLoadsheddingZones ? 'primary' : 'default'}
-              >
-                Loadshedding zones
-              </Button>
-              <Button
                 icon={<WarningOutlined />}
                 onClick={() => setShowRoadblocks((value) => !value)}
                 type={showRoadblocks ? 'primary' : 'default'}
@@ -604,10 +657,13 @@ export default function AlertsDispatchPage() {
               <Button
                 icon={<ClearOutlined />}
                 onClick={() => {
-                  setRoutes([]);
-                  setResponders(INITIAL_RESPONDERS);
+                  void Promise.all(
+                    activeDispatches.map((dispatch) =>
+                      transitionStatus({ id: dispatch.id, toStatus: 'Cancelled', notes: 'Cleared from alerts board' }),
+                    ),
+                  );
                 }}
-                disabled={routes.length === 0}
+                disabled={activeDispatches.length === 0}
               >
                 Clear routes
               </Button>
@@ -616,21 +672,6 @@ export default function AlertsDispatchPage() {
               </Button>
             </Space>
           </Card>
-
-          {showLoadsheddingZones && (
-            <Card size="small" className={styles.legend}>
-              <Space align="center">
-                <span
-                  className={styles.legendSwatch}
-                  style={{
-                    background: token.colorErrorBg,
-                    borderColor: token.colorError,
-                  }}
-                />
-                <Text>Stage 2 loadshedding active</Text>
-              </Space>
-            </Card>
-          )}
         </div>
       </div>
     </div>

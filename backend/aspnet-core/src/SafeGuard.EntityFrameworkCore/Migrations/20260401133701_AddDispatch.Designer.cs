@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SafeGuard.EntityFrameworkCore;
@@ -11,9 +12,11 @@ using SafeGuard.EntityFrameworkCore;
 namespace SafeGuard.Migrations
 {
     [DbContext(typeof(SafeGuardDbContext))]
-    partial class SafeGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260401133701_AddDispatch")]
+    partial class AddDispatch
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1884,9 +1887,6 @@ namespace SafeGuard.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<long?>("OfficialUserId")
-                        .HasColumnType("bigint");
-
                     b.Property<DateTime?>("OnSceneAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1927,8 +1927,6 @@ namespace SafeGuard.Migrations
                     b.HasIndex("CaseId");
 
                     b.HasIndex("IncidentId");
-
-                    b.HasIndex("OfficialUserId");
 
                     b.HasIndex("Status");
 
@@ -2514,16 +2512,9 @@ namespace SafeGuard.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SafeGuard.Authorization.Users.User", "OfficialUser")
-                        .WithMany()
-                        .HasForeignKey("OfficialUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("Case");
 
                     b.Navigation("Incident");
-
-                    b.Navigation("OfficialUser");
                 });
 
             modelBuilder.Entity("SafeGuard.Domains.Evidence.ChainOfCustody", b =>

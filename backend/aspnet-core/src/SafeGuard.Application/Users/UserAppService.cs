@@ -123,6 +123,27 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
         return new ListResultDto<RoleDto>(ObjectMapper.Map<List<RoleDto>>(roles));
     }
 
+    public async Task<ListResultDto<UserDto>> GetOfficials()
+    {
+        var officialRoleId = await _roleRepository.GetAll()
+            .Where(role => role.Name == StaticRoleNames.Tenants.Offical)
+            .Select(role => (int?)role.Id)
+            .FirstOrDefaultAsync();
+
+        if (!officialRoleId.HasValue)
+        {
+            return new ListResultDto<UserDto>(new List<UserDto>());
+        }
+
+        var officials = await Repository.GetAllIncluding(user => user.Roles)
+            .Where(user => user.IsActive && user.Roles.Any(role => role.RoleId == officialRoleId.Value))
+            .OrderBy(user => user.Name)
+            .ThenBy(user => user.Surname)
+            .ToListAsync();
+
+        return new ListResultDto<UserDto>(officials.Select(MapToEntityDto).ToList());
+    }
+
     public async Task ChangeLanguage(ChangeUserLanguageDto input)
     {
         await SettingManager.ChangeSettingForUserAsync(

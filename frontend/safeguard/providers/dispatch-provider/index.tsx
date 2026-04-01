@@ -1,0 +1,88 @@
+'use client';
+import { useContext, useReducer, useRef } from 'react';
+import { getAxiosInstance } from '@/utils/axiosInstance';
+import { DispatchReducer } from './reducer';
+import {
+  DispatchActionContext,
+  DispatchStateContext,
+  ICreateDispatchInput,
+  INITIAL_STATE,
+  ITransitionDispatchStatusInput,
+} from './context';
+import {
+  createError,
+  createPending,
+  createSuccess,
+  fetchAllError,
+  fetchAllPending,
+  fetchAllSuccess,
+  transitionError,
+  transitionPending,
+  transitionSuccess,
+} from './actions';
+
+const BASE = '/api/services/app/dispatch';
+
+export const DispatchProvider = ({ children }: { children: React.ReactNode }) => {
+  const instance = getAxiosInstance();
+  const [state, dispatch] = useReducer(DispatchReducer, INITIAL_STATE);
+  const lastFetchParamsRef = useRef<Record<string, unknown> | undefined>(undefined);
+
+  const fetchAll = async (params?: Record<string, unknown>) => {
+    lastFetchParamsRef.current = params;
+    dispatch(fetchAllPending());
+    try {
+      const res = await instance.get(`${BASE}/GetAll`, { params });
+      const { items, totalCount } = res.data.result;
+      dispatch(fetchAllSuccess({ items, totalCount }));
+    } catch {
+      dispatch(fetchAllError());
+    }
+  };
+
+  const create = async (input: ICreateDispatchInput) => {
+    dispatch(createPending());
+    try {
+      const res = await instance.post(`${BASE}/Create`, input);
+      dispatch(createSuccess(res.data.result));
+      await fetchAll(lastFetchParamsRef.current);
+      return res.data.result;
+    } catch {
+      dispatch(createError());
+      return null;
+    }
+  };
+
+  const transitionStatus = async (input: ITransitionDispatchStatusInput) => {
+    dispatch(transitionPending());
+    try {
+      const res = await instance.post(`${BASE}/TransitionStatus`, input);
+      dispatch(transitionSuccess(res.data.result));
+      await fetchAll(lastFetchParamsRef.current);
+      return res.data.result;
+    } catch {
+      dispatch(transitionError());
+      return null;
+    }
+  };
+
+  return (
+    <DispatchStateContext.Provider value={state}>
+      <DispatchActionContext.Provider value={{ fetchAll, create, transitionStatus }}>
+        {children}
+      </DispatchActionContext.Provider>
+    </DispatchStateContext.Provider>
+  );
+};
+
+export const useDispatchState = () => {
+  const context = useContext(DispatchStateContext);
+  if (!context) throw new Error('useDispatchState must be used within DispatchProvider');
+  return context;
+};
+
+export const useDispatchAction = () => {
+  const context = useContext(DispatchActionContext);
+  if (!context) throw new Error('useDispatchAction must be used within DispatchProvider');
+  return context;
+};

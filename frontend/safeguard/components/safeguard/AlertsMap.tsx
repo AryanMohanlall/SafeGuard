@@ -8,7 +8,6 @@ import {
   CircleMarker,
   MapContainer,
   Marker,
-  Polygon,
   Polyline,
   Popup,
   TileLayer,
@@ -27,40 +26,6 @@ L.Icon.Default.mergeOptions({
 
 const JOHANNESBURG_CENTER: [number, number] = [-26.2041, 28.0473];
 const DEFAULT_ZOOM = 11;
-
-const LOADSHEDDING_ZONES: [number, number][][] = [
-  [
-    [-26.126, 27.955],
-    [-26.104, 27.993],
-    [-26.143, 28.021],
-    [-26.169, 27.972],
-  ],
-  [
-    [-26.032, 28.071],
-    [-26.014, 28.134],
-    [-26.061, 28.162],
-    [-26.087, 28.098],
-  ],
-  [
-    [-33.934, 18.427],
-    [-33.915, 18.471],
-    [-33.952, 18.496],
-    [-33.977, 18.446],
-  ],
-  [
-    [-33.888, 18.511],
-    [-33.872, 18.56],
-    [-33.914, 18.583],
-    [-33.933, 18.53],
-  ],
-];
-
-const ROADBLOCKS: RoadblockMarker[] = [
-  { id: 'roadblock-1', label: 'Police roadblock - N1 Northbound', latitude: -25.9843, longitude: 28.1154, source: 'fallback' },
-  { id: 'roadblock-2', label: 'Police roadblock - M1 South off-ramp', latitude: -26.1784, longitude: 28.0471, source: 'fallback' },
-  { id: 'roadblock-3', label: 'Police roadblock - N3 Heidelberg corridor', latitude: -26.2467, longitude: 28.1297, source: 'fallback' },
-  { id: 'roadblock-4', label: 'Police roadblock - N2 Airport approach', latitude: -29.9658, longitude: 30.9482, source: 'fallback' },
-];
 
 export type ResponderStatus = 'Available' | 'En Route' | 'On Scene';
 
@@ -114,7 +79,6 @@ export interface AlertsMapProps {
   routes: DispatchRoute[];
   focusTarget: FocusTarget | null;
   centerTrigger: number;
-  showLoadsheddingZones: boolean;
   showRoadblocks: boolean;
   roadblocks: RoadblockMarker[];
   onDispatch: (incidentId: string) => void;
@@ -130,8 +94,6 @@ export interface AlertsMapProps {
     responderText: string;
     routeBlue: string;
     roadblock: string;
-    roadsheddingFill: string;
-    roadsheddingStroke: string;
     popupButton: string;
     popupButtonText: string;
     popupMutedText: string;
@@ -280,7 +242,6 @@ export default function AlertsMap({
   routes,
   focusTarget,
   centerTrigger,
-  showLoadsheddingZones,
   showRoadblocks,
   roadblocks,
   onDispatch,
@@ -341,20 +302,6 @@ export default function AlertsMap({
         markerRefs={markerRefs}
         onBoundsChange={onBoundsChange}
       />
-
-      {showLoadsheddingZones &&
-        LOADSHEDDING_ZONES.map((coordinates, index) => (
-          <Polygon
-            key={`loadshedding-${index}`}
-            positions={coordinates}
-            pathOptions={{
-              color: mapColors.roadsheddingStroke,
-              fillColor: mapColors.roadsheddingFill,
-              fillOpacity: 0.35,
-              weight: 2,
-            }}
-          />
-        ))}
 
       {positionedIncidents.map((incident) => {
         const priority = derivePriority(incident);
@@ -448,7 +395,7 @@ export default function AlertsMap({
       ))}
 
       {showRoadblocks &&
-        (roadblocks.length > 0 ? roadblocks : ROADBLOCKS).map((roadblock) => (
+        roadblocks.map((roadblock) => (
           <Marker
             key={roadblock.id}
             position={[roadblock.latitude, roadblock.longitude]}
@@ -458,7 +405,7 @@ export default function AlertsMap({
               <Space orientation="vertical" size={4}>
                 <div style={{ fontWeight: 700 }}>{roadblock.label}</div>
                 <Text style={{ color: mapColors.popupMutedText }}>
-                  {roadblock.source === 'overpass' ? 'Live OSM / Overpass data' : 'Fallback operational marker'}
+                  {roadblock.source === 'overpass' ? 'Live OSM / Overpass data' : 'Backend-provided roadblock'}
                 </Text>
               </Space>
             </Popup>

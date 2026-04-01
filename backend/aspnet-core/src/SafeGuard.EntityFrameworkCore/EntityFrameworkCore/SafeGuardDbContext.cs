@@ -4,6 +4,7 @@ using SafeGuard.Authorization.Roles;
 using SafeGuard.Authorization.Users;
 using SafeGuard.Domains.Blockchain;
 using SafeGuard.Domains.Case;
+using SafeGuard.Domains.Dispatches;
 using SafeGuard.Domains.Incidents;
 using SafeGuard.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
     public DbSet<CaseEntity> Cases { get; set; }
     public DbSet<CaseNote> CaseNotes { get; set; }
     public DbSet<CaseStatusHistory> CaseStatusHistories { get; set; }
+    public DbSet<Dispatch> Dispatches { get; set; }
 
     public DbSet<EvidenceEntity> Evidences { get; set; }
     public DbSet<ChainOfCustodyEntity> ChainOfCustodies { get; set; }
@@ -54,6 +56,11 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
 
         modelBuilder.Entity<CaseEntity>(entity =>
         {
+            entity.HasMany(c => c.Dispatches)
+                  .WithOne(d => d.Case)
+                  .HasForeignKey(d => d.CaseId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasMany(c => c.EvidenceItems)
                   .WithOne()
                   .HasForeignKey(e => e.CaseId)
@@ -71,6 +78,37 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
 
             entity.Property(e => e.OpenedAt)
                   .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+        });
+
+        modelBuilder.Entity<Dispatch>(entity =>
+        {
+            entity.HasOne(d => d.Incident)
+                  .WithMany(i => i.Dispatches)
+                  .HasForeignKey(d => d.IncidentId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.OfficialUser)
+                  .WithMany()
+                  .HasForeignKey(d => d.OfficialUserId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(d => d.IncidentId);
+            entity.HasIndex(d => d.CaseId);
+            entity.HasIndex(d => d.OfficialUserId);
+            entity.HasIndex(d => d.Status);
+            entity.Property(d => d.ResponderLatitude).HasPrecision(9, 6);
+            entity.Property(d => d.ResponderLongitude).HasPrecision(9, 6);
+            entity.Property(d => d.IncidentLatitudeSnapshot).HasPrecision(9, 6);
+            entity.Property(d => d.IncidentLongitudeSnapshot).HasPrecision(9, 6);
+            entity.Property(d => d.EstimatedDistanceKm).HasPrecision(8, 2);
+            entity.Property(d => d.AssignedAt)
+                  .HasConversion(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+            entity.Property(d => d.EnRouteAt)
+                  .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+            entity.Property(d => d.OnSceneAt)
+                  .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+            entity.Property(d => d.ClearedAt)
+                  .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
         });
 
         modelBuilder.Entity<LedgerEntry>(entity =>
