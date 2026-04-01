@@ -212,15 +212,17 @@ public class DispatchAppService
         var roleIds = user.Roles.Select(role => role.RoleId).ToList();
         if (roleIds.Count == 0)
         {
-            throw new UserFriendlyException($"User '{user.FullName}' is not assigned to the '{StaticRoleNames.Tenants.Offical}' role.");
+            throw new UserFriendlyException($"User '{user.FullName}' is not assigned to the '{StaticRoleNames.Tenants.Official}' role.");
         }
 
-        var hasOfficalRole = await _roleRepository.GetAll()
-            .AnyAsync(role => roleIds.Contains(role.Id) && role.Name == StaticRoleNames.Tenants.Offical);
+        var hasOfficialRole = await _roleRepository.GetAll()
+            .AnyAsync(role =>
+                roleIds.Contains(role.Id) &&
+                (role.Name == StaticRoleNames.Tenants.Official || role.Name == StaticRoleNames.Tenants.Offical));
 
-        if (!hasOfficalRole)
+        if (!hasOfficialRole)
         {
-            throw new UserFriendlyException($"User '{user.FullName}' is not assigned to the '{StaticRoleNames.Tenants.Offical}' role.");
+            throw new UserFriendlyException($"User '{user.FullName}' is not assigned to the '{StaticRoleNames.Tenants.Official}' role.");
         }
     }
 

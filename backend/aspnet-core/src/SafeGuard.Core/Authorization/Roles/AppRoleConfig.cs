@@ -27,6 +27,20 @@ public static class AppRoleConfig
 
         roleManagementConfig.StaticRoles.Add(
             new StaticRoleDefinition(
+                StaticRoleNames.Tenants.Citizen,
+                MultiTenancySides.Tenant
+            )
+        );
+
+        roleManagementConfig.StaticRoles.Add(
+            new StaticRoleDefinition(
+                StaticRoleNames.Tenants.Official,
+                MultiTenancySides.Tenant
+            )
+        );
+
+        roleManagementConfig.StaticRoles.Add(
+            new StaticRoleDefinition(
                 StaticRoleNames.Tenants.Offical,
                 MultiTenancySides.Tenant
             )

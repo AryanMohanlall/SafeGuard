@@ -62,9 +62,22 @@ const AlertsMap = dynamic(() => import('@/components/safeguard/AlertsMap'), {
 
 const ACTIVE_CASE_STATUSES = new Set(['Draft', 'Open', 'UnderReview', 'PendingTrial']);
 const ACTIVE_DISPATCH_STATUSES = new Set(['Dispatched', 'EnRoute', 'OnScene']);
+const OFFICIAL_ROLE_PATTERN = /OFFICIAL|OFFICAL/i;
+const CITIZEN_ROLE_PATTERN = /CITIZEN/i;
 
-type OperationalResponder = Responder & {
+interface AlertUser {
+  id: number;
+  fullName?: string;
+  name: string;
+  surname: string;
+  isActive: boolean;
+  roleNames?: string[];
+}
+
+type OperationalResponder = Omit<Responder, 'latitude' | 'longitude'> & {
   officialUserId: number;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 function derivePriority(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' {
@@ -156,6 +169,7 @@ export default function AlertsDispatchPage() {
   const [showRoadblocks, setShowRoadblocks] = useState(false);
   const [mapBounds, setMapBounds] = useState<MapBounds>(DEFAULT_MAP_BOUNDS);
   const [roadblocks, setRoadblocks] = useState<RoadblockMarker[]>([]);
+  const [users, setUsers] = useState<AlertUser[]>([]);
 
   useEffect(() => {
     fetchIncidents({ skipCount: 0, maxResultCount: 1000 });
@@ -197,6 +211,32 @@ export default function AlertsDispatchPage() {
       window.clearTimeout(timeoutId);
     };
   }, [axiosInstance, mapBounds, showRoadblocks]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void axiosInstance
+      .get('/api/services/app/User/GetAll', {
+        params: {
+          skipCount: 0,
+          maxResultCount: 1000,
+        },
+      })
+      .then((res) => {
+        if (!cancelled) {
+          setUsers(res.data.result?.items ?? []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUsers([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [axiosInstance]);
 
   const caseLookup = useMemo(() => buildCaseLookup(cases), [cases]);
 
@@ -267,6 +307,17 @@ export default function AlertsDispatchPage() {
     [activeDispatches],
   );
 
+  const visibleOfficials = useMemo(
+    () =>
+      users.filter((user) => {
+        const roleNames = user.roleNames ?? [];
+        const isOfficial = roleNames.some((roleName) => OFFICIAL_ROLE_PATTERN.test(roleName));
+        const isCitizen = roleNames.some((roleName) => CITIZEN_ROLE_PATTERN.test(roleName));
+        return user.isActive && isOfficial && !isCitizen;
+      }),
+    [users],
+  );
+
   const operationalResponders = useMemo<OperationalResponder[]>(() => {
     const latestByResponder = new Map<number, IDispatch>();
 
@@ -296,31 +347,41 @@ export default function AlertsDispatchPage() {
       statusByResponderId.set(dispatch.officialUserId, nextStatus);
     }
 
-    return [...latestByResponder.values()].map((dispatch) => {
-      const lastUpdatedAt = dispatch.clearedAt ?? dispatch.onSceneAt ?? dispatch.enRouteAt ?? dispatch.assignedAt;
-      const nameParts = dispatch.responderName
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2);
+    return visibleOfficials.map((user) => {
+      const dispatch = latestByResponder.get(user.id);
+      const responderName = dispatch?.responderName ?? user.fullName ?? `${user.name} ${user.surname}`.trim();
+      const lastUpdatedAt = dispatch?.clearedAt ?? dispatch?.onSceneAt ?? dispatch?.enRouteAt ?? dispatch?.assignedAt;
+      const nameParts = responderName.split(/\s+/).filter(Boolean).slice(0, 2);
       const initials = nameParts.map((part) => part[0]?.toUpperCase() ?? '').join('') || 'NA';
 
       return {
-        id: dispatch.officialUserId!.toString(),
-        officialUserId: dispatch.officialUserId as number,
-        rank: dispatch.responderRank,
-        name: dispatch.responderName,
-        sector: dispatch.responderSector ?? 'Unassigned sector',
-        status: statusByResponderId.get(dispatch.officialUserId as number) ?? 'Available',
-        latitude: dispatch.responderLatitude as number,
-        longitude: dispatch.responderLongitude as number,
+        id: user.id.toString(),
+        officialUserId: user.id,
+        rank: dispatch?.responderRank ?? 'Official',
+        name: responderName,
+        sector: dispatch?.responderSector ?? 'No sector on record',
+        status: statusByResponderId.get(user.id) ?? 'Available',
+        latitude: dispatch?.responderLatitude ?? null,
+        longitude: dispatch?.responderLongitude ?? null,
         initials,
-        lastUpdatedMinutes: Math.max(
-          0,
-          Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 60000),
-        ),
+        lastUpdatedMinutes: lastUpdatedAt
+          ? Math.max(0, Math.floor((Date.now() - new Date(lastUpdatedAt).getTime()) / 60000))
+          : 0,
       };
     });
-  }, [activeDispatches, dispatches]);
+  }, [activeDispatches, dispatches, visibleOfficials]);
+
+  const mapResponders = useMemo<Responder[]>(
+    () =>
+      operationalResponders
+        .filter((responder) => responder.latitude != null && responder.longitude != null)
+        .map((responder) => ({
+          ...responder,
+          latitude: responder.latitude as number,
+          longitude: responder.longitude as number,
+        })),
+    [operationalResponders],
+  );
 
   const availableCount = operationalResponders.filter((item) => item.status === 'Available').length;
   const enRouteCount = operationalResponders.filter((item) => item.status === 'En Route').length;
@@ -329,7 +390,9 @@ export default function AlertsDispatchPage() {
     const hasRoute = dispatchByIncidentId.has(incident.id);
     return isHigh && !hasRoute;
   }).length;
-  const canDispatch = operationalResponders.some((item) => item.status === 'Available');
+  const canDispatch = operationalResponders.some(
+    (item) => item.status === 'Available' && item.latitude != null && item.longitude != null,
+  );
 
   const focusIncident = (incident: IIncident) => {
     if (incident.latitude == null || incident.longitude == null) return;
@@ -356,7 +419,10 @@ export default function AlertsDispatchPage() {
       return;
     }
 
-    const availableResponders = operationalResponders.filter((item) => item.status === 'Available');
+    const availableResponders = operationalResponders.filter(
+      (item): item is OperationalResponder & { latitude: number; longitude: number } =>
+        item.status === 'Available' && item.latitude != null && item.longitude != null,
+    );
     if (availableResponders.length === 0) {
       messageApi.error('No available officials can be dispatched yet. Add or migrate dispatch-linked officials first.');
       return;
@@ -405,7 +471,7 @@ export default function AlertsDispatchPage() {
     });
 
     if (!created) {
-      messageApi.error('Dispatch creation failed. Check that the database migration is applied and the user has the Offical role.');
+      messageApi.error('Dispatch creation failed. Check that the database migration is applied and the user has the Official role.');
       return;
     }
 
@@ -419,7 +485,7 @@ export default function AlertsDispatchPage() {
 
   const mapProps: AlertsMapProps = {
     incidents: queueIncidents,
-    responders: operationalResponders,
+    responders: mapResponders,
     routes: dispatchRoutes,
     focusTarget,
     centerTrigger,

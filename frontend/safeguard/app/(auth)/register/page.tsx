@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button, Form, Input, message, Typography } from 'antd';
+import { Button, Form, Input, Radio, message, Typography } from 'antd';
 import {
   LockOutlined,
   MailOutlined,
@@ -21,6 +21,7 @@ interface RegisterFormValues {
   firstName: string;
   lastName: string;
   email: string;
+  roleName: 'Citizen' | 'Official';
   password: string;
   confirmPassword: string;
 }
@@ -54,13 +55,14 @@ export default function RegisterPage() {
     }
   }, [isError, messageApi]);
 
-  const handleSubmit = ({ firstName, lastName, email, password }: RegisterFormValues) => {
+  const handleSubmit = ({ firstName, lastName, email, password, roleName }: RegisterFormValues) => {
     register({
       name: firstName,
       surname: lastName,
       userName: email,
       emailAddress: email,
       password,
+      roleName,
     });
   };
 
@@ -109,6 +111,7 @@ export default function RegisterPage() {
               onFinish={handleSubmit}
               requiredMark={false}
               size="large"
+              initialValues={{ roleName: 'Citizen' }}
             >
               <div className={styles.nameGrid}>
                 <Form.Item
@@ -148,6 +151,21 @@ export default function RegisterPage() {
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
+              </Form.Item>
+
+              <Form.Item
+                name="roleName"
+                label="Account role"
+                rules={[{ required: true, message: 'Please choose a role.' }]}
+              >
+                <Radio.Group optionType="button" buttonStyle="solid" style={{ width: '100%' }}>
+                  <Radio.Button value="Citizen" style={{ width: '50%', textAlign: 'center' }}>
+                    Citizen
+                  </Radio.Button>
+                  <Radio.Button value="Official" style={{ width: '50%', textAlign: 'center' }}>
+                    Official
+                  </Radio.Button>
+                </Radio.Group>
               </Form.Item>
 
               <Form.Item

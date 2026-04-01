@@ -37,37 +37,79 @@ public class UserRegistrationManager : DomainService
         AbpSession = NullAbpSession.Instance;
     }
 
-    public async Task<User> RegisterAsync(string name, string surname, string emailAddress, string userName, string plainPassword, bool isEmailConfirmed)
+    public async Task<User> RegisterAsync(
+        string name,
+        string surname,
+        string emailAddress,
+        string userName,
+        string plainPassword,
+        string roleName,
+        bool isEmailConfirmed)
     {
         CheckForTenant();
 
         var tenant = await GetActiveTenantAsync();
-
-        var user = new User
+        using (CurrentUnitOfWork.SetTenantId(tenant.Id))
         {
-            TenantId = tenant.Id,
-            Name = name,
-            Surname = surname,
-            EmailAddress = emailAddress,
-            IsActive = true,
-            UserName = userName,
-            IsEmailConfirmed = isEmailConfirmed,
-            Roles = new List<UserRole>()
-        };
+            ValidateRegistrationRole(roleName);
+            var role = await EnsureRegistrationRoleAsync(tenant.Id, roleName);
 
-        user.SetNormalizedNames();
+            var user = new User
+            {
+                TenantId = tenant.Id,
+                Name = name,
+                Surname = surname,
+                EmailAddress = emailAddress,
+                IsActive = true,
+                UserName = userName,
+                IsEmailConfirmed = isEmailConfirmed,
+                Roles = new List<UserRole>()
+            };
 
-        foreach (var defaultRole in await _roleManager.Roles.Where(r => r.IsDefault).ToListAsync())
+            user.SetNormalizedNames();
+
+            await _userManager.InitializeOptionsAsync(tenant.Id);
+
+            CheckErrors(await _userManager.CreateAsync(user, plainPassword));
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            CheckErrors(await _userManager.AddToRoleAsync(user, role.Name));
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            return user;
+        }
+    }
+
+    private static void ValidateRegistrationRole(string roleName)
+    {
+        if (roleName != StaticRoleNames.Tenants.Citizen &&
+            roleName != StaticRoleNames.Tenants.Official)
         {
-            user.Roles.Add(new UserRole(tenant.Id, user.Id, defaultRole.Id));
+            throw new UserFriendlyException("Users may only register as Citizen or Official.");
+        }
+    }
+
+    private async Task<Role> EnsureRegistrationRoleAsync(int tenantId, string roleName)
+    {
+        var role = await _roleManager.Roles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.Name == roleName);
+
+        if (role != null)
+        {
+            return role;
         }
 
-        await _userManager.InitializeOptionsAsync(tenant.Id);
+        role = new Role(tenantId, roleName, roleName)
+        {
+            IsStatic = true
+        };
+        role.SetNormalizedName();
 
-        CheckErrors(await _userManager.CreateAsync(user, plainPassword));
+        CheckErrors(await _roleManager.CreateAsync(role));
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        return user;
+        return role;
     }
 
     private void CheckForTenant()

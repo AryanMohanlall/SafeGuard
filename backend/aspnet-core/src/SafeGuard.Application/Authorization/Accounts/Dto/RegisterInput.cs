@@ -1,6 +1,7 @@
 ﻿using Abp.Auditing;
 using Abp.Authorization.Users;
 using Abp.Extensions;
+using SafeGuard.Authorization.Roles;
 using SafeGuard.Validation;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -34,6 +35,10 @@ public class RegisterInput : IValidatableObject
     [DisableAuditing]
     public string CaptchaResponse { get; set; }
 
+    [Required]
+    [StringLength(32)]
+    public string RoleName { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!UserName.IsNullOrEmpty())
@@ -42,6 +47,13 @@ public class RegisterInput : IValidatableObject
             {
                 yield return new ValidationResult("Username cannot be an email address unless it's the same as your email address!");
             }
+        }
+
+        if (!RoleName.IsNullOrWhiteSpace() &&
+            RoleName != StaticRoleNames.Tenants.Citizen &&
+            RoleName != StaticRoleNames.Tenants.Official)
+        {
+            yield return new ValidationResult("Role must be either Citizen or Official.", [nameof(RoleName)]);
         }
     }
 }
