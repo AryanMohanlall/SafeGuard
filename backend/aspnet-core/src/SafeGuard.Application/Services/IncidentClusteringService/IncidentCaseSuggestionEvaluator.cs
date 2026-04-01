@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using SafeGuard.Services.IncidentClusteringService.Dto;
 
@@ -70,10 +69,10 @@ public class IncidentCaseSuggestionEvaluator
             return null;
         }
 
-        var anchor = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(
-            IncidentFeatureTextNormalizer.BuildLocationAnchor(orderedIncidents[0].Location));
-
-        var suggestedTitle = $"{ToDisplayText(categorySummary.value)} pattern near {anchor}";
+        var narrative = IncidentClusterNarrativeBuilder.Build(
+            orderedIncidents,
+            categorySummary.value,
+            objectSummary.value);
         var reasons = BuildReasons(orderedIncidents.Count, timeSpanHours, maxDistanceKm, categorySummary, objectSummary);
         var confidence = (float)Math.Round(weightedScore, 3, MidpointRounding.AwayFromZero);
 
@@ -82,9 +81,9 @@ public class IncidentCaseSuggestionEvaluator
             Id = $"suggestion-{clusterId}",
             GroupId = $"cluster-{clusterId}",
             ClusterId = clusterId,
-            SuggestedTitle = suggestedTitle,
-            DominantCategory = ToDisplayText(categorySummary.value),
-            DominantObject = ToDisplayText(objectSummary.value),
+            SuggestedTitle = narrative.SuggestedTitle,
+            DominantCategory = narrative.DominantCategoryDisplay,
+            DominantObject = narrative.DominantObjectDisplay,
             ConfidenceScore = confidence,
             TimeSpanHours = Math.Round(timeSpanHours, 2, MidpointRounding.AwayFromZero),
             MaxDistanceKm = Math.Round(maxDistanceKm, 2, MidpointRounding.AwayFromZero),
@@ -128,8 +127,8 @@ public class IncidentCaseSuggestionEvaluator
             $"{incidentCount} incidents landed in the same ML cluster.",
             $"Incidents occurred within {Math.Round(timeSpanHours, 1, MidpointRounding.AwayFromZero)} hours.",
             $"Maximum spread from the cluster center is {Math.Round(maxDistanceKm, 1, MidpointRounding.AwayFromZero)} km.",
-            $"Top title/category pattern: {ToDisplayText(categorySummary.value)} ({Math.Round(categorySummary.ratio * 100f)}%).",
-            $"Most common detected object: {ToDisplayText(objectSummary.value)} ({Math.Round(objectSummary.ratio * 100f)}%)."
+            $"Top title/category pattern: {IncidentClusterNarrativeBuilder.ToDisplayText(categorySummary.value)} ({Math.Round(categorySummary.ratio * 100f)}%).",
+            $"Most common detected object: {IncidentClusterNarrativeBuilder.ToDisplayText(objectSummary.value)} ({Math.Round(objectSummary.ratio * 100f)}%)."
         };
     }
 
@@ -188,12 +187,5 @@ public class IncidentCaseSuggestionEvaluator
     private static double Clamp(double value)
     {
         return Math.Max(0d, Math.Min(1d, value));
-    }
-
-    private static string ToDisplayText(string value)
-    {
-        return string.IsNullOrWhiteSpace(value)
-            ? "Unknown"
-            : value.Replace('_', ' ');
     }
 }
