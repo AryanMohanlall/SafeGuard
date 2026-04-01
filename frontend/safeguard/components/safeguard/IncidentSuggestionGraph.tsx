@@ -471,71 +471,71 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
               })}
             </div>
           </div>
+        </div>
 
-          <div className={styles.minimapShell}>
-            <div className={styles.minimapHeader}>Map</div>
-            <div
-              className={styles.minimap}
-              style={{ width: minimapWidth, height: minimapHeight }}
-              onPointerDown={handleMinimapPointerDown}
-            >
-              <svg width={minimapWidth} height={minimapHeight} className={styles.minimapSvg}>
-                {edges.map((edge) => {
-                  const source = layout.positions.get(edge.source);
-                  const target = layout.positions.get(edge.target);
-                  if (!source || !target) {
-                    return null;
-                  }
+        <div className={styles.minimapShell}>
+          <div className={styles.minimapHeader}>Map</div>
+          <div
+            className={styles.minimap}
+            style={{ width: minimapWidth, height: minimapHeight }}
+            onPointerDown={handleMinimapPointerDown}
+          >
+            <svg width={minimapWidth} height={minimapHeight} className={styles.minimapSvg}>
+              {edges.map((edge) => {
+                const source = layout.positions.get(edge.source);
+                const target = layout.positions.get(edge.target);
+                if (!source || !target) {
+                  return null;
+                }
 
-                  return (
-                    <line
-                      key={`mini-${edge.id}`}
-                      x1={source.x * scale * minimapScale}
-                      y1={(source.y + CARD_HEIGHT / 2) * scale * minimapScale}
-                      x2={target.x * scale * minimapScale}
-                      y2={(target.y - CARD_HEIGHT / 2) * scale * minimapScale}
-                      stroke="rgba(100, 116, 139, 0.45)"
-                      strokeWidth={1}
-                    />
-                  );
-                })}
-                {nodes.map((node) => {
-                  const point = layout.positions.get(node.id);
-                  if (!point) {
-                    return null;
-                  }
+                return (
+                  <line
+                    key={`mini-${edge.id}`}
+                    x1={source.x * scale * minimapScale}
+                    y1={(source.y + CARD_HEIGHT / 2) * scale * minimapScale}
+                    x2={target.x * scale * minimapScale}
+                    y2={(target.y - CARD_HEIGHT / 2) * scale * minimapScale}
+                    stroke="rgba(100, 116, 139, 0.45)"
+                    strokeWidth={1}
+                  />
+                );
+              })}
+              {nodes.map((node) => {
+                const point = layout.positions.get(node.id);
+                if (!point) {
+                  return null;
+                }
 
-                  const fill =
-                    node.type === 'cluster'
-                      ? '#2563eb'
-                      : node.type === 'suggestion'
-                        ? '#16a34a'
-                        : node.type === 'case'
-                          ? '#d97706'
-                          : '#475569';
+                const fill =
+                  node.type === 'cluster'
+                    ? '#2563eb'
+                    : node.type === 'suggestion'
+                      ? '#16a34a'
+                      : node.type === 'case'
+                        ? '#d97706'
+                        : '#475569';
 
-                  return (
-                    <rect
-                      key={`mini-node-${node.id}`}
-                      x={(point.x - CARD_WIDTH / 2) * scale * minimapScale}
-                      y={(point.y - CARD_HEIGHT / 2) * scale * minimapScale}
-                      width={Math.max(CARD_WIDTH * scale * minimapScale, 4)}
-                      height={Math.max(CARD_HEIGHT * scale * minimapScale, 4)}
-                      rx={3}
-                      fill={fill}
-                      opacity={0.82}
-                    />
-                  );
-                })}
-                <rect
-                  x={viewportState.scrollLeft * minimapScale}
-                  y={viewportState.scrollTop * minimapScale}
-                  width={Math.min(viewportState.clientWidth, canvasWidth) * minimapScale}
-                  height={Math.min(viewportState.clientHeight, canvasHeight) * minimapScale}
-                  className={styles.minimapViewport}
-                />
-              </svg>
-            </div>
+                return (
+                  <rect
+                    key={`mini-node-${node.id}`}
+                    x={(point.x - CARD_WIDTH / 2) * scale * minimapScale}
+                    y={(point.y - CARD_HEIGHT / 2) * scale * minimapScale}
+                    width={Math.max(CARD_WIDTH * scale * minimapScale, 4)}
+                    height={Math.max(CARD_HEIGHT * scale * minimapScale, 4)}
+                    rx={3}
+                    fill={fill}
+                    opacity={0.82}
+                  />
+                );
+              })}
+              <rect
+                x={viewportState.scrollLeft * minimapScale}
+                y={viewportState.scrollTop * minimapScale}
+                width={Math.min(viewportState.clientWidth, canvasWidth) * minimapScale}
+                height={Math.min(viewportState.clientHeight, canvasHeight) * minimapScale}
+                className={styles.minimapViewport}
+              />
+            </svg>
           </div>
         </div>
       </div>

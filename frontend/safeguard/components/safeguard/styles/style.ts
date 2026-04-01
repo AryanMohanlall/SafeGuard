@@ -2,6 +2,7 @@ import { createStyles } from 'antd-style';
 
 export const useStyles = createStyles(({ css }) => ({
   graphContainer: css`
+    position: relative;
     border: 1px solid #e2e8f0;
     border-radius: 24px;
     background:
@@ -128,10 +129,9 @@ export const useStyles = createStyles(({ css }) => ({
   `,
 
   minimapShell: css`
-    position: sticky;
+    position: absolute;
     right: 14px;
     bottom: 14px;
-    margin-left: auto;
     width: fit-content;
     padding: 10px;
     border: 1px solid rgba(226, 232, 240, 0.95);
@@ -139,6 +139,14 @@ export const useStyles = createStyles(({ css }) => ({
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
     backdrop-filter: blur(12px);
+    z-index: 2;
+
+    @media (max-width: 768px) {
+      right: 10px;
+      bottom: 10px;
+      transform: scale(0.92);
+      transform-origin: bottom right;
+    }
   `,
 
   minimapHeader: css`
