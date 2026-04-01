@@ -69,6 +69,7 @@ export interface IDispatchActionContext {
   fetchAll: (params?: Record<string, unknown>) => Promise<void>;
   create: (input: ICreateDispatchInput) => Promise<IDispatch | null>;
   transitionStatus: (input: ITransitionDispatchStatusInput) => Promise<IDispatch | null>;
+  completeMine: (id: string) => Promise<IDispatch | null>;
 }
 
 export const INITIAL_STATE: IDispatchStateContext = {
@@ -84,4 +85,5 @@ export const DispatchActionContext = createContext<IDispatchActionContext>({
   fetchAll: async () => {},
   create: async () => null,
   transitionStatus: async () => null,
+  completeMine: async () => null,
 });

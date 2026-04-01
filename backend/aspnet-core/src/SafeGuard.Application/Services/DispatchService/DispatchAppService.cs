@@ -8,12 +8,14 @@ using Abp.Authorization;
 using Abp.Domain.Repositories;
 using Abp.Extensions;
 using Abp.Linq.Extensions;
+using Abp.Runtime.Session;
 using Abp.UI;
 using Microsoft.EntityFrameworkCore;
 using SafeGuard.Authorization.Roles;
 using SafeGuard.Authorization.Users;
 using SafeGuard.Domains.Dispatches;
 using SafeGuard.Domains.Incidents;
+using SafeGuard.Notifications;
 using SafeGuard.Services.DispatchService.Dto;
 
 namespace SafeGuard.Services.DispatchService;
@@ -36,19 +38,22 @@ public class DispatchAppService
     private readonly IRepository<Domains.Case.Case, Guid> _caseRepository;
     private readonly IRepository<User, long> _userRepository;
     private readonly IRepository<Role> _roleRepository;
+    private readonly IDispatchNotifier _dispatchNotifier;
 
     public DispatchAppService(
         IRepository<Dispatch, Guid> repository,
         IRepository<Incident, Guid> incidentRepository,
         IRepository<Domains.Case.Case, Guid> caseRepository,
         IRepository<User, long> userRepository,
-        IRepository<Role> roleRepository)
+        IRepository<Role> roleRepository,
+        IDispatchNotifier dispatchNotifier)
         : base(repository)
     {
         _incidentRepository = incidentRepository;
         _caseRepository = caseRepository;
         _userRepository = userRepository;
         _roleRepository = roleRepository;
+        _dispatchNotifier = dispatchNotifier;
     }
 
     public override async Task<DispatchDto> CreateAsync(CreateDispatchDto input)
@@ -73,7 +78,9 @@ public class DispatchAppService
         await Repository.InsertAsync(entity);
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        return await GetAsync(new EntityDto<Guid>(entity.Id));
+        var dto = await GetAsync(new EntityDto<Guid>(entity.Id));
+        await NotifyDispatchUpdatedAsync(dto);
+        return dto;
     }
 
     public override async Task<DispatchDto> UpdateAsync(UpdateDispatchDto input)
@@ -97,7 +104,9 @@ public class DispatchAppService
         ApplyStatusTimestamps(entity, input.Status, isCreate: false, previousStatus);
 
         await Repository.UpdateAsync(entity);
-        return await GetAsync(new EntityDto<Guid>(entity.Id));
+        var dto = await GetAsync(new EntityDto<Guid>(entity.Id));
+        await NotifyDispatchUpdatedAsync(dto);
+        return dto;
     }
 
     public async Task<DispatchDto> TransitionStatusAsync(TransitionDispatchStatusInput input)
@@ -114,7 +123,31 @@ public class DispatchAppService
         }
 
         await Repository.UpdateAsync(entity);
-        return await GetAsync(new EntityDto<Guid>(entity.Id));
+        var dto = await GetAsync(new EntityDto<Guid>(entity.Id));
+        await NotifyDispatchUpdatedAsync(dto);
+        return dto;
+    }
+
+    public async Task<DispatchDto> CompleteMyDispatchAsync(EntityDto<Guid> input)
+    {
+        if (!AbpSession.UserId.HasValue)
+        {
+            throw new UserFriendlyException("You must be logged in to complete a dispatch.");
+        }
+
+        var entity = await Repository.GetAsync(input.Id);
+        if (entity.OfficialUserId != AbpSession.UserId.Value)
+        {
+            throw new UserFriendlyException("You can only complete your own assigned dispatch.");
+        }
+
+        ApplyStatusTimestamps(entity, "Cleared", isCreate: false, entity.Status);
+        entity.Status = "Cleared";
+
+        await Repository.UpdateAsync(entity);
+        var dto = await GetAsync(new EntityDto<Guid>(entity.Id));
+        await NotifyDispatchUpdatedAsync(dto);
+        return dto;
     }
 
     public override async Task<DispatchDto> GetAsync(EntityDto<Guid> input)
@@ -290,5 +323,17 @@ public class DispatchAppService
                 dto.OfficialFullName = officialName;
             }
         }
+    }
+
+    private Task NotifyDispatchUpdatedAsync(DispatchDto dto)
+    {
+        return _dispatchNotifier.NotifyAsync(new DispatchNotificationDto
+        {
+            DispatchId = dto.Id,
+            IncidentId = dto.IncidentId,
+            OfficialUserId = dto.OfficialUserId,
+            Status = dto.Status,
+            UpdatedAt = DateTime.UtcNow
+        });
     }
 }

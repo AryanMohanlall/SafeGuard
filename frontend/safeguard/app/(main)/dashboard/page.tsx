@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, Col, Grid, Row, Spin, Statistic, theme } from 'antd';
+import { Button, Card, Col, Grid, Row, Spin, Statistic, Tag, theme, Typography, message } from 'antd';
 import {
   AlertOutlined,
   EnvironmentOutlined,
   EyeInvisibleOutlined,
   FileImageOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import {
   Bar,
@@ -25,7 +26,11 @@ import {
 import dayjs from 'dayjs';
 import { getAxiosInstance } from '@/utils/axiosInstance';
 import type { IIncident } from '@/providers/incidents-provider/context';
+import { useAuthState } from '@/providers/auth-provider';
+import { useDispatchAction, useDispatchState } from '@/providers/dispatch-provider';
 import { useStyles } from './styles/style';
+
+const { Text } = Typography;
 
 function MapLoading() {
   const { styles } = useStyles();
@@ -64,9 +69,14 @@ export default function Dashboard() {
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
+  const [messageApi, contextHolder] = message.useMessage();
+  const { user } = useAuthState();
+  const { items: dispatches } = useDispatchState();
+  const { fetchAll: fetchDispatches, completeMine, transitionStatus } = useDispatchAction();
 
   const [incidents, setIncidents] = useState<IIncident[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dispatchSubmitting, setDispatchSubmitting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -80,6 +90,60 @@ export default function Dashboard() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    void fetchDispatches({ skipCount: 0, maxResultCount: 1000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const myActiveDispatch = useMemo(
+    () =>
+      dispatches
+        .filter(
+          (dispatch) =>
+            dispatch.officialUserId === user?.userId &&
+            ['Dispatched', 'EnRoute', 'OnScene'].includes(dispatch.status),
+        )
+        .sort(
+          (left, right) =>
+            new Date(right.assignedAt).getTime() - new Date(left.assignedAt).getTime(),
+        )[0] ?? null,
+    [dispatches, user?.userId],
+  );
+
+  const handleMarkOnScene = async () => {
+    if (!myActiveDispatch) return;
+
+    setDispatchSubmitting(true);
+    const updated = await transitionStatus({
+      id: myActiveDispatch.id,
+      toStatus: 'OnScene',
+      notes: 'Responder marked dispatch as on scene from dashboard',
+    });
+    setDispatchSubmitting(false);
+
+    if (!updated) {
+      messageApi.error('Unable to update dispatch status right now.');
+      return;
+    }
+
+    messageApi.success('Dispatch marked as on scene.');
+  };
+
+  const handleCompleteDispatch = async () => {
+    if (!myActiveDispatch) return;
+
+    setDispatchSubmitting(true);
+    const completed = await completeMine(myActiveDispatch.id);
+    setDispatchSubmitting(false);
+
+    if (!completed) {
+      messageApi.error('Unable to complete your dispatch right now.');
+      return;
+    }
+
+    messageApi.success('Dispatch completed. You are now available for reassignment.');
+  };
 
   // ── Stats ──────────────────────────────────────────────────────────────────
   const totalCount = incidents.length;
@@ -166,10 +230,73 @@ export default function Dashboard() {
 
   return (
     <div className={styles.pageWrapper}>
+      {contextHolder}
       {/* Header */}
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Dashboard</h1>
       </div>
+
+      {user && (
+        <Card className={styles.card} style={{ marginBottom: 24 }}>
+          {myActiveDispatch ? (
+            <Row gutter={[16, 16]} align="middle">
+              <Col xs={24} lg={16}>
+                <p className={styles.sectionLabel}>My active dispatch</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Text strong>{myActiveDispatch.incidentTitle ?? 'Assigned incident'}</Text>
+                  <Text type="secondary">
+                    {myActiveDispatch.caseNumber
+                      ? `Case ${myActiveDispatch.caseNumber}`
+                      : 'No linked case yet'}
+                  </Text>
+                  <Text type="secondary">
+                    Assigned {dayjs(myActiveDispatch.assignedAt).format('MMM D, YYYY h:mm A')}
+                  </Text>
+                  <div>
+                    <Tag color={myActiveDispatch.status === 'OnScene' ? 'error' : 'processing'}>
+                      {myActiveDispatch.status === 'OnScene' ? 'On Scene' : 'En Route'}
+                    </Tag>
+                    {myActiveDispatch.estimatedDistanceKm != null && (
+                      <Tag>{myActiveDispatch.estimatedDistanceKm.toFixed(1)} km route</Tag>
+                    )}
+                  </div>
+                </div>
+              </Col>
+              <Col xs={24} lg={8}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                  {myActiveDispatch.status !== 'OnScene' && (
+                    <Button onClick={() => void handleMarkOnScene()} loading={dispatchSubmitting}>
+                      On scene
+                    </Button>
+                  )}
+                  <Button
+                    type="primary"
+                    icon={<CheckCircleOutlined />}
+                    onClick={() => void handleCompleteDispatch()}
+                    loading={dispatchSubmitting}
+                  >
+                    Complete dispatch
+                  </Button>
+                </div>
+              </Col>
+            </Row>
+          ) : (
+            <Row gutter={[16, 16]} align="middle">
+              <Col xs={24} lg={16}>
+                <p className={styles.sectionLabel}>My active dispatch</p>
+                <Text type="secondary">
+                  No active dispatch assigned to you right now. When a new assignment comes in, it will appear here automatically.
+                </Text>
+              </Col>
+              <Col xs={24} lg={8}>
+                <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                  <Tag color="success">Available</Tag>
+                </div>
+              </Col>
+            </Row>
+          )}
+        </Card>
+      )}
 
       {/* Stat cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>

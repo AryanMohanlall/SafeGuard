@@ -1,5 +1,7 @@
 'use client';
 import { useContext, useReducer, useRef } from 'react';
+import { useEffect } from 'react';
+import * as signalR from '@microsoft/signalr';
 import { getAxiosInstance } from '@/utils/axiosInstance';
 import { DispatchReducer } from './reducer';
 import {
@@ -27,6 +29,7 @@ export const DispatchProvider = ({ children }: { children: React.ReactNode }) =>
   const instance = getAxiosInstance();
   const [state, dispatch] = useReducer(DispatchReducer, INITIAL_STATE);
   const lastFetchParamsRef = useRef<Record<string, unknown> | undefined>(undefined);
+  const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   const fetchAll = async (params?: Record<string, unknown>) => {
     lastFetchParamsRef.current = params;
@@ -66,9 +69,59 @@ export const DispatchProvider = ({ children }: { children: React.ReactNode }) =>
     }
   };
 
+  const completeMine = async (id: string) => {
+    dispatch(transitionPending());
+    try {
+      const res = await instance.post(`${BASE}/CompleteMyDispatch`, { id });
+      dispatch(transitionSuccess(res.data.result));
+      await fetchAll(lastFetchParamsRef.current);
+      return res.data.result;
+    } catch {
+      dispatch(transitionError());
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:44311';
+    const token = instance.defaults.headers.common['Authorization']
+      ?.toString()
+      .replace(/^Bearer\s+/i, '');
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${apiUrl}/alertHub`, {
+        accessTokenFactory: () => token ?? '',
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on('DispatchUpdated', () => {
+      if (!lastFetchParamsRef.current) {
+        return;
+      }
+
+      void fetchAll(lastFetchParamsRef.current);
+    });
+
+    const startPromise = connection.start().catch(() => {
+      // Ignore startup failures when the backend is offline.
+    });
+
+    connectionRef.current = connection;
+
+    return () => {
+      void startPromise.finally(() => {
+        void connection.stop().catch(() => {
+          // Ignore shutdown races during React dev remounts.
+        });
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instance]);
+
   return (
     <DispatchStateContext.Provider value={state}>
-      <DispatchActionContext.Provider value={{ fetchAll, create, transitionStatus }}>
+      <DispatchActionContext.Provider value={{ fetchAll, create, transitionStatus, completeMine }}>
         {children}
       </DispatchActionContext.Provider>
     </DispatchStateContext.Provider>

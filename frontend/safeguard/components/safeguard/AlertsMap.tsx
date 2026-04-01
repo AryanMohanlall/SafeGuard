@@ -197,7 +197,7 @@ function FocusController({
   useEffect(() => {
     if (!focusTarget) return;
 
-    map.flyTo([focusTarget.latitude, focusTarget.longitude], 14, { duration: 0.8 });
+    map.flyTo([focusTarget.latitude, focusTarget.longitude], map.getZoom(), { duration: 0.8 });
 
     const timeoutId = window.setTimeout(() => {
       markerRefs.current[focusTarget.id]?.openPopup();
@@ -346,8 +346,8 @@ export default function AlertsMap({
                     Nearest responder is {route.distanceKm} km away.
                   </Text>
                 )}
-                <Button type="primary" block onClick={() => onDispatch(incident.id)}>
-                  Dispatch
+                <Button type="primary" block onClick={() => onDispatch(incident.id)} disabled={!!route}>
+                  {route ? 'Assigned' : 'Dispatch'}
                 </Button>
               </Space>
             </Popup>

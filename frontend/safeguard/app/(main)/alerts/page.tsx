@@ -18,6 +18,8 @@ import {
   Card,
   Collapse,
   message,
+  Modal,
+  Select,
   Space,
   Statistic,
   Tag,
@@ -80,6 +82,11 @@ type OperationalResponder = Omit<Responder, 'latitude' | 'longitude'> & {
   longitude?: number | null;
 };
 
+type ResponderSelection = {
+  responder: OperationalResponder;
+  distance: number | null;
+};
+
 function derivePriority(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' {
   if (incident.priorityTag) {
     return incident.priorityTag;
@@ -139,6 +146,49 @@ function haversineKm(startLat: number, startLng: number, endLat: number, endLng:
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function selectPreferredResponder(
+  responders: OperationalResponder[],
+  incident: IIncident,
+): ResponderSelection | null {
+  if (responders.length === 0 || incident.latitude == null || incident.longitude == null) {
+    return null;
+  }
+
+  const respondersWithCoordinates = responders.filter(
+    (item): item is OperationalResponder & { latitude: number; longitude: number } =>
+      item.latitude != null && item.longitude != null,
+  );
+
+  const nearestResponder = respondersWithCoordinates.reduce((closest, candidate) => {
+    const candidateDistance = haversineKm(
+      candidate.latitude,
+      candidate.longitude,
+      incident.latitude as number,
+      incident.longitude as number,
+    );
+
+    if (!closest) {
+      return { responder: candidate, distance: candidateDistance };
+    }
+
+    return candidateDistance < (closest.distance ?? Number.POSITIVE_INFINITY)
+      ? { responder: candidate, distance: candidateDistance }
+      : closest;
+  }, null as ResponderSelection | null);
+
+  if (nearestResponder) {
+    return nearestResponder;
+  }
+
+  const fallbackResponder = [...responders].sort((left, right) => {
+    const leftName = `${left.rank} ${left.name}`.trim();
+    const rightName = `${right.rank} ${right.name}`.trim();
+    return leftName.localeCompare(rightName);
+  })[0];
+
+  return fallbackResponder ? { responder: fallbackResponder, distance: null } : null;
+}
+
 function buildCaseLookup(cases: ICase[]) {
   return new Map(cases.map((item) => [item.id, item]));
 }
@@ -170,6 +220,10 @@ export default function AlertsDispatchPage() {
   const [mapBounds, setMapBounds] = useState<MapBounds>(DEFAULT_MAP_BOUNDS);
   const [roadblocks, setRoadblocks] = useState<RoadblockMarker[]>([]);
   const [users, setUsers] = useState<AlertUser[]>([]);
+  const [dispatchCandidateIncidentId, setDispatchCandidateIncidentId] = useState<string | null>(null);
+  const [selectedResponderId, setSelectedResponderId] = useState<number | null>(null);
+  const [selectedSector, setSelectedSector] = useState<string>('All sectors');
+  const [isDispatchSubmitting, setIsDispatchSubmitting] = useState(false);
 
   useEffect(() => {
     fetchIncidents({ skipCount: 0, maxResultCount: 1000 });
@@ -378,15 +432,94 @@ export default function AlertsDispatchPage() {
     [operationalResponders],
   );
 
-  const availableCount = operationalResponders.filter((item) => item.status === 'Available').length;
+  const availableResponders = useMemo(
+    () => operationalResponders.filter((item) => item.status === 'Available'),
+    [operationalResponders],
+  );
+
+  const availableCount = availableResponders.length;
   const enRouteCount = operationalResponders.filter((item) => item.status === 'En Route').length;
   const highPriorityUnassigned = queueIncidents.filter((incident) => {
     const isHigh = derivePriority(incident) === 'HIGH';
     const hasRoute = dispatchByIncidentId.has(incident.id);
     return isHigh && !hasRoute;
   }).length;
-  const canDispatch = operationalResponders.some(
-    (item) => item.status === 'Available' && item.latitude != null && item.longitude != null,
+  const canDispatch = availableResponders.length > 0;
+  const dispatchCandidateIncident = useMemo(
+    () =>
+      dispatchCandidateIncidentId
+        ? incidents.find((item) => item.id === dispatchCandidateIncidentId) ?? null
+        : null,
+    [dispatchCandidateIncidentId, incidents],
+  );
+  const preferredResponderSelection = useMemo(
+    () =>
+      dispatchCandidateIncident
+        ? selectPreferredResponder(availableResponders, dispatchCandidateIncident)
+        : null,
+    [availableResponders, dispatchCandidateIncident],
+  );
+  const dispatchModalOptions = useMemo(
+    () =>
+      availableResponders
+        .map((responder) => {
+          const distance =
+            responder.latitude != null &&
+            responder.longitude != null &&
+            dispatchCandidateIncident?.latitude != null &&
+            dispatchCandidateIncident?.longitude != null
+              ? haversineKm(
+                  responder.latitude,
+                  responder.longitude,
+                  dispatchCandidateIncident.latitude as number,
+                  dispatchCandidateIncident.longitude as number,
+                )
+              : null;
+
+          return {
+            responder,
+            distance,
+          };
+        })
+        .sort((left, right) => {
+          if (left.distance != null && right.distance != null) {
+            return left.distance - right.distance;
+          }
+
+          if (left.distance != null) return -1;
+          if (right.distance != null) return 1;
+
+          const leftName = `${left.responder.rank} ${left.responder.name}`.trim();
+          const rightName = `${right.responder.rank} ${right.responder.name}`.trim();
+          return leftName.localeCompare(rightName);
+        }),
+    [availableResponders, dispatchCandidateIncident],
+  );
+  const responderAssignmentCountByUserId = useMemo(() => {
+    const counts = new Map<number, number>();
+
+    for (const dispatch of activeDispatches) {
+      if (dispatch.officialUserId == null) continue;
+      counts.set(dispatch.officialUserId, (counts.get(dispatch.officialUserId) ?? 0) + 1);
+    }
+
+    return counts;
+  }, [activeDispatches]);
+  const responderSectorOptions = useMemo(() => {
+    const sectors = new Set(
+      availableResponders
+        .map((responder) => responder.sector.trim())
+        .filter((sector) => sector.length > 0),
+    );
+
+    return ['All sectors', ...[...sectors].sort((left, right) => left.localeCompare(right))];
+  }, [availableResponders]);
+  const filteredDispatchModalOptions = useMemo(
+    () =>
+      dispatchModalOptions.filter(
+        ({ responder }) => selectedSector === 'All sectors' || responder.sector === selectedSector,
+      ),
+    [dispatchModalOptions, selectedSector],
   );
 
   const focusIncident = (incident: IIncident) => {
@@ -414,56 +547,68 @@ export default function AlertsDispatchPage() {
       return;
     }
 
-    const availableResponders = operationalResponders.filter(
-      (item): item is OperationalResponder & { latitude: number; longitude: number } =>
-        item.status === 'Available' && item.latitude != null && item.longitude != null,
-    );
     if (availableResponders.length === 0) {
-      messageApi.error('No available officials can be dispatched yet. Add or migrate dispatch-linked officials first.');
+      messageApi.error('No available officials can be dispatched right now.');
       return;
     }
 
-    const nearestResponder = availableResponders.reduce((closest, candidate) => {
-      const candidateDistance = haversineKm(
-        candidate.latitude,
-        candidate.longitude,
-        incident.latitude as number,
-        incident.longitude as number,
-      );
+    const responderSelection = selectPreferredResponder(availableResponders, incident);
 
-      if (!closest) {
-        return { responder: candidate, distance: candidateDistance };
-      }
-
-      return candidateDistance < closest.distance
-        ? { responder: candidate, distance: candidateDistance }
-        : closest;
-    }, null as { responder: OperationalResponder; distance: number } | null);
-
-    if (!nearestResponder) {
-      messageApi.error('Unable to determine the nearest official for this incident.');
+    if (!responderSelection) {
+      messageApi.error('Unable to determine which official should receive this dispatch.');
       return;
     }
+
+    setDispatchCandidateIncidentId(incidentId);
+    setSelectedResponderId(responderSelection.responder.officialUserId);
+    setSelectedSector('All sectors');
+  };
+
+  const handleConfirmDispatch = async () => {
+    if (!dispatchCandidateIncident || dispatchCandidateIncident.latitude == null || dispatchCandidateIncident.longitude == null) {
+      messageApi.error('This incident is missing coordinates, so it cannot be dispatched from the map.');
+      return;
+    }
+
+    const responder = availableResponders.find((item) => item.officialUserId === selectedResponderId);
+    if (!responder) {
+      messageApi.error('Choose an available official before dispatching.');
+      return;
+    }
+
+    const distance =
+      responder.latitude != null && responder.longitude != null
+        ? haversineKm(
+            responder.latitude,
+            responder.longitude,
+            dispatchCandidateIncident.latitude as number,
+            dispatchCandidateIncident.longitude as number,
+          )
+        : null;
+
+    setIsDispatchSubmitting(true);
 
     const created = await createDispatch({
-      incidentId,
-      caseId: incident.caseId,
-      officialUserId: nearestResponder.responder.officialUserId,
+      incidentId: dispatchCandidateIncident.id,
+      caseId: dispatchCandidateIncident.caseId,
+      officialUserId: responder.officialUserId,
       status: 'EnRoute',
-      responderExternalId: nearestResponder.responder.id,
-      responderRank: nearestResponder.responder.rank,
-      responderName: nearestResponder.responder.name,
-      responderSector: nearestResponder.responder.sector,
-      responderLatitude: nearestResponder.responder.latitude,
-      responderLongitude: nearestResponder.responder.longitude,
-      incidentLatitudeSnapshot: incident.latitude,
-      incidentLongitudeSnapshot: incident.longitude,
-      estimatedDistanceKm: Number(nearestResponder.distance.toFixed(1)),
+      responderExternalId: responder.id,
+      responderRank: responder.rank,
+      responderName: responder.name,
+      responderSector: responder.sector,
+      responderLatitude: responder.latitude,
+      responderLongitude: responder.longitude,
+      incidentLatitudeSnapshot: dispatchCandidateIncident.latitude,
+      incidentLongitudeSnapshot: dispatchCandidateIncident.longitude,
+      estimatedDistanceKm: distance != null ? Number(distance.toFixed(1)) : null,
       assignedAt: new Date().toISOString(),
       enRouteAt: new Date().toISOString(),
       assignmentSource: 'Manual',
       notes: 'Created from Alerts & Dispatch board',
     });
+
+    setIsDispatchSubmitting(false);
 
     if (!created) {
       messageApi.error('Dispatch creation failed. Check that the database migration is applied and the user has the Official role.');
@@ -471,7 +616,10 @@ export default function AlertsDispatchPage() {
     }
 
     messageApi.success('Dispatch created.');
-    focusIncident(incident);
+    focusIncident(dispatchCandidateIncident);
+    setDispatchCandidateIncidentId(null);
+    setSelectedResponderId(null);
+    setSelectedSector('All sectors');
   };
 
   const handleViewOnMap = (incident: IIncident) => {
@@ -510,6 +658,87 @@ export default function AlertsDispatchPage() {
   return (
     <div className={styles.page}>
       {contextHolder}
+      <Modal
+        title="Dispatch official"
+        open={!!dispatchCandidateIncident}
+        onCancel={() => {
+          if (isDispatchSubmitting) return;
+          setDispatchCandidateIncidentId(null);
+          setSelectedResponderId(null);
+          setSelectedSector('All sectors');
+        }}
+        onOk={() => void handleConfirmDispatch()}
+        okText="Dispatch"
+        okButtonProps={{
+          disabled:
+            selectedResponderId == null ||
+            !filteredDispatchModalOptions.some(({ responder }) => responder.officialUserId === selectedResponderId),
+          loading: isDispatchSubmitting,
+        }}
+        cancelButtonProps={{ disabled: isDispatchSubmitting }}
+      >
+        <Space orientation="vertical" size={12} style={{ width: '100%' }}>
+          <div>
+            <Text strong>{dispatchCandidateIncident?.title}</Text>
+            <div>
+              <Text type="secondary">{dispatchCandidateIncident?.location}</Text>
+            </div>
+          </div>
+          <div>
+            <Text type="secondary">Choose which available official should receive this dispatch.</Text>
+          </div>
+          <Select
+            value={selectedSector}
+            onChange={(value) => setSelectedSector(value)}
+            style={{ width: '100%' }}
+            options={responderSectorOptions.map((sector) => ({
+              value: sector,
+              label: sector,
+            }))}
+          />
+          <Select
+            value={selectedResponderId ?? undefined}
+            onChange={(value) => setSelectedResponderId(value)}
+            style={{ width: '100%' }}
+            placeholder="Select an official"
+            optionLabelProp="label"
+            options={filteredDispatchModalOptions.map(({ responder, distance }) => ({
+              value: responder.officialUserId,
+              label: `${responder.rank} ${responder.name}`.trim(),
+              searchLabel: `${responder.rank} ${responder.name} ${responder.sector}`.trim(),
+              children: (
+                <div>
+                  <div>{`${responder.rank} ${responder.name}`.trim()}</div>
+                  <Text type="secondary">
+                    {distance != null
+                      ? `${distance.toFixed(1)} km away`
+                      : 'No live location on record'}
+                    {' · '}
+                    {responder.sector}
+                    {' · '}
+                    {responderAssignmentCountByUserId.get(responder.officialUserId) ?? 0} active assignment
+                    {(responderAssignmentCountByUserId.get(responder.officialUserId) ?? 0) === 1 ? '' : 's'}
+                  </Text>
+                </div>
+              ),
+            }))}
+            filterOption={(input, option) =>
+              (option?.searchLabel as string | undefined)?.toLowerCase().includes(input.toLowerCase()) ?? false
+            }
+          />
+          {filteredDispatchModalOptions.length === 0 && (
+            <Text type="secondary">No available officials match the selected sector.</Text>
+          )}
+          {preferredResponderSelection && (
+            <Text type="secondary">
+              Recommended: {`${preferredResponderSelection.responder.rank} ${preferredResponderSelection.responder.name}`.trim()}
+              {preferredResponderSelection.distance != null
+                ? ` (${preferredResponderSelection.distance.toFixed(1)} km away)`
+                : ' (first available official without location history)'}
+            </Text>
+          )}
+        </Space>
+      </Modal>
       <div className={cx(styles.panel, styles.leftPanel)}>
         <div className={styles.leftScroll}>
           <div className={styles.headerBlock}>
@@ -522,7 +751,7 @@ export default function AlertsDispatchPage() {
             {!canDispatch && (
               <div>
                 <Text type="warning">
-                  Dispatching is currently unavailable because no available dispatch-linked officials were found.
+                  Dispatching is currently unavailable because no available officials were found.
                 </Text>
               </div>
             )}
@@ -651,6 +880,10 @@ export default function AlertsDispatchPage() {
                           {responder.rank} {responder.name}
                         </div>
                         <Text type="secondary">{responder.sector}</Text>
+                        <Text type="secondary">
+                          {responderAssignmentCountByUserId.get(responder.officialUserId) ?? 0} active assignment
+                          {(responderAssignmentCountByUserId.get(responder.officialUserId) ?? 0) === 1 ? '' : 's'}
+                        </Text>
                         <Text type="secondary">Updated {responder.lastUpdatedMinutes} min ago</Text>
                       </div>
                       <Tag color={getResponderTagColor(responder.status)}>{responder.status}</Tag>
