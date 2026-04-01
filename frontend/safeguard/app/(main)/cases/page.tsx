@@ -9,7 +9,7 @@ import {
 } from '@hello-pangea/dnd';
 import {
   Button, Drawer, Form, Input, Modal,
-  Select, Spin, Tag,
+  Select, Spin, Tag, message,
 } from 'antd';
 import {
   CalendarOutlined,
@@ -49,6 +49,8 @@ const STATUS_TAG_COLORS: Record<string, string> = {
   Draft: 'default', Open: 'blue', UnderReview: 'purple',
   PendingTrial: 'gold', Closed: 'green', Void: 'red',
 };
+
+const CASE_BOARD_FETCH_PARAMS = { skipCount: 0, maxResultCount: 1000 };
 
 function statusLabel(key: string) {
   return PIPELINE_STAGES.find((s) => s.key === key)?.label ?? key;
@@ -184,10 +186,33 @@ export default function CasesPage() {
   const [editingCase, setEditingCase] = useState<ICase | null>(null);
   const [transitionModal, setTransitionModal] = useState(false);
   const [pendingDrop, setPendingDrop] = useState<{ caseItem: ICase; toStatus: string } | null>(null);
+  const [submittingCase, setSubmittingCase] = useState(false);
   const [form] = Form.useForm<ICreateCaseInput>();
 
+  const getRequestErrorMessage = (error: unknown, fallback: string) => {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      typeof error.response === 'object' &&
+      error.response !== null &&
+      'data' in error.response &&
+      typeof error.response.data === 'object' &&
+      error.response.data !== null &&
+      'error' in error.response.data &&
+      typeof error.response.data.error === 'object' &&
+      error.response.data.error !== null &&
+      'message' in error.response.data.error &&
+      typeof error.response.data.error.message === 'string'
+    ) {
+      return error.response.data.error.message;
+    }
+
+    return fallback;
+  };
+
   useEffect(() => {
-    fetchAll();
+    fetchAll(CASE_BOARD_FETCH_PARAMS);
     fetchAllIncidents({ skipCount: 0, maxResultCount: 1000 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -231,34 +256,49 @@ export default function CasesPage() {
     setPendingDrop(null);
   };
 
-  const handleCaseSubmit = (values: ICreateCaseInput) => {
-    if (caseModalMode === 'edit' && editingCase) {
-      const input: IUpdateCaseInput = {
-        id: editingCase.id,
-        title: values.title,
-        summary: values.summary ?? null,
-        status: values.status,
-        severity: values.severity,
-        category: values.category ?? null,
-        incidentIds: values.incidentIds ?? [],
-        isCourtReady: editingCase.isCourtReady,
-        closedAt: editingCase.closedAt,
-        closureReason: editingCase.closureReason,
-      };
+  const handleCaseSubmit = async (values: ICreateCaseInput) => {
+    setSubmittingCase(true);
 
-      update(editingCase.id, input);
-      setSelected(null);
-    } else {
-      create({
-        ...values,
-        incidentIds: values.incidentIds ?? [],
-        openedAt: new Date().toISOString(),
-      });
+    try {
+      if (caseModalMode === 'edit' && editingCase) {
+        const input: IUpdateCaseInput = {
+          id: editingCase.id,
+          title: values.title,
+          summary: values.summary ?? null,
+          status: values.status,
+          severity: values.severity,
+          category: values.category ?? null,
+          incidentIds: values.incidentIds ?? [],
+          isCourtReady: editingCase.isCourtReady,
+          closedAt: editingCase.closedAt,
+          closureReason: editingCase.closureReason,
+        };
+
+        await update(editingCase.id, input);
+        setSelected(null);
+        message.success('Case updated.');
+      } else {
+        await create({
+          ...values,
+          incidentIds: values.incidentIds ?? [],
+          openedAt: new Date().toISOString(),
+        });
+        message.success('Case created.');
+      }
+
+      form.resetFields();
+      setEditingCase(null);
+      setCaseModalOpen(false);
+    } catch (error: unknown) {
+      message.error(
+        getRequestErrorMessage(
+          error,
+          caseModalMode === 'create' ? 'Failed to create case.' : 'Failed to update case.'
+        )
+      );
+    } finally {
+      setSubmittingCase(false);
     }
-
-    form.resetFields();
-    setEditingCase(null);
-    setCaseModalOpen(false);
   };
 
   const openCreateModal = () => {
@@ -571,6 +611,7 @@ export default function CasesPage() {
           form.resetFields();
         }}
         onOk={() => form.submit()}
+        confirmLoading={submittingCase}
         okText={caseModalMode === 'create' ? 'Create' : 'Save Changes'}
         width={540}
       >

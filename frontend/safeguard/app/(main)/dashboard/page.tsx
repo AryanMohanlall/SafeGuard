@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Button, Card, Col, Grid, Row, Spin, Statistic, Tag, theme, Typography, message } from 'antd';
+import { Button, Card, Col, Grid, Row, Segmented, Spin, Statistic, Tag, theme, Typography, message } from 'antd';
 import {
   AlertOutlined,
+  CheckCircleOutlined,
   EnvironmentOutlined,
   EyeInvisibleOutlined,
   FileImageOutlined,
-  CheckCircleOutlined,
 } from '@ant-design/icons';
 import {
   Bar,
@@ -32,9 +32,28 @@ import { useStyles } from './styles/style';
 
 const { Text } = Typography;
 
+type TrendRangeKey = '7d' | '30d' | '90d' | '365d' | 'all';
+type TrendFilterKey = 'all' | 'anonymous' | 'media';
+
+const TREND_RANGE_OPTIONS: { label: string; value: TrendRangeKey }[] = [
+  { label: '7 days', value: '7d' },
+  { label: '30 days', value: '30d' },
+  { label: '90 days', value: '90d' },
+  { label: '12 months', value: '365d' },
+  { label: 'All time', value: 'all' },
+];
+
+const TREND_FILTER_OPTIONS: { label: string; value: TrendFilterKey }[] = [
+  { label: 'All incidents', value: 'all' },
+  { label: 'Anonymous only', value: 'anonymous' },
+  { label: 'With media', value: 'media' },
+];
+
+const BASE = '/api/services/app/incident';
+
 function MapLoading() {
   const { styles } = useStyles();
-  return <div className={styles.mapLoadingContainer}>Loading map…</div>;
+  return <div className={styles.mapLoadingContainer}>Loading map...</div>;
 }
 
 const IncidentHeatmap = dynamic(() => import('../../../components/Map/IncidentHeatmap'), {
@@ -42,26 +61,86 @@ const IncidentHeatmap = dynamic(() => import('../../../components/Map/IncidentHe
   loading: () => <MapLoading />,
 });
 
-const BASE = '/api/services/app/incident';
-
 function getPriorityBucket(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' | null {
   if (incident.priorityTag === 'HIGH' || incident.priorityTag === 'MEDIUM' || incident.priorityTag === 'LOW') {
     return incident.priorityTag;
   }
 
-  if (incident.caseLikelihood == null) {
-    return null;
+  if (incident.caseLikelihood != null) {
+    if (incident.caseLikelihood >= 0.75) {
+      return 'HIGH';
+    }
+
+    if (incident.caseLikelihood >= 0.25) {
+      return 'MEDIUM';
+    }
+
+    return 'LOW';
   }
 
-  if (incident.caseLikelihood >= 0.75) {
+  const haystack = `${incident.title} ${incident.description}`.toLowerCase();
+  if (/(gun|shoot|armed|fire|explosion|attack|assault|hijack|critical)/.test(haystack)) {
     return 'HIGH';
   }
 
-  if (incident.caseLikelihood >= 0.25) {
+  if (/(fight|suspicious|theft|robbery|crowd|traffic|break)/.test(haystack)) {
     return 'MEDIUM';
   }
 
   return 'LOW';
+}
+
+function buildTrendData(incidents: IIncident[], range: TrendRangeKey) {
+  const now = dayjs().startOf('day');
+  const unit = range === '365d' || range === 'all' ? 'month' : 'day';
+  const format = unit === 'month' ? 'MMM YYYY' : 'MMM D';
+  const stepCount =
+    range === '7d' ? 7 :
+    range === '30d' ? 30 :
+    range === '90d' ? 90 :
+    range === '365d' ? 12 :
+    Math.max(
+      1,
+      now.diff(
+        incidents.reduce((earliest, incident) => {
+          const occurredAt = dayjs(incident.occurredAt);
+          return occurredAt.isBefore(earliest) ? occurredAt : earliest;
+        }, now),
+        'month',
+      ) + 1,
+    );
+
+  const counts: Record<string, number> = {};
+
+  for (let index = stepCount - 1; index >= 0; index--) {
+    const label =
+      unit === 'month'
+        ? now.subtract(index, 'month').startOf('month').format(format)
+        : now.subtract(index, 'day').format(format);
+    counts[label] = 0;
+  }
+
+  incidents.forEach((incident) => {
+    const occurredAt = dayjs(incident.occurredAt);
+    const label = unit === 'month' ? occurredAt.startOf('month').format(format) : occurredAt.format(format);
+    if (label in counts) {
+      counts[label] += 1;
+    }
+  });
+
+  return Object.entries(counts).map(([date, count]) => ({ date, count }));
+}
+
+function filterTrendIncidents(incidents: IIncident[], filter: TrendFilterKey) {
+  if (filter === 'anonymous') {
+    return incidents.filter((incident) => incident.anonymous);
+  }
+
+  if (filter === 'media') {
+    return incidents.filter((incident) => incident.hasAudio || incident.hasImage);
+  }
+
+  return incidents;
 }
 
 export default function Dashboard() {
@@ -77,6 +156,8 @@ export default function Dashboard() {
   const [incidents, setIncidents] = useState<IIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [dispatchSubmitting, setDispatchSubmitting] = useState(false);
+  const [trendRange, setTrendRange] = useState<TrendRangeKey>('30d');
+  const [trendFilter, setTrendFilter] = useState<TrendFilterKey>('all');
 
   useEffect(() => {
     (async () => {
@@ -104,11 +185,78 @@ export default function Dashboard() {
             dispatch.officialUserId === user?.userId &&
             ['Dispatched', 'EnRoute', 'OnScene'].includes(dispatch.status),
         )
-        .sort(
-          (left, right) =>
-            new Date(right.assignedAt).getTime() - new Date(left.assignedAt).getTime(),
-        )[0] ?? null,
+        .sort((left, right) => new Date(right.assignedAt).getTime() - new Date(left.assignedAt).getTime())[0] ?? null,
     [dispatches, user?.userId],
+  );
+
+  const totalCount = incidents.length;
+  const withGps = useMemo(() => incidents.filter((incident) => incident.latitude != null && incident.longitude != null).length, [incidents]);
+  const anonymousCount = useMemo(() => incidents.filter((incident) => incident.anonymous).length, [incidents]);
+  const withMedia = useMemo(() => incidents.filter((incident) => incident.hasAudio || incident.hasImage).length, [incidents]);
+
+  const filteredTrendIncidents = useMemo(
+    () => filterTrendIncidents(incidents, trendFilter),
+    [incidents, trendFilter],
+  );
+  const trendData = useMemo(
+    () => buildTrendData(filteredTrendIncidents, trendRange),
+    [filteredTrendIncidents, trendRange],
+  );
+  const trendTotal = useMemo(() => trendData.reduce((sum, item) => sum + item.count, 0), [trendData]);
+  const trendPeak = useMemo(() => trendData.reduce((peak, item) => Math.max(peak, item.count), 0), [trendData]);
+  const trendAverage = trendData.length > 0 ? (trendTotal / trendData.length).toFixed(1) : '0.0';
+
+  const mediaData = useMemo(() => {
+    let audio = 0;
+    let image = 0;
+    let both = 0;
+    let none = 0;
+
+    incidents.forEach((incident) => {
+      if (incident.hasAudio && incident.hasImage) both += 1;
+      else if (incident.hasAudio) audio += 1;
+      else if (incident.hasImage) image += 1;
+      else none += 1;
+    });
+
+    return [
+      { name: 'Image + Audio', value: both, fill: '#0f766e' },
+      { name: 'Image only', value: image, fill: '#0ea5e9' },
+      { name: 'Audio only', value: audio, fill: '#22c55e' },
+      { name: 'No media', value: none, fill: '#334155' },
+    ].filter((item) => item.value > 0);
+  }, [incidents]);
+
+  const priorityData = useMemo(() => {
+    let high = 0;
+    let medium = 0;
+    let low = 0;
+
+    incidents.forEach((incident) => {
+      const priority = getPriorityBucket(incident);
+      if (priority === 'HIGH') high += 1;
+      else if (priority === 'MEDIUM') medium += 1;
+      else if (priority === 'LOW') low += 1;
+    });
+
+    const total = high + medium + low;
+    if (total === 0) return [];
+
+    const percent = (value: number) => Math.round((value / total) * 100);
+
+    return [
+      { name: 'High', value: high, fill: token.colorError, label: `High ${high} (${percent(high)}%)` },
+      { name: 'Medium', value: medium, fill: token.colorWarning, label: `Medium ${medium} (${percent(medium)}%)` },
+      { name: 'Low', value: low, fill: '#64748b', label: `Low ${low} (${percent(low)}%)` },
+    ].filter((item) => item.value > 0);
+  }, [incidents, token]);
+
+  const anonData = useMemo(
+    () => [
+      { name: 'Identified', value: totalCount - anonymousCount, fill: '#2563eb' },
+      { name: 'Anonymous', value: anonymousCount, fill: '#0f172a' },
+    ].filter((item) => item.value > 0),
+    [anonymousCount, totalCount],
   );
 
   const handleMarkOnScene = async () => {
@@ -145,77 +293,6 @@ export default function Dashboard() {
     messageApi.success('Dispatch completed. You are now available for reassignment.');
   };
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const totalCount = incidents.length;
-  const withGps = useMemo(
-    () => incidents.filter((i) => i.latitude != null && i.longitude != null).length,
-    [incidents],
-  );
-  const anonymousCount = useMemo(() => incidents.filter((i) => i.anonymous).length, [incidents]);
-  const withMedia = useMemo(
-    () => incidents.filter((i) => i.hasAudio || i.hasImage).length,
-    [incidents],
-  );
-
-  // ── Incidents per day (last 30 days) ───────────────────────────────────────
-  const dailyData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    const today = dayjs().startOf('day');
-    for (let d = 29; d >= 0; d--) {
-      counts[today.subtract(d, 'day').format('MMM D')] = 0;
-    }
-    incidents.forEach((i) => {
-      const key = dayjs(i.occurredAt).format('MMM D');
-      if (key in counts) counts[key]++;
-    });
-    return Object.entries(counts).map(([date, count]) => ({ date, count }));
-  }, [incidents]);
-
-  // ── Media breakdown pie ────────────────────────────────────────────────────
-  const mediaData = useMemo(() => {
-    let audio = 0, image = 0, both = 0, none = 0;
-    incidents.forEach((i) => {
-      if (i.hasAudio && i.hasImage) both++;
-      else if (i.hasAudio) audio++;
-      else if (i.hasImage) image++;
-      else none++;
-    });
-    return [
-      { name: 'Image + Audio', value: both,  fill: '#8b5cf6' },
-      { name: 'Image only',    value: image, fill: '#06b6d4' },
-      { name: 'Audio only',    value: audio, fill: '#10b981' },
-      { name: 'No media',      value: none,  fill: '#060b10' },
-    ].filter((d) => d.value > 0);
-  }, [incidents]);
-
-  // ── AI priority distribution ───────────────────────────────────────────────
-  const priorityData = useMemo(() => {
-    let high = 0, medium = 0, low = 0;
-    incidents.forEach((i) => {
-      const priority = getPriorityBucket(i);
-      if (priority === 'HIGH') high++;
-      else if (priority === 'MEDIUM') medium++;
-      else if (priority === 'LOW') low++;
-    });
-    const total = high + medium + low;
-    if (total === 0) return [];
-    const pct = (n: number) => Math.round((n / total) * 100);
-    return [
-      { name: 'High',   value: high,   fill: token.colorError,           label: `High   ${high}  (${pct(high)}%)` },
-      { name: 'Medium', value: medium, fill: token.colorWarning,         label: `Medium ${medium}  (${pct(medium)}%)` },
-      { name: 'Low',    value: low,    fill: token.colorTextQuaternary,  label: `Low    ${low}  (${pct(low)}%)` },
-    ].filter((d) => d.value > 0);
-  }, [incidents, token]);
-
-  // ── Anonymous vs Identified pie ────────────────────────────────────────────
-  const anonData = useMemo(
-    () => [
-      { name: 'Identified', value: totalCount - anonymousCount, fill: '#2563eb' },
-      { name: 'Anonymous',  value: anonymousCount,              fill: '#090e15' },
-    ].filter((d) => d.value > 0),
-    [totalCount, anonymousCount],
-  );
-
   if (loading) {
     return (
       <div className={styles.loadingWrapper}>
@@ -224,17 +301,54 @@ export default function Dashboard() {
     );
   }
 
-  const statSuffix = totalCount > 0
-    ? <span className={styles.statSuffix}>/ {totalCount}</span>
-    : undefined;
+  const statSuffix = totalCount > 0 ? <span className={styles.statSuffix}>/ {totalCount}</span> : undefined;
+  const trendLabel = TREND_RANGE_OPTIONS.find((option) => option.value === trendRange)?.label ?? '30 days';
+  const trendFilterLabel = TREND_FILTER_OPTIONS.find((option) => option.value === trendFilter)?.label ?? 'All incidents';
+  const angledTicks = trendRange === '365d' || trendRange === 'all';
 
   return (
     <div className={styles.pageWrapper}>
       {contextHolder}
-      {/* Header */}
+
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Dashboard</h1>
+        <div>
+          <h1 className={styles.pageTitle}>Operations Dashboard</h1>
+          <p className={styles.pageSubtitle}>
+            Live situational overview for reporting volume, field readiness, and media quality.
+          </p>
+        </div>
+        <div className={styles.headerBadgeRow}>
+          <Tag color={myActiveDispatch ? 'processing' : 'success'}>
+            {myActiveDispatch ? 'Responder engaged' : 'Responder ready'}
+          </Tag>
+        </div>
       </div>
+
+      <Card className={styles.heroCard}>
+        <div className={styles.heroGrid}>
+          <div>
+            <div className={styles.heroEyebrow}>Command snapshot</div>
+            <div className={styles.heroTitle}>See operational load, route readiness, and reporting quality at a glance.</div>
+            <div className={styles.heroText}>
+              Expand the incident trend horizon, monitor your own dispatch state, and use the heatmap to spot where activity is clustering.
+            </div>
+          </div>
+          <div className={styles.heroStats}>
+            <div className={styles.heroStat}>
+              <span className={styles.heroStatValue}>{totalCount}</span>
+              <span className={styles.heroStatLabel}>Incidents loaded</span>
+            </div>
+            <div className={styles.heroStat}>
+              <span className={styles.heroStatValue}>{withGps}</span>
+              <span className={styles.heroStatLabel}>With coordinates</span>
+            </div>
+            <div className={styles.heroStat}>
+              <span className={styles.heroStatValue}>{myActiveDispatch ? '1' : '0'}</span>
+              <span className={styles.heroStatLabel}>My live dispatches</span>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {user && (
         <Card className={styles.card} style={{ marginBottom: 24 }}>
@@ -242,16 +356,10 @@ export default function Dashboard() {
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} lg={16}>
                 <p className={styles.sectionLabel}>My active dispatch</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div className={styles.dispatchMeta}>
                   <Text strong>{myActiveDispatch.incidentTitle ?? 'Assigned incident'}</Text>
-                  <Text type="secondary">
-                    {myActiveDispatch.caseNumber
-                      ? `Case ${myActiveDispatch.caseNumber}`
-                      : 'No linked case yet'}
-                  </Text>
-                  <Text type="secondary">
-                    Assigned {dayjs(myActiveDispatch.assignedAt).format('MMM D, YYYY h:mm A')}
-                  </Text>
+                  <Text type="secondary">{myActiveDispatch.caseNumber ? `Case ${myActiveDispatch.caseNumber}` : 'No linked case yet'}</Text>
+                  <Text type="secondary">Assigned {dayjs(myActiveDispatch.assignedAt).format('MMM D, YYYY h:mm A')}</Text>
                   <div>
                     <Tag color={myActiveDispatch.status === 'OnScene' ? 'error' : 'processing'}>
                       {myActiveDispatch.status === 'OnScene' ? 'On Scene' : 'En Route'}
@@ -263,7 +371,7 @@ export default function Dashboard() {
                 </div>
               </Col>
               <Col xs={24} lg={8}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                <div className={styles.dispatchActions}>
                   {myActiveDispatch.status !== 'OnScene' && (
                     <Button onClick={() => void handleMarkOnScene()} loading={dispatchSubmitting}>
                       On scene
@@ -285,11 +393,11 @@ export default function Dashboard() {
               <Col xs={24} lg={16}>
                 <p className={styles.sectionLabel}>My active dispatch</p>
                 <Text type="secondary">
-                  No active dispatch assigned to you right now. When a new assignment comes in, it will appear here automatically.
+                  No active dispatch assigned to you right now. New assignments will appear here automatically.
                 </Text>
               </Col>
               <Col xs={24} lg={8}>
-                <div style={{ display: 'flex', justifyContent: isMobile ? 'flex-start' : 'flex-end' }}>
+                <div className={styles.dispatchActions}>
                   <Tag color="success">Available</Tag>
                 </div>
               </Col>
@@ -298,12 +406,11 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Stat cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card className={styles.card}>
             <Statistic
-              title="Total Incidents"
+              title="Total incidents"
               value={totalCount}
               prefix={<AlertOutlined style={{ color: '#2563eb' }} />}
               styles={{ content: { color: '#0f172a' } }}
@@ -313,7 +420,7 @@ export default function Dashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card className={styles.card}>
             <Statistic
-              title="With GPS Location"
+              title="With GPS location"
               value={withGps}
               prefix={<EnvironmentOutlined style={{ color: '#10b981' }} />}
               styles={{ content: { color: '#0f172a' } }}
@@ -324,7 +431,7 @@ export default function Dashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card className={styles.card}>
             <Statistic
-              title="Anonymous Reports"
+              title="Anonymous reports"
               value={anonymousCount}
               prefix={<EyeInvisibleOutlined style={{ color: '#f59e0b' }} />}
               styles={{ content: { color: '#0f172a' } }}
@@ -335,9 +442,9 @@ export default function Dashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card className={styles.card}>
             <Statistic
-              title="With Media"
+              title="With media"
               value={withMedia}
-              prefix={<FileImageOutlined style={{ color: '#8b5cf6' }} />}
+              prefix={<FileImageOutlined style={{ color: '#0f766e' }} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -345,21 +452,47 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* Charts row */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {/* Incidents over time */}
         <Col xs={24} lg={14}>
           <Card className={styles.card} style={{ height: '100%' }}>
-            <p className={styles.sectionLabel}>Incidents — Last 30 Days</p>
-            <ResponsiveContainer width="100%" height={isMobile ? 220 : 260}>
-              <BarChart data={dailyData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+            <div className={styles.chartHeader}>
+              <div>
+                <p className={styles.sectionLabel}>Incident trend</p>
+                <div className={styles.chartTitleRow}>
+                  <span className={styles.chartTitle}>{trendLabel}</span>
+                  <Tag color="blue">{trendFilterLabel}</Tag>
+                  <Tag>{trendTotal} incidents</Tag>
+                  <Tag color="geekblue">Peak {trendPeak}</Tag>
+                  <Tag color="cyan">Avg {trendAverage}</Tag>
+                </div>
+              </div>
+              <div className={styles.chartControls}>
+                <Segmented
+                  options={TREND_FILTER_OPTIONS}
+                  value={trendFilter}
+                  onChange={(value) => setTrendFilter(value as TrendFilterKey)}
+                  size={isMobile ? 'small' : 'middle'}
+                />
+                <Segmented
+                  options={TREND_RANGE_OPTIONS}
+                  value={trendRange}
+                  onChange={(value) => setTrendRange(value as TrendRangeKey)}
+                  size={isMobile ? 'small' : 'middle'}
+                />
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
+              <BarChart data={trendData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 11, fill: '#94a3b8' }}
                   tickLine={false}
                   axisLine={false}
-                  interval={isMobile ? 'preserveStartEnd' : 4}
+                  interval={isMobile ? 'preserveStartEnd' : angledTicks ? 0 : 4}
+                  angle={angledTicks ? -18 : 0}
+                  textAnchor={angledTicks ? 'end' : 'middle'}
+                  height={angledTicks ? 56 : 30}
                 />
                 <YAxis
                   allowDecimals={false}
@@ -371,26 +504,25 @@ export default function Dashboard() {
                   contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
                   cursor={{ fill: '#f1f5f9' }}
                 />
-                <Bar dataKey="count" name="Incidents" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" name="Incidents" fill="#2563eb" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
         </Col>
 
-        {/* Pie charts */}
         <Col xs={24} lg={10}>
           <Row gutter={[16, 16]} style={{ height: '100%' }}>
             <Col xs={24} sm={12} lg={24}>
               <Card className={styles.card}>
-                <p className={styles.sectionLabel}>Reporter Identity</p>
-                <ResponsiveContainer width="100%" height={130}>
+                <p className={styles.sectionLabel}>Reporter identity</p>
+                <ResponsiveContainer width="100%" height={160}>
                   <PieChart>
                     <Pie
                       data={anonData}
                       cx="50%"
                       cy="50%"
                       innerRadius={38}
-                      outerRadius={58}
+                      outerRadius={62}
                       paddingAngle={3}
                       dataKey="value"
                     />
@@ -402,15 +534,15 @@ export default function Dashboard() {
             </Col>
             <Col xs={24} sm={12} lg={24}>
               <Card className={styles.card}>
-                <p className={styles.sectionLabel}>Media Attachments</p>
-                <ResponsiveContainer width="100%" height={130}>
+                <p className={styles.sectionLabel}>Media attachments</p>
+                <ResponsiveContainer width="100%" height={160}>
                   <PieChart>
                     <Pie
                       data={mediaData}
                       cx="50%"
                       cy="50%"
                       innerRadius={38}
-                      outerRadius={58}
+                      outerRadius={62}
                       paddingAngle={3}
                       dataKey="value"
                     />
@@ -424,11 +556,10 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* AI priority distribution */}
       <Card className={styles.card} style={{ marginBottom: 24 }}>
         <p className={styles.sectionLabel}>AI priority distribution</p>
-        <p style={{ fontSize: 12, color: '#94a3b8', marginTop: -12, marginBottom: 16 }}>
-          Based on AI priority tags across all loaded incidents
+        <p className={styles.chartSupportText}>
+          Based on AI priority tags and probability scores across all loaded incidents.
         </p>
         {priorityData.length > 0 ? (
           <ResponsiveContainer width="100%" height={isMobile ? 220 : 180}>
@@ -455,33 +586,21 @@ export default function Dashboard() {
                 iconSize={8}
                 wrapperStyle={{ fontSize: isMobile ? 11 : 12 }}
                 formatter={(_value, entry) => {
-                  const d = priorityData.find((p) => p.name === entry.value);
-                  return d?.label ?? entry.value;
+                  const item = priorityData.find((priority) => priority.name === entry.value);
+                  return item?.label ?? entry.value;
                 }}
               />
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div
-            style={{
-              minHeight: 180,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px dashed #cbd5e1',
-              borderRadius: 12,
-              color: '#64748b',
-              fontSize: 14,
-            }}
-          >
-            No AI priority data available for the loaded incidents yet.
+          <div className={styles.emptyState}>
+            No AI priority data is available for the incidents currently loaded into the dashboard.
           </div>
         )}
       </Card>
 
-      {/* Heatmap */}
       <Card className={styles.card}>
-        <p className={styles.sectionLabel}>Incident Heatmap</p>
+        <p className={styles.sectionLabel}>Incident heatmap</p>
         {withGps === 0 ? (
           <div className={styles.heatmapEmpty}>
             No incidents with GPS coordinates yet.

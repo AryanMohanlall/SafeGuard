@@ -75,6 +75,57 @@ interface IncidentFormValues {
   reportedAt: dayjs.Dayjs;
 }
 
+function deriveIncidentPriority(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' {
+  if (incident.priorityTag) {
+    return incident.priorityTag;
+  }
+
+  if (typeof incident.caseLikelihood === 'number') {
+    if (incident.caseLikelihood >= 0.75) return 'HIGH';
+    if (incident.caseLikelihood >= 0.25) return 'MEDIUM';
+    return 'LOW';
+  }
+
+  const haystack = `${incident.title} ${incident.description}`.toLowerCase();
+  if (/(gun|shoot|armed|fire|explosion|attack|assault|hijack|critical)/.test(haystack)) return 'HIGH';
+  if (/(fight|suspicious|theft|robbery|crowd|traffic|break)/.test(haystack)) return 'MEDIUM';
+  return 'LOW';
+}
+
+function getIncidentAiDisplay(incident: IIncident) {
+  const priorityTag = deriveIncidentPriority(incident);
+  const probability =
+    typeof incident.caseLikelihood === 'number'
+      ? incident.caseLikelihood
+      : priorityTag === 'HIGH'
+        ? 0.85
+        : priorityTag === 'MEDIUM'
+          ? 0.55
+          : 0.15;
+
+  return { priorityTag, probability };
+}
+
+function deriveCaseSeverity(incident: IIncident): 'Low' | 'Medium' | 'High' | 'Critical' {
+  const priorityTag = deriveIncidentPriority(incident);
+  if (priorityTag === 'HIGH') return 'High';
+  if (priorityTag === 'MEDIUM') return 'Medium';
+  return 'Low';
+}
+
+function deriveCaseCategory(incident: IIncident): string {
+  const haystack = `${incident.title} ${incident.description}`.toLowerCase();
+
+  if (/(theft|stolen|steal|robbery|break[- ]?in|burglary)/.test(haystack)) return 'Theft';
+  if (/(assault|fight|attack|stab|shoot|armed|gun|violence)/.test(haystack)) return 'Assault';
+  if (/(fraud|scam|forgery|embezzl)/.test(haystack)) return 'Fraud';
+  if (/(homicide|murder|fatal|killed|dead body)/.test(haystack)) return 'Homicide';
+  if (/(vandal|damage|graffiti|arson)/.test(haystack)) return 'Vandalism';
+  if (/(drug|narcotic|cocaine|heroin|meth|cannabis)/.test(haystack)) return 'Drug Offence';
+
+  return 'Other';
+}
+
 function getCaseForIncident(incident: IIncident, cases: ICase[]) {
   if (!incident.caseId) return null;
   return cases.find((caseItem) => caseItem.id === incident.caseId) ?? null;
@@ -288,15 +339,43 @@ const IncidentsPage = () => {
     try {
       await getAxiosInstance().post('/api/services/app/case/Create', {
         title: `Case: ${incident.title}`,
+        summary: incident.description?.trim() || incident.title,
         status: 'Open',
-        severity: 'High',
+        severity: deriveCaseSeverity(incident),
+        category: deriveCaseCategory(incident),
         incidentIds: [incident.id],
+        openedAt: new Date().toISOString(),
       });
       message.success('Case created and linked to this incident.');
       dismissedBanners.add(incident.id);
       forceUpdate((n) => n + 1);
-    } catch {
-      message.error('Failed to create case.');
+      await Promise.all([
+        fetchAllCases({ skipCount: 0, maxResultCount: 1000 }),
+        fetchAll({
+          skipCount: (page - 1) * pageSize,
+          maxResultCount: pageSize,
+          sortByCaseLikelihood: sortByAI,
+        }),
+      ]);
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof error.response === 'object' &&
+        error.response !== null &&
+        'data' in error.response &&
+        typeof error.response.data === 'object' &&
+        error.response.data !== null &&
+        'error' in error.response.data &&
+        typeof error.response.data.error === 'object' &&
+        error.response.data.error !== null &&
+        'message' in error.response.data.error &&
+        typeof error.response.data.error.message === 'string'
+          ? error.response.data.error.message
+          : 'Failed to create case.';
+
+      message.error(errorMessage);
     }
   };
 
@@ -306,10 +385,11 @@ const IncidentsPage = () => {
   };
 
   const activeCase = activeIncident ? getCaseForIncident(activeIncident, caseItems) : null;
+  const activeIncidentAi = activeIncident ? getIncidentAiDisplay(activeIncident) : null;
 
   const showAiBanner =
     activeIncident != null &&
-    (activeIncident.caseLikelihood ?? 0) >= 0.75 &&
+    (activeIncidentAi?.probability ?? 0) >= 0.75 &&
     activeIncident.caseId == null &&
     !dismissedBanners.has(activeIncident.id);
 
@@ -322,7 +402,7 @@ const IncidentsPage = () => {
       render: (title: string, record: IIncident) => (
         <span style={{ fontWeight: 500, color: '#1e293b' }}>
           {title}
-          {record.priorityTag === 'LOW' && (
+          {deriveIncidentPriority(record) === 'LOW' && (
             <Tag style={{ marginLeft: 8, fontSize: 11 }} color="default">
               Low priority
             </Tag>
@@ -395,12 +475,15 @@ const IncidentsPage = () => {
       title: 'Case likelihood',
       key: 'caseLikelihood',
       width: 130,
-      render: (_: unknown, record: IIncident) => (
-        <CaseLikelihoodBadge
-          probability={record.caseLikelihood}
-          priorityTag={record.priorityTag}
-        />
-      ),
+      render: (_: unknown, record: IIncident) => {
+        const aiDisplay = getIncidentAiDisplay(record);
+        return (
+          <CaseLikelihoodBadge
+            probability={aiDisplay.probability}
+            priorityTag={aiDisplay.priorityTag}
+          />
+        );
+      },
     },
     {
       title: 'Actions',
@@ -496,6 +579,7 @@ const IncidentsPage = () => {
               <div className={styles.mobileList}>
                 {items.map((incident) => {
                   const linkedCase = getCaseForIncident(incident, caseItems);
+                  const aiDisplay = getIncidentAiDisplay(incident);
                   return (
                     <div key={incident.id} className={styles.mobileIncidentCard}>
                       <div className={styles.mobileIncidentHeader}>
@@ -503,8 +587,8 @@ const IncidentsPage = () => {
                           <p className={styles.mobileIncidentTitle}>{incident.title}</p>
                           <div style={{ marginTop: 6 }}>
                             <CaseLikelihoodBadge
-                              probability={incident.caseLikelihood}
-                              priorityTag={incident.priorityTag}
+                              probability={aiDisplay.probability}
+                              priorityTag={aiDisplay.priorityTag}
                             />
                           </div>
                         </div>
@@ -526,7 +610,7 @@ const IncidentsPage = () => {
                         {incident.hasAudio && <Tag color="blue">Audio</Tag>}
                         {incident.hasImage && <Tag color="purple">Image</Tag>}
                         {incident.detectedObjects && <Tag color="green" icon={<RobotOutlined />}>AI analysed</Tag>}
-                        {incident.priorityTag === 'LOW' && <Tag color="default">Low priority</Tag>}
+                        {aiDisplay.priorityTag === 'LOW' && <Tag color="default">Low priority</Tag>}
                       </div>
 
                       <div className={styles.mobileIncidentActions}>
@@ -621,7 +705,7 @@ const IncidentsPage = () => {
                 description={
                   <>
                     This incident has a{' '}
-                    <strong>{Math.round((activeIncident.caseLikelihood ?? 0) * 100)}%</strong>{' '}
+                    <strong>{Math.round((activeIncidentAi?.probability ?? 0) * 100)}%</strong>{' '}
                     likelihood of requiring a formal case based on the report content, location,
                     and detected objects.
                   </>
@@ -692,13 +776,13 @@ const IncidentsPage = () => {
                 {dayjs(activeIncident.reportedAt).format('DD MMM YYYY HH:mm')}
               </p>
             </div>
-            {activeIncident.caseLikelihood != null && (
+            {activeIncidentAi != null && (
               <div className={styles.detailField}>
                 <p className={styles.detailLabel}>AI Case Likelihood</p>
                 <div style={{ marginTop: 2 }}>
                   <CaseLikelihoodBadge
-                    probability={activeIncident.caseLikelihood}
-                    priorityTag={activeIncident.priorityTag}
+                    probability={activeIncidentAi.probability}
+                    priorityTag={activeIncidentAi.priorityTag}
                   />
                 </div>
               </div>
