@@ -216,12 +216,7 @@ export default function AlertsDispatchPage() {
     let cancelled = false;
 
     void axiosInstance
-      .get('/api/services/app/User/GetAll', {
-        params: {
-          skipCount: 0,
-          maxResultCount: 1000,
-        },
-      })
+      .get('/api/services/app/OfficialDirectory/GetOfficials')
       .then((res) => {
         if (!cancelled) {
           setUsers(res.data.result?.items ?? []);
@@ -635,7 +630,7 @@ export default function AlertsDispatchPage() {
           <Card title="Responders" className={styles.sectionCard}>
             <div>
               {operationalResponders.length === 0 ? (
-                <Text type="secondary">No responders available from dispatch history yet.</Text>
+                <Text type="secondary">No active officials are available to display right now.</Text>
               ) : (
                 operationalResponders.map((responder) => (
                 <div key={responder.id} className={styles.listItem}>
