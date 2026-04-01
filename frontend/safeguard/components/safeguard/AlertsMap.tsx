@@ -2,7 +2,7 @@
 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, type MutableRefObject } from 'react';
 import { Button, Space, Tag, Typography } from 'antd';
 import {
   CircleMarker,
@@ -193,29 +193,80 @@ function FocusController({
   onBoundsChange: (bounds: MapBounds) => void;
 }) {
   const map = useMap();
+  const pendingPopupTimeoutRef = useRef<number | null>(null);
+  const handleFocusHandled = useEffectEvent(() => {
+    onFocusHandled();
+  });
+  const handleBoundsChange = useEffectEvent((bounds: MapBounds) => {
+    onBoundsChange(bounds);
+  });
 
   useEffect(() => {
     if (!focusTarget) return;
 
+    if (pendingPopupTimeoutRef.current != null) {
+      window.clearTimeout(pendingPopupTimeoutRef.current);
+      pendingPopupTimeoutRef.current = null;
+    }
+
+    map.stop();
+    map.closePopup();
     map.flyTo([focusTarget.latitude, focusTarget.longitude], map.getZoom(), { duration: 0.8 });
 
-    const timeoutId = window.setTimeout(() => {
+    pendingPopupTimeoutRef.current = window.setTimeout(() => {
       markerRefs.current[focusTarget.id]?.openPopup();
-      onFocusHandled();
+      handleFocusHandled();
+      pendingPopupTimeoutRef.current = null;
     }, 900);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [focusTarget, map, markerRefs, onFocusHandled]);
+    return () => {
+      if (pendingPopupTimeoutRef.current != null) {
+        window.clearTimeout(pendingPopupTimeoutRef.current);
+        pendingPopupTimeoutRef.current = null;
+      }
+    };
+  }, [focusTarget?.sequence, focusTarget, map, markerRefs]);
 
   useEffect(() => {
     if (centerTrigger === 0) return;
+
+    if (pendingPopupTimeoutRef.current != null) {
+      window.clearTimeout(pendingPopupTimeoutRef.current);
+      pendingPopupTimeoutRef.current = null;
+    }
+
+    map.stop();
+    map.closePopup();
     map.flyTo(JOHANNESBURG_CENTER, DEFAULT_ZOOM, { duration: 0.8 });
+    handleFocusHandled();
   }, [centerTrigger, map]);
+
+  useEffect(() => {
+    map.invalidateSize();
+
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingPopupTimeoutRef.current != null) {
+        window.clearTimeout(pendingPopupTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const emitBounds = () => {
       const bounds = map.getBounds();
-      onBoundsChange({
+      handleBoundsChange({
         south: bounds.getSouth(),
         west: bounds.getWest(),
         north: bounds.getNorth(),
@@ -231,7 +282,7 @@ function FocusController({
       map.off('moveend', emitBounds);
       map.off('zoomend', emitBounds);
     };
-  }, [map, onBoundsChange]);
+  }, [map]);
 
   return null;
 }
@@ -286,8 +337,14 @@ export default function AlertsMap({
     <MapContainer
       center={JOHANNESBURG_CENTER}
       zoom={DEFAULT_ZOOM}
+      className="safeguard-alerts-leaflet"
       style={{ height: '100%', width: '100%' }}
       scrollWheelZoom
+      dragging
+      touchZoom
+      doubleClickZoom
+      boxZoom
+      keyboard
       zoomControl
     >
       <TileLayer
@@ -385,6 +442,7 @@ export default function AlertsMap({
             [route.responderLatitude, route.responderLongitude],
             [route.incidentLatitude, route.incidentLongitude],
           ]}
+          interactive={false}
           pathOptions={{
             color: mapColors.routeBlue,
             weight: 3,

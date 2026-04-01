@@ -236,6 +236,39 @@ export const useStyles = createStyles(({ css, token }) => ({
     position: relative;
     height: calc(100vh - 64px);
     min-height: calc(100vh - 64px);
+    overflow: hidden;
+
+    :global(.safeguard-alerts-leaflet) {
+      height: 100%;
+      width: 100%;
+      touch-action: pan-x pan-y pinch-zoom;
+      cursor: grab;
+    }
+
+    :global(.safeguard-alerts-leaflet.leaflet-grab),
+    :global(.safeguard-alerts-leaflet .leaflet-grab) {
+      cursor: grab;
+    }
+
+    :global(.safeguard-alerts-leaflet.leaflet-dragging),
+    :global(.safeguard-alerts-leaflet .leaflet-dragging) {
+      cursor: grabbing;
+    }
+
+    :global(.safeguard-alerts-leaflet .leaflet-control-container) {
+      pointer-events: none;
+    }
+
+    :global(.safeguard-alerts-leaflet .leaflet-top),
+    :global(.safeguard-alerts-leaflet .leaflet-right),
+    :global(.safeguard-alerts-leaflet .leaflet-bottom),
+    :global(.safeguard-alerts-leaflet .leaflet-left),
+    :global(.safeguard-alerts-leaflet .leaflet-control),
+    :global(.safeguard-alerts-leaflet .leaflet-pane),
+    :global(.safeguard-alerts-leaflet .leaflet-marker-icon),
+    :global(.safeguard-alerts-leaflet .leaflet-popup) {
+      pointer-events: auto;
+    }
 
     @media (max-width: 991px) {
       height: 60vh;
