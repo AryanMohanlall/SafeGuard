@@ -153,6 +153,7 @@ const IncidentsPage = () => {
   const [viewMode, setViewMode] = useState<'table' | 'map'>('table');
   const [mapItems, setMapItems] = useState<IIncident[]>([]);
   const [mapLoading, setMapLoading] = useState(false);
+  const [deletingIncidentId, setDeletingIncidentId] = useState<string | null>(null);
 
   // Track dismissed banners for this session (re-render when set changes).
   const [, forceUpdate] = useState(0);
@@ -300,44 +301,97 @@ const IncidentsPage = () => {
   };
 
   const handleSubmit = async (values: IncidentFormValues) => {
-    if (drawerMode === 'create') {
-      const input: ICreateIncidentInput = {
-        title: values.title,
-        description: values.description,
-        location: values.location,
-        latitude: values.latitude ?? null,
-        longitude: values.longitude ?? null,
-        caseId: null,
-        anonymous: values.anonymous ?? false,
-        occurredAt: values.occurredAt.toISOString(),
-        reportedAt: new Date().toISOString(),
-      };
-      create(input);
-      message.success('Incident created.');
-    } else if (drawerMode === 'edit' && activeIncident) {
-      const input: IUpdateIncidentInput = {
-        id: activeIncident.id,
-        title: values.title,
-        description: values.description,
-        location: values.location,
-        latitude: values.latitude ?? null,
-        longitude: values.longitude ?? null,
-        caseId: activeIncident.caseId,
-        anonymous: values.anonymous ?? false,
-        occurredAt: values.occurredAt.toISOString(),
-        reportedAt: activeIncident.reportedAt,
-      };
-      update(activeIncident.id, input);
-      message.success('Incident updated.');
+    try {
+      if (drawerMode === 'create') {
+        const input: ICreateIncidentInput = {
+          title: values.title,
+          description: values.description,
+          location: values.location,
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
+          caseId: null,
+          anonymous: values.anonymous ?? false,
+          occurredAt: values.occurredAt.toISOString(),
+          reportedAt: new Date().toISOString(),
+        };
+        await create(input);
+        message.success('Incident created.');
+      } else if (drawerMode === 'edit' && activeIncident) {
+        const input: IUpdateIncidentInput = {
+          id: activeIncident.id,
+          title: values.title,
+          description: values.description,
+          location: values.location,
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
+          caseId: activeIncident.caseId,
+          anonymous: values.anonymous ?? false,
+          occurredAt: values.occurredAt.toISOString(),
+          reportedAt: activeIncident.reportedAt,
+        };
+        await update(activeIncident.id, input);
+        message.success('Incident updated.');
+      }
+      closeDrawer();
+      if (viewMode === 'map') {
+        await loadMapItems(searchTerm);
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof error.response === 'object' &&
+        error.response !== null &&
+        'data' in error.response &&
+        typeof error.response.data === 'object' &&
+        error.response.data !== null &&
+        'error' in error.response.data &&
+        typeof error.response.data.error === 'object' &&
+        error.response.data.error !== null &&
+        'message' in error.response.data.error &&
+        typeof error.response.data.error.message === 'string'
+          ? error.response.data.error.message
+          : drawerMode === 'create'
+            ? 'Failed to create incident.'
+            : 'Failed to update incident.';
+
+      message.error(errorMessage);
     }
-    closeDrawer();
-    fetchPage(page, sortByAI, searchTerm);
   };
 
-  const handleDelete = (id: string) => {
-    remove(id);
-    message.success('Incident deleted.');
-    fetchPage(page, sortByAI, searchTerm);
+  const handleDelete = async (id: string) => {
+    if (deletingIncidentId === id) return;
+
+    setDeletingIncidentId(id);
+    try {
+      await remove(id);
+      message.success('Incident deleted.');
+      if (viewMode === 'map') {
+        await loadMapItems(searchTerm);
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof error.response === 'object' &&
+        error.response !== null &&
+        'data' in error.response &&
+        typeof error.response.data === 'object' &&
+        error.response.data !== null &&
+        'error' in error.response.data &&
+        typeof error.response.data.error === 'object' &&
+        error.response.data.error !== null &&
+        'message' in error.response.data.error &&
+        typeof error.response.data.error.message === 'string'
+          ? error.response.data.error.message
+          : 'Failed to delete incident.';
+
+      message.error(errorMessage);
+    } finally {
+      setDeletingIncidentId(null);
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -523,11 +577,17 @@ const IncidentsPage = () => {
             description="This action cannot be undone."
             onConfirm={() => handleDelete(record.id)}
             okText="Delete"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, loading: deletingIncidentId === record.id }}
             cancelText="Cancel"
           >
             <Tooltip title="Delete">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                loading={deletingIncidentId === record.id}
+              />
             </Tooltip>
           </Popconfirm>
         </div>
@@ -644,10 +704,15 @@ const IncidentsPage = () => {
                           description="This action cannot be undone."
                           onConfirm={() => handleDelete(incident.id)}
                           okText="Delete"
-                          okButtonProps={{ danger: true }}
+                          okButtonProps={{ danger: true, loading: deletingIncidentId === incident.id }}
                           cancelText="Cancel"
                         >
-                          <Button size="small" danger icon={<DeleteOutlined />}>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            loading={deletingIncidentId === incident.id}
+                          >
                             Delete
                           </Button>
                         </Popconfirm>

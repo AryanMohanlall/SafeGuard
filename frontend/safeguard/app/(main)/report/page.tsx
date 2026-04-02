@@ -50,6 +50,7 @@ const IncidentPage = () => {
   const { styles } = useStyles();
   const { create } = useIncidentAction();
   const [form] = Form.useForm<IncidentFormValues>();
+  const [messageApi, contextHolder] = message.useMessage();
   const [anonymous, setAnonymous] = useState(false);
   const [geoStatus, setGeoStatus] = useState<GeoStatus>(() =>
     typeof navigator !== 'undefined' && navigator.geolocation ? 'requesting' : 'idle'
@@ -113,7 +114,7 @@ const IncidentPage = () => {
       mediaRecorderRef.current = recorder;
       setRecordingStatus('recording');
     } catch {
-      message.error('Microphone access denied.');
+      messageApi.error('Microphone access denied.');
     }
   };
 
@@ -143,7 +144,7 @@ const IncidentPage = () => {
       cameraStreamRef.current = stream;
       setCameraStatus('active');
     } catch {
-      message.error('Camera access denied.');
+      messageApi.error('Camera access denied.');
     }
   };
 
@@ -204,25 +205,29 @@ const IncidentPage = () => {
       imageContentType = imageFile.type;
     }
 
-    create({
-      title: values.title,
-      description: values.description,
-      location: values.location,
-      anonymous: values.anonymous ?? false,
-      occurredAt: values.occurredAt.toISOString(),
-      reportedAt: new Date().toISOString(),
-      latitude: coords?.latitude ?? null,
-      longitude: coords?.longitude ?? null,
-      audioFile: audioBase64,
-      audioFileName,
-      audioContentType,
-      imageFile: imageBase64,
-      imageFileName,
-      imageContentType,
-    });
+    try {
+      await create({
+        title: values.title,
+        description: values.description,
+        location: values.location,
+        anonymous: values.anonymous ?? false,
+        occurredAt: values.occurredAt.toISOString(),
+        reportedAt: new Date().toISOString(),
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
+        audioFile: audioBase64,
+        audioFileName,
+        audioContentType,
+        imageFile: imageBase64,
+        imageFileName,
+        imageContentType,
+      });
 
-    message.success('Incident submitted successfully.');
-    handleReset();
+      messageApi.success('Incident submitted successfully.');
+      handleReset();
+    } catch {
+      messageApi.error('Failed to submit the incident.');
+    }
   };
 
   const locationSuffix =
@@ -234,6 +239,7 @@ const IncidentPage = () => {
 
   return (
     <div className={styles.pageWrapper}>
+      {contextHolder}
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Report an Incident</h1>
         <p className={styles.pageSubtitle}>

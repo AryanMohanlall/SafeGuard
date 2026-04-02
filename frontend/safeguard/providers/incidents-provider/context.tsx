@@ -72,11 +72,11 @@ export interface IIncidentStateContext {
 }
 
 export interface IIncidentActionContext {
-  fetchAll: (params?: Record<string, unknown>) => void;
-  fetchById: (id: string) => void;
-  create: (input: ICreateIncidentInput) => void;
-  update: (id: string, input: IUpdateIncidentInput) => void;
-  remove: (id: string) => void;
+  fetchAll: (params?: Record<string, unknown>) => Promise<void>;
+  fetchById: (id: string) => Promise<void>;
+  create: (input: ICreateIncidentInput) => Promise<IIncident | void>;
+  update: (id: string, input: IUpdateIncidentInput) => Promise<IIncident | void>;
+  remove: (id: string) => Promise<void>;
 }
 
 export const INITIAL_STATE: IIncidentStateContext = {
@@ -89,9 +89,9 @@ export const INITIAL_STATE: IIncidentStateContext = {
 
 export const IncidentStateContext = createContext<IIncidentStateContext>(INITIAL_STATE);
 export const IncidentActionContext = createContext<IIncidentActionContext>({
-  fetchAll:  () => {},
-  fetchById: () => {},
-  create:    () => {},
-  update:    () => {},
-  remove:    () => {},
+  fetchAll:  async () => {},
+  fetchById: async () => {},
+  create:    async () => undefined,
+  update:    async () => undefined,
+  remove:    async () => {},
 });

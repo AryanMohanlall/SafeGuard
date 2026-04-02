@@ -22,6 +22,7 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
   const [state, dispatch] = useReducer(IncidentReducer, INITIAL_STATE);
 
   const BASE = '/api/services/app/incident';
+  const DEFAULT_FETCH_PARAMS = { skipCount: 0, maxResultCount: 1000 };
 
   const fetchAll = async (params?: Record<string, unknown>) => {
     dispatch(fetchAllPending());
@@ -49,8 +50,11 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
     try {
       const res = await instance.post(`${BASE}/Create`, input);
       dispatch(createSuccess(res.data.result));
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+      return res.data.result;
+    } catch (error) {
       dispatch(createError());
+      throw error;
     }
   };
 
@@ -59,8 +63,11 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
     try {
       const res = await instance.put(`${BASE}/Update`, { ...input, id });
       dispatch(updateSuccess(res.data.result));
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+      return res.data.result;
+    } catch (error) {
       dispatch(updateError());
+      throw error;
     }
   };
 
@@ -69,8 +76,10 @@ export const IncidentProvider = ({ children }: { children: React.ReactNode }) =>
     try {
       await instance.delete(`${BASE}/Delete`, { params: { id } });
       dispatch(deleteSuccess());
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+    } catch (error) {
       dispatch(deleteError());
+      throw error;
     }
   };
 
