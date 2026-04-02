@@ -143,7 +143,7 @@ function filterTrendIncidents(incidents: IIncident[], filter: TrendFilterKey) {
   return incidents;
 }
 
-export default function Dashboard() {
+const Dashboard = () => {
   const { styles } = useStyles();
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
@@ -412,7 +412,7 @@ export default function Dashboard() {
             <Statistic
               title="Total incidents"
               value={totalCount}
-              prefix={<AlertOutlined style={{ color: '#2563eb' }} />}
+              prefix={<AlertOutlined className={styles.iconPrimary} />}
               styles={{ content: { color: '#0f172a' } }}
             />
           </Card>
@@ -422,7 +422,7 @@ export default function Dashboard() {
             <Statistic
               title="With GPS location"
               value={withGps}
-              prefix={<EnvironmentOutlined style={{ color: '#10b981' }} />}
+              prefix={<EnvironmentOutlined className={styles.iconSuccess} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -433,7 +433,7 @@ export default function Dashboard() {
             <Statistic
               title="Anonymous reports"
               value={anonymousCount}
-              prefix={<EyeInvisibleOutlined style={{ color: '#f59e0b' }} />}
+              prefix={<EyeInvisibleOutlined className={styles.iconWarning} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -444,7 +444,7 @@ export default function Dashboard() {
             <Statistic
               title="With media"
               value={withMedia}
-              prefix={<FileImageOutlined style={{ color: '#0f766e' }} />}
+              prefix={<FileImageOutlined className={styles.iconInfo} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -613,4 +613,6 @@ export default function Dashboard() {
       </Card>
     </div>
   );
-}
+};
+
+export default Dashboard;

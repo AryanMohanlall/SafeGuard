@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 
-export const useStyles = createStyles(() => ({
+export const useStyles = createStyles(({ token }) => ({
   container: {
     minHeight: '100vh',
     display: 'flex',
@@ -169,5 +169,20 @@ export const useStyles = createStyles(() => ({
     '@media (max-width: 480px)': {
       gridTemplateColumns: '1fr',
     },
+  },
+  mobileBrandIcon: {
+    fontSize: 28,
+    color: token.colorPrimary,
+    flexShrink: 0,
+  },
+  inputPrefixIcon: {
+    color: token.colorTextTertiary,
+  },
+  radioGroup: {
+    width: '100%',
+  },
+  radioButton: {
+    width: '50%',
+    textAlign: 'center' as const,
   },
 }));

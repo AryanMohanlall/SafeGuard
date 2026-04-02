@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 
-export const useStyles = createStyles(({ css }) => ({
+export const useStyles = createStyles(({ css, token }) => ({
   pageWrapper: css`
     max-width: 1240px;
     margin: 0 auto;
@@ -295,5 +295,21 @@ export const useStyles = createStyles(({ css }) => ({
     align-items: center;
     justify-content: center;
     color: #8797ac;
+  `,
+
+  iconPrimary: css`
+    color: ${token.colorPrimary};
+  `,
+
+  iconSuccess: css`
+    color: ${token.colorSuccess};
+  `,
+
+  iconWarning: css`
+    color: ${token.colorWarning};
+  `,
+
+  iconInfo: css`
+    color: ${token.colorInfo};
   `,
 }));

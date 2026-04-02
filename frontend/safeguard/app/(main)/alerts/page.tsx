@@ -46,20 +46,14 @@ import { useStyles } from './styles/style';
 
 const { Text, Title } = Typography;
 
+const MapLoader = () => {
+  const { styles } = useStyles();
+  return <div className={styles.mapLoading}>Loading map...</div>;
+};
+
 const AlertsMap = dynamic(() => import('@/components/safeguard/AlertsMap'), {
   ssr: false,
-  loading: () => (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      Loading map...
-    </div>
-  ),
+  loading: () => <MapLoader />,
 });
 
 const ACTIVE_CASE_STATUSES = new Set(['Draft', 'Open', 'UnderReview', 'PendingTrial']);

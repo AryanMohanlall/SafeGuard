@@ -23,7 +23,7 @@ const TAG_CONFIG = {
   LOW:    { color: 'default' as const, label: 'LOW'  },
 } as const;
 
-export function CaseLikelihoodBadge({ probability, priorityTag }: Props) {
+export const CaseLikelihoodBadge = ({ probability, priorityTag }: Props) => {
   const { styles } = useStyles();
 
   if (priorityTag == null || probability == null) return null;

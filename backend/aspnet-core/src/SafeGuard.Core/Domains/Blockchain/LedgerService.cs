@@ -1,12 +1,9 @@
 using System;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Abp.Domain.Repositories;
 using Abp.Domain.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace SafeGuard.Domains.Blockchain;
@@ -28,11 +25,11 @@ public class LedgerService : DomainService, ILedgerService
     private static readonly SemaphoreSlim _appendLock = new(1, 1);
     private const string DevelopmentFallbackSecret = "SafeGuard_Dev_HmacSecret_ChangeMe";
 
-    private readonly IRepository<LedgerEntry, Guid> _ledgerRepo;
+    private readonly ILedgerRepository _ledgerRepo;
     private readonly byte[] _hmacKey;
 
     public LedgerService(
-        IRepository<LedgerEntry, Guid> ledgerRepo,
+        ILedgerRepository ledgerRepo,
         IConfiguration configuration)
     {
         _ledgerRepo = ledgerRepo;
@@ -63,11 +60,7 @@ public class LedgerService : DomainService, ILedgerService
         try
         {
             // Fetch the most recent chain hash to link this new block.
-            string previousHash = await _ledgerRepo
-                .GetAll()
-                .OrderByDescending(e => e.RecordedAt)
-                .Select(e => e.ChainHash)
-                .FirstOrDefaultAsync();
+            string previousHash = await _ledgerRepo.GetLastChainHashAsync();
 
             string prev = previousHash ?? string.Empty;
 
@@ -104,10 +97,7 @@ public class LedgerService : DomainService, ILedgerService
 
     public async Task<ChainVerificationResult> VerifyChainAsync(CancellationToken ct = default)
     {
-        var entries = await _ledgerRepo
-            .GetAll()
-            .OrderBy(e => e.RecordedAt)
-            .ToListAsync(ct);
+        var entries = await _ledgerRepo.GetAllOrderedAsync(ct);
 
         if (entries.Count == 0)
             return new ChainVerificationResult { IsValid = true, TotalEntries = 0 };

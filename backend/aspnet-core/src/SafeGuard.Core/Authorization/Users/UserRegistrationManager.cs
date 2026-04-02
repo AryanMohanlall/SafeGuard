@@ -1,16 +1,14 @@
-﻿using Abp.Authorization.Users;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Abp.Authorization.Users;
 using Abp.Domain.Services;
 using Abp.IdentityFramework;
 using Abp.Runtime.Session;
 using Abp.UI;
+using Microsoft.AspNetCore.Identity;
 using SafeGuard.Authorization.Roles;
 using SafeGuard.MultiTenancy;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SafeGuard.Authorization.Users;
 
@@ -21,17 +19,20 @@ public class UserRegistrationManager : DomainService
     private readonly TenantManager _tenantManager;
     private readonly UserManager _userManager;
     private readonly RoleManager _roleManager;
+    private readonly IRoleRepository _roleRepository;
     private readonly IPasswordHasher<User> _passwordHasher;
 
     public UserRegistrationManager(
         TenantManager tenantManager,
         UserManager userManager,
         RoleManager roleManager,
+        IRoleRepository roleRepository,
         IPasswordHasher<User> passwordHasher)
     {
         _tenantManager = tenantManager;
         _userManager = userManager;
         _roleManager = roleManager;
+        _roleRepository = roleRepository;
         _passwordHasher = passwordHasher;
 
         AbpSession = NullAbpSession.Instance;
@@ -91,9 +92,7 @@ public class UserRegistrationManager : DomainService
 
     private async Task<Role> EnsureRegistrationRoleAsync(int tenantId, string roleName)
     {
-        var role = await _roleManager.Roles
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.Name == roleName);
+        var role = await _roleRepository.FindByTenantAndNameIgnoreFiltersAsync(tenantId, roleName);
 
         if (role != null)
         {

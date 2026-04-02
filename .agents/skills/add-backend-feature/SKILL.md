@@ -92,7 +92,7 @@ Rules:
 
 ---
 
-### 3. Application Layer Rules (`SafeGuardApi.Application`)
+### 3. Application Layer Rules (`SafeGuard.Application`)
 
 Place services in:
 
@@ -102,7 +102,7 @@ Services/{EntityName}Service/
 
 Rules:
 
-- all app services MUST be placed under `aspnet-core/src/MosaicTalent.Application/Services/...`
+- all app services MUST be placed under `aspnet-core/src/SafeGuard.Application/Services/...`
 - each service must have an interface
 - use `AsyncCrudAppService<TEntity, TDto, Guid>` for standard CRUD
 - use `ApplicationService` for custom workflows
@@ -144,15 +144,15 @@ Rules:
 ### Domain
 
 ```
-SafeGuardApi.Core/Domains/{ModuleName}/{EntityName}.cs
+SafeGuard.Core/Domains/{ModuleName}/{EntityName}.cs
 ```
 
 ### Application
 
 ```
-MosaicTalent.Application/Services/{EntityName}Service/I{EntityName}AppService.cs
-MosaicTalent.Application/Services/{EntityName}Service/{EntityName}AppService.cs
-MosaicTalent.Application/Services/{EntityName}Service/DTO/{EntityName}Dto.cs
+SafeGuard.Application/Services/{EntityName}Service/I{EntityName}AppService.cs
+SafeGuard.Application/Services/{EntityName}Service/{EntityName}AppService.cs
+SafeGuard.Application/Services/{EntityName}Service/DTO/{EntityName}Dto.cs
 ```
 
 ### EF Core
@@ -254,7 +254,7 @@ public DbSet<{Entity}> {EntityPlural} { get; set; }
 
 ```bash
 cd aspnet-core
-dotnet ef migrations add Add{Entity} --project src/SafeGuardApi.EntityFrameworkCore
+dotnet ef migrations add Add{Entity} --project src/SafeGuard.EntityFrameworkCore
 ```
 
 Important: In this repository workflow, the agent must never execute migration commands. The agent should only identify model changes and explicitly ask the user to run migrations manually.

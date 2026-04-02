@@ -1,56 +1,50 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import * as signalR from '@microsoft/signalr';
-import { getAxiosInstance } from '@/utils/axiosInstance';
-
-export interface IncidentAlert {
-  id: string;
-  creatorUserId?: number | null;
-  title: string;
-  location: string;
-  occurredAt: string;
-  anonymous: boolean;
-}
-
-interface AlertContextValue {
-  alerts: IncidentAlert[];
-  pending: IncidentAlert | null;
-  dismiss: () => void;
-}
-
-const AlertContext = createContext<AlertContextValue>({
-  alerts: [],
-  pending: null,
-  dismiss: () => {},
-});
+import { useContext, useEffect, useReducer, useRef } from "react";
+import * as signalR from "@microsoft/signalr";
+import { getAxiosInstance } from "@/utils/axiosInstance";
+import { AlertReducer } from "./reducer";
+import {
+  INITIAL_STATE,
+  AlertStateContext,
+  AlertActionContext,
+  type IncidentAlert,
+} from "./context";
+import {
+  connectPending,
+  connectSuccess,
+  connectError,
+  newAlert,
+  dismiss,
+} from "./actions";
 
 export const AlertProvider = ({ children }: { children: React.ReactNode }) => {
-  const [alerts, setAlerts] = useState<IncidentAlert[]>([]);
-  const [pending, setPending] = useState<IncidentAlert | null>(null);
+  const [state, dispatch] = useReducer(AlertReducer, INITIAL_STATE);
   const connectionRef = useRef<signalR.HubConnection | null>(null);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:44311';
-    const token = getAxiosInstance().defaults.headers.common['Authorization']
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:44311";
+    const token = getAxiosInstance().defaults.headers.common["Authorization"]
       ?.toString()
-      .replace(/^Bearer\s+/i, '');
+      .replace(/^Bearer\s+/i, "");
+
+    dispatch(connectPending());
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(`${apiUrl}/alertHub`, {
-        accessTokenFactory: () => token ?? '',
+        accessTokenFactory: () => token ?? "",
       })
       .withAutomaticReconnect()
       .build();
 
-    connection.on('NewIncident', (alert: IncidentAlert) => {
-      setAlerts((prev) => [alert, ...prev]);
-      setPending(alert);
+    connection.on("NewIncident", (alert: IncidentAlert) => {
+      dispatch(newAlert(alert));
     });
 
-    const startPromise = connection.start().catch(() => {
-      // Ignore startup failures in development and backend-offline cases.
-    });
+    const startPromise = connection
+      .start()
+      .then(() => dispatch(connectSuccess()))
+      .catch(() => dispatch(connectError()));
 
     connectionRef.current = connection;
 
@@ -63,13 +57,20 @@ export const AlertProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const dismiss = () => setPending(null);
+  const handleDismiss = () => dispatch(dismiss());
 
   return (
-    <AlertContext.Provider value={{ alerts, pending, dismiss }}>
-      {children}
-    </AlertContext.Provider>
+    <AlertStateContext.Provider value={state}>
+      <AlertActionContext.Provider value={{ dismiss: handleDismiss }}>
+        {children}
+      </AlertActionContext.Provider>
+    </AlertStateContext.Provider>
   );
 };
 
-export const useAlerts = () => useContext(AlertContext);
+export const useAlerts = () => {
+  const state = useContext(AlertStateContext);
+  const actions = useContext(AlertActionContext);
+  if (!state) throw new Error("useAlerts must be used within AlertProvider");
+  return { ...state, ...actions };
+};

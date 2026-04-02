@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 
-export const useStyles = createStyles(({ css }) => ({
+export const useStyles = createStyles(({ css, token }) => ({
   pageWrapper: css`
     max-width: 100%;
     display: flex;
@@ -185,5 +185,104 @@ export const useStyles = createStyles(({ css }) => ({
   drawerValue: css`
     font-size: 14px;
     color: #0f172a;
+  `,
+
+  drawerTagGroup: css`
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  `,
+
+  drawerList: css`
+    display: grid;
+    gap: 10px;
+  `,
+
+  drawerTransitions: css`
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  `,
+
+  incidentCard: css`
+    border: 1px solid ${token.colorBorderSecondary};
+    background: ${token.colorBgContainer};
+    border-radius: 10px;
+    padding: 10px 12px;
+  `,
+
+  incidentCardHeader: css`
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+    align-items: flex-start;
+  `,
+
+  incidentCardTitle: css`
+    font-weight: 600;
+    color: ${token.colorText};
+  `,
+
+  incidentCardLocation: css`
+    font-size: 13px;
+    color: ${token.colorTextSecondary};
+  `,
+
+  incidentCardDate: css`
+    font-size: 12px;
+    color: ${token.colorTextTertiary};
+    margin-top: 4px;
+  `,
+
+  evidenceCard: css`
+    border: 1px solid ${token.colorBorderSecondary};
+    background: ${token.colorBgContainer};
+    border-radius: 10px;
+    padding: 12px 14px;
+  `,
+
+  evidenceCardHeader: css`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  `,
+
+  evidenceCardTitle: css`
+    font-weight: 600;
+    color: ${token.colorText};
+  `,
+
+  evidenceTagGroup: css`
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  `,
+
+  evidenceMeta: css`
+    font-size: 13px;
+    color: ${token.colorTextSecondary};
+    display: grid;
+    gap: 4px;
+  `,
+
+  evidenceBlockchainRef: css`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  `,
+
+  boardLoading: css`
+    text-align: center;
+    padding: 60px;
+  `,
+
+  formTwoColumn: css`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
   `,
 }));

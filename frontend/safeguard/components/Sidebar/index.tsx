@@ -1,21 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ConfigProvider, Layout, Menu, Tooltip } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  DashboardOutlined,
-  WarningOutlined,
-  FolderOutlined,
-  BellOutlined,
-  SafetyOutlined,
-  LogoutOutlined,
-  FileAddOutlined,
-  VideoCameraOutlined,
   ApartmentOutlined,
+  BellOutlined,
+  DashboardOutlined,
+  FileAddOutlined,
+  FolderOutlined,
+  LogoutOutlined,
+  SafetyOutlined,
+  VideoCameraOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import { useAuthAction } from '@/providers/auth-provider';
-import type { CSSProperties } from 'react';
+import { useStyles } from './styles';
 
 const { Sider } = Layout;
 
@@ -24,20 +24,21 @@ const NAV_ACTIVE = '#2563eb';
 const NAV_HOVER = 'rgba(37, 99, 235, 0.18)';
 
 const navItems = [
-  { key: '/dashboard',  icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/incidents',  icon: <WarningOutlined />,   label: 'Incidents' },
-  { key: '/cases',      icon: <FolderOutlined />,    label: 'Cases'     },
-  { key: '/incident-graph', icon: <ApartmentOutlined />, label: 'Incident Graph' },
-  { key: '/alerts',     icon: <BellOutlined />,      label: 'Alerts'    },
-  { key: '/report',   icon: <FileAddOutlined />,     label: 'Report'  },
-  { key: '/monitor',  icon: <VideoCameraOutlined />, label: 'Monitor' },
+  { key: '/dashboard',      icon: <DashboardOutlined />,  label: 'Dashboard'      },
+  { key: '/incidents',      icon: <WarningOutlined />,    label: 'Incidents'      },
+  { key: '/cases',          icon: <FolderOutlined />,     label: 'Cases'          },
+  { key: '/incident-graph', icon: <ApartmentOutlined />,  label: 'Incident Graph' },
+  { key: '/alerts',         icon: <BellOutlined />,       label: 'Alerts'         },
+  { key: '/report',         icon: <FileAddOutlined />,    label: 'Report'         },
+  { key: '/monitor',        icon: <VideoCameraOutlined />, label: 'Monitor'       },
 ];
 
-export const Sidebar: React.FC = () => {
+export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuthAction();
+  const { styles, cx } = useStyles();
 
   const selectedKey =
     navItems.find((item) => pathname.startsWith(item.key))?.key ?? '/dashboard';
@@ -71,14 +72,12 @@ export const Sidebar: React.FC = () => {
         breakpoint="lg"
         onBreakpoint={(broken) => setCollapsed(broken)}
         width={220}
-        style={{ background: NAV_BG, display: 'flex', flexDirection: 'column' }}
+        className={styles.sider}
       >
         {/* Brand */}
-        <div style={brandWrap(collapsed)}>
-          <SafetyOutlined style={{ fontSize: 22, color: '#60a5fa', flexShrink: 0 }} />
-          {!collapsed && (
-            <span style={brandText}>SafeGuard</span>
-          )}
+        <div className={cx(styles.brandWrap, collapsed && styles.brandWrapCollapsed)}>
+          <SafetyOutlined className={styles.brandIcon} />
+          {!collapsed && <span className={styles.brandText}>SafeGuard</span>}
         </div>
 
         {/* Nav */}
@@ -88,53 +87,20 @@ export const Sidebar: React.FC = () => {
           selectedKeys={[selectedKey]}
           items={navItems}
           onClick={({ key }) => router.push(key)}
-          style={{ background: NAV_BG, borderRight: 0, marginTop: 4, flex: 1 }}
+          className={styles.menu}
         />
 
         {/* Logout */}
-        <div style={logoutWrap(collapsed)} onClick={handleLogout}>
+        <div
+          className={cx(styles.logoutWrap, collapsed && styles.logoutWrapCollapsed)}
+          onClick={handleLogout}
+        >
           <Tooltip title={collapsed ? 'Logout' : ''} placement="right">
-            <LogoutOutlined style={{ fontSize: 16, color: '#94a3b8', flexShrink: 0 }} />
+            <LogoutOutlined className={styles.logoutIcon} />
           </Tooltip>
-          {!collapsed && <span style={logoutText}>Logout</span>}
+          {!collapsed && <span className={styles.logoutText}>Logout</span>}
         </div>
       </Sider>
     </ConfigProvider>
   );
-};
-
-const brandWrap = (collapsed: boolean): CSSProperties => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: collapsed ? 'center' : 'flex-start',
-  gap: 10,
-  padding: collapsed ? '20px 0' : '20px 20px',
-  borderBottom: '1px solid rgba(255,255,255,0.07)',
-  marginBottom: 4,
-  userSelect: 'none',
-});
-
-const brandText: CSSProperties = {
-  fontSize: 16,
-  fontWeight: 800,
-  color: '#fff',
-  letterSpacing: '-0.3px',
-  whiteSpace: 'nowrap',
-};
-
-const logoutWrap = (collapsed: boolean): CSSProperties => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: collapsed ? 'center' : 'flex-start',
-  gap: 10,
-  padding: collapsed ? '16px 0' : '16px 24px',
-  borderTop: '1px solid rgba(255,255,255,0.07)',
-  cursor: 'pointer',
-  transition: 'background 0.2s',
-});
-
-const logoutText: CSSProperties = {
-  fontSize: 14,
-  color: '#94a3b8',
-  whiteSpace: 'nowrap',
 };

@@ -305,4 +305,12 @@ export const useStyles = createStyles(({ css, token }) => ({
     border-style: solid;
     border-radius: ${token.borderRadiusSM}px;
   `,
+
+  mapLoading: css`
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${token.colorTextTertiary};
+  `,
 }));

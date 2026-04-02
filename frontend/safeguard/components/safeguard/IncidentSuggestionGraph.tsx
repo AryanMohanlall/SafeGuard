@@ -37,7 +37,7 @@ const TYPE_LABELS: Record<string, string> = {
   case: 'Case',
 };
 
-export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGraphProps) {
+export const IncidentSuggestionGraph = ({ nodes, edges }: IncidentSuggestionGraphProps) => {
   const { styles } = useStyles();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{ pointerId: number; x: number; y: number; left: number; top: number } | null>(null);

@@ -171,7 +171,7 @@ function KanbanColumn({
 }
 
 // ── Main page ──────────────────────────────────────────────────
-export default function CasesPage() {
+const CasesPage = () => {
   const { styles } = useStyles();
   const { items, isPending } = useCaseState();
   const { fetchAll, create, update, transitionStatus } = useCaseAction();
@@ -349,7 +349,7 @@ export default function CasesPage() {
 
       {/* Kanban board */}
       {isPending ? (
-        <div style={{ textAlign: 'center', padding: 60 }}><Spin size="large" /></div>
+        <div className={styles.boardLoading}><Spin size="large" /></div>
       ) : (
         <DragDropContext onDragEnd={onDragEnd}>
           <div className={styles.board}>
@@ -393,7 +393,7 @@ export default function CasesPage() {
 
             <div className={styles.drawerSection}>
               <p className={styles.drawerLabel}>Severity / Category</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div className={styles.drawerTagGroup}>
                 <Tag color={SEVERITY_COLORS[selected.severity] ?? 'default'}>{selected.severity}</Tag>
                 {selected.category && <Tag>{selected.category}</Tag>}
               </div>
@@ -407,26 +407,18 @@ export default function CasesPage() {
             <div className={styles.drawerSection}>
               <p className={styles.drawerLabel}>Linked Incidents</p>
               {selected.incidentIds.length > 0 ? (
-                <div style={{ display: 'grid', gap: 10 }}>
+                <div className={styles.drawerList}>
                   {selectedIncidentDetails.length > 0
                     ? selectedIncidentDetails.map((incident) => (
-                        <div
-                          key={incident.id}
-                          style={{
-                            border: '1px solid #dbeafe',
-                            background: '#f8fbff',
-                            borderRadius: 10,
-                            padding: '10px 12px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                            <strong style={{ color: '#0f172a' }}>{incident.title}</strong>
+                        <div key={incident.id} className={styles.incidentCard}>
+                          <div className={styles.incidentCardHeader}>
+                            <strong className={styles.incidentCardTitle}>{incident.title}</strong>
                             <Tag color="geekblue" style={{ margin: 0 }}>
                               {incident.hasImage || incident.hasAudio ? 'Media attached' : 'No media'}
                             </Tag>
                           </div>
-                          <div style={{ fontSize: 13, color: '#475569' }}>{incident.location}</div>
-                          <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                          <div className={styles.incidentCardLocation}>{incident.location}</div>
+                          <div className={styles.incidentCardDate}>
                             Reported {new Date(incident.reportedAt).toLocaleString()}
                           </div>
                         </div>
@@ -447,29 +439,12 @@ export default function CasesPage() {
               {evidencePending ? (
                 <Spin size="small" />
               ) : evidenceItems.length > 0 ? (
-                <div style={{ display: 'grid', gap: 10 }}>
+                <div className={styles.drawerList}>
                   {evidenceItems.map((evidence: IEvidence) => (
-                    <div
-                      key={evidence.id}
-                      style={{
-                        border: '1px solid #e2e8f0',
-                        background: '#fff',
-                        borderRadius: 10,
-                        padding: '12px 14px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: 8,
-                          flexWrap: 'wrap',
-                          marginBottom: 6,
-                        }}
-                      >
-                        <strong style={{ color: '#0f172a' }}>{evidence.fileName}</strong>
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <div key={evidence.id} className={styles.evidenceCard}>
+                      <div className={styles.evidenceCardHeader}>
+                        <strong className={styles.evidenceCardTitle}>{evidence.fileName}</strong>
+                        <div className={styles.evidenceTagGroup}>
                           <Tag color="purple" icon={<FileProtectOutlined />} style={{ margin: 0 }}>
                             {evidence.type}
                           </Tag>
@@ -482,7 +457,7 @@ export default function CasesPage() {
                         </div>
                       </div>
 
-                      <div style={{ fontSize: 13, color: '#475569', display: 'grid', gap: 4 }}>
+                      <div className={styles.evidenceMeta}>
                         <div>
                           <strong>Source Incident:</strong>{' '}
                           {getIncidentTitle(evidence.incidentId, incidentItems) ?? 'Manual / Unknown'}
@@ -492,7 +467,7 @@ export default function CasesPage() {
                         </div>
                         <div>
                           <strong>Hash:</strong>{' '}
-                          <code style={{ fontSize: 12 }}>
+                          <code>
                             {evidence.fileHash ? `${evidence.fileHash.slice(0, 16)}...` : 'Unavailable'}
                           </code>
                         </div>
@@ -505,7 +480,7 @@ export default function CasesPage() {
                         {evidence.blockchainTx && (
                           <div>
                             <strong>Blockchain Ref:</strong>{' '}
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span className={styles.evidenceBlockchainRef}>
                               <LinkOutlined />
                               {evidence.blockchainTx}
                             </span>
@@ -557,7 +532,7 @@ export default function CasesPage() {
 
             <div className={styles.drawerSection} style={{ marginTop: 24 }}>
               <p className={styles.drawerLabel}>Move to stage</p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div className={styles.drawerTransitions}>
                 {availableTransitions.map((s) => (
                   <Button
                     key={s.key}
@@ -624,7 +599,7 @@ export default function CasesPage() {
             <TextArea rows={3} placeholder="Full narrative description" />
           </Form.Item>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+          <div className={styles.formTwoColumn}>
             <Form.Item name="severity" label="Severity" rules={[{ required: true }]}>
               <Select placeholder="Select severity">
                 <Select.Option value="Low">Low</Select.Option>
@@ -676,4 +651,6 @@ export default function CasesPage() {
       </Modal>
     </div>
   );
-}
+};
+
+export default CasesPage;

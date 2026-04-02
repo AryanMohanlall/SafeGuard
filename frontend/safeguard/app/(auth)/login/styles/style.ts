@@ -1,6 +1,6 @@
 import { createStyles } from 'antd-style';
 
-export const useStyles = createStyles(() => ({
+export const useStyles = createStyles(({ token }) => ({
   container: {
     minHeight: '100vh',
     display: 'flex',
@@ -167,5 +167,16 @@ export const useStyles = createStyles(() => ({
     gap: 12,
     alignItems: 'center',
     flexWrap: 'wrap' as const,
+  },
+  mobileBrandIcon: {
+    fontSize: 28,
+    color: token.colorPrimary,
+    flexShrink: 0,
+  },
+  inputPrefixIcon: {
+    color: token.colorTextTertiary,
+  },
+  forgotPasswordLink: {
+    fontSize: 13,
   },
 }));

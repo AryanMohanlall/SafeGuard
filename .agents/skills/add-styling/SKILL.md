@@ -1,9 +1,9 @@
 ---
 name: add-styling
-description: Use this skill when styling any page, component, or layout in the Mosaic-Talent frontend. Covers the mandatory antd-style createStyles pattern, design token usage, and the styles folder structure that every route must follow.
+description: Use this skill when styling any page, component, or layout in the SafeGuard frontend. Covers the mandatory antd-style createStyles pattern, design token usage, and the styles folder structure that every route must follow.
 ---
 
-# Mosaic-Talent - Styling with antd-style
+# SafeGuard - Styling with antd-style
 
 ## Core Rule
 

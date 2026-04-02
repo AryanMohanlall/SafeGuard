@@ -1,9 +1,9 @@
 ---
 name: setup-project
-description: Use this skill when scaffolding the GovLeave Next.js project from scratch, setting up folder structure, installing dependencies, configuring environment variables, and wiring up the root layout with providers and AntdRegistry.
+description: Use this skill when scaffolding the SafeGuard Next.js project from scratch, setting up folder structure, installing dependencies, configuring environment variables, and wiring up the root layout with providers and AntdRegistry.
 ---
 
-# GovLeave — Project Setup
+# SafeGuard — Project Setup
 
 ## Tech Stack
 
@@ -29,7 +29,7 @@ npm install @types/js-cookie @types/redux-actions --save-dev
 
 ---
 
-## Folder Structure (STRICT — never deviate)
+## Folder Structure
 
 ```
 src/
