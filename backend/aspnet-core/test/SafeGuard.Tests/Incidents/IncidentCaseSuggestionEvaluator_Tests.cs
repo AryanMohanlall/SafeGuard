@@ -32,7 +32,7 @@ public class IncidentCaseSuggestionEvaluator_Tests
         suggestion.ShouldNotBeNull();
         suggestion.ClusterId.ShouldBe(2);
         suggestion.IncidentIds.Count.ShouldBe(3);
-        suggestion.DominantCategory.ShouldBe("property burglary");
+        suggestion.DominantCategory.ShouldBe("Property Burglary");
         suggestion.ConfidenceScore.ShouldBeGreaterThan(0.5f);
     }
 

@@ -1822,6 +1822,119 @@ namespace SafeGuard.Migrations
                     b.ToTable("CaseStatusHistories");
                 });
 
+            modelBuilder.Entity("SafeGuard.Domains.Dispatches.Dispatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AssignmentSource")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("CaseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ClearedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("DeleterUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EnRouteAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("EstimatedDistanceKm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<Guid>("IncidentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("IncidentLatitudeSnapshot")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
+                    b.Property<decimal?>("IncidentLongitudeSnapshot")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("LastModifierUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<long?>("OfficialUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("OnSceneAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResponderExternalId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal?>("ResponderLatitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
+                    b.Property<decimal?>("ResponderLongitude")
+                        .HasPrecision(9, 6)
+                        .HasColumnType("numeric(9,6)");
+
+                    b.Property<string>("ResponderName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ResponderRank")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ResponderSector")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("IncidentId");
+
+                    b.HasIndex("OfficialUserId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Dispatches");
+                });
+
             modelBuilder.Entity("SafeGuard.Domains.Evidence.ChainOfCustody", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2388,6 +2501,31 @@ namespace SafeGuard.Migrations
                     b.Navigation("Case");
                 });
 
+            modelBuilder.Entity("SafeGuard.Domains.Dispatches.Dispatch", b =>
+                {
+                    b.HasOne("SafeGuard.Domains.Case.Case", "Case")
+                        .WithMany("Dispatches")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SafeGuard.Domains.Incidents.Incident", "Incident")
+                        .WithMany("Dispatches")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SafeGuard.Authorization.Users.User", "OfficialUser")
+                        .WithMany()
+                        .HasForeignKey("OfficialUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Case");
+
+                    b.Navigation("Incident");
+
+                    b.Navigation("OfficialUser");
+                });
+
             modelBuilder.Entity("SafeGuard.Domains.Evidence.ChainOfCustody", b =>
                 {
                     b.HasOne("SafeGuard.Domains.Evidence.Evidence", "Evidence")
@@ -2525,6 +2663,8 @@ namespace SafeGuard.Migrations
 
             modelBuilder.Entity("SafeGuard.Domains.Case.Case", b =>
                 {
+                    b.Navigation("Dispatches");
+
                     b.Navigation("EvidenceItems");
 
                     b.Navigation("Incidents");
@@ -2537,6 +2677,11 @@ namespace SafeGuard.Migrations
             modelBuilder.Entity("SafeGuard.Domains.Evidence.Evidence", b =>
                 {
                     b.Navigation("CustodyLog");
+                });
+
+            modelBuilder.Entity("SafeGuard.Domains.Incidents.Incident", b =>
+                {
+                    b.Navigation("Dispatches");
                 });
 #pragma warning restore 612, 618
         }

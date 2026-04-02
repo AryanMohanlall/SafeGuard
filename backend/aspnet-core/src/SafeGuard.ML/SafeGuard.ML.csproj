@@ -8,6 +8,7 @@
     <ProjectReference Include="..\SafeGuard.Application\SafeGuard.Application.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.ML" Version="4.0.1" />
+    <PackageReference Include="Microsoft.ML" Version="5.0.0" />
+    <PackageReference Include="Microsoft.ML.LightGbm" Version="5.0.0" />
   </ItemGroup>
 </Project>

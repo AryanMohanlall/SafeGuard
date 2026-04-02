@@ -39,6 +39,27 @@ public class TenantRoleAndUserBuilder
             _context.SaveChanges();
         }
 
+        var officalRole = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == StaticRoleNames.Tenants.Offical);
+        if (officalRole == null)
+        {
+            _context.Roles.Add(new Role(_tenantId, StaticRoleNames.Tenants.Offical, StaticRoleNames.Tenants.Offical) { IsStatic = true });
+            _context.SaveChanges();
+        }
+
+        var officialRole = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == StaticRoleNames.Tenants.Official);
+        if (officialRole == null)
+        {
+            _context.Roles.Add(new Role(_tenantId, StaticRoleNames.Tenants.Official, StaticRoleNames.Tenants.Official) { IsStatic = true });
+            _context.SaveChanges();
+        }
+
+        var citizenRole = _context.Roles.IgnoreQueryFilters().FirstOrDefault(r => r.TenantId == _tenantId && r.Name == StaticRoleNames.Tenants.Citizen);
+        if (citizenRole == null)
+        {
+            _context.Roles.Add(new Role(_tenantId, StaticRoleNames.Tenants.Citizen, StaticRoleNames.Tenants.Citizen) { IsStatic = true });
+            _context.SaveChanges();
+        }
+
         // Grant all permissions to admin role
 
         var grantedPermissions = _context.Permissions.IgnoreQueryFilters()

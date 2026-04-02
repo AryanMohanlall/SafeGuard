@@ -57,16 +57,21 @@ public class CsvIncidentTrainingReader
 
             results.Add(new IncidentTrainingRecord
             {
-                Title = GetValue(fields, index, "title"),
-                Description = GetValue(fields, index, "description"),
-                Location = GetValue(fields, index, "location"),
+                Title           = GetValue(fields, index, "title"),
+                Description     = GetValue(fields, index, "description"),
+                Location        = GetValue(fields, index, "location"),
                 DetectedObjects = GetValue(fields, index, "detected_objects"),
-                Anonymous = ParseBool(GetValue(fields, index, "anonymous")),
-                HasAudio = !string.IsNullOrWhiteSpace(GetValue(fields, index, "audio_file")),
-                HasImage = !string.IsNullOrWhiteSpace(GetValue(fields, index, "image_file")),
-                OccurredHour = occurredAt.Hour,
+                CrimeCategory   = GetValue(fields, index, "crime_category"), 
+                Anonymous       = ParseBool(GetValue(fields, index, "anonymous")),
+                HasAudio        = !string.IsNullOrWhiteSpace(GetValue(fields, index, "audio_file")),
+                HasImage        = !string.IsNullOrWhiteSpace(GetValue(fields, index, "image_file")),
+                OccurredHour    = occurredAt.Hour,
+                DayOfWeek       = (float)occurredAt.DayOfWeek,
+                IsWeekend       = occurredAt.DayOfWeek is DayOfWeek.Saturday
+                                or DayOfWeek.Sunday ? 1f : 0f,
+                IsNighttime     = occurredAt.Hour >= 22 || occurredAt.Hour <= 4 ? 1f : 0f,
                 ReportDelayHours = (float)Math.Max(0, (reportedAt - occurredAt).TotalHours),
-                Label = ParseBool(GetValue(fields, index, labelColumnName))
+                Label           = ParseBool(GetValue(fields, index, labelColumnName))
             });
         }
 

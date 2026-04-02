@@ -254,3 +254,5 @@ paket-files/
 src/SafeGuard.Web.Mvc/secrets.json
 src/SafeGuard.Web.Host/secrets.json
 src/SafeGuard.Migrator/secrets.json
+
+*.csv

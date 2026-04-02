@@ -27,6 +27,8 @@ namespace SafeGuard.Users;
 [AbpAuthorize(PermissionNames.Pages_Users)]
 public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUserResultRequestDto, CreateUserDto, UserDto>, IUserAppService
 {
+    private const int DefaultTenantId = 1;
+
     private readonly UserManager _userManager;
     private readonly RoleManager _roleManager;
     private readonly IRepository<Role> _roleRepository;
@@ -58,10 +60,10 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
 
         var user = ObjectMapper.Map<User>(input);
 
-        user.TenantId = AbpSession.TenantId;
+        user.TenantId = DefaultTenantId;
         user.IsEmailConfirmed = true;
 
-        await _userManager.InitializeOptionsAsync(AbpSession.TenantId);
+        await _userManager.InitializeOptionsAsync(DefaultTenantId);
 
         CheckErrors(await _userManager.CreateAsync(user, input.Password));
 
@@ -121,6 +123,27 @@ public class UserAppService : AsyncCrudAppService<User, UserDto, long, PagedUser
     {
         var roles = await _roleRepository.GetAllListAsync();
         return new ListResultDto<RoleDto>(ObjectMapper.Map<List<RoleDto>>(roles));
+    }
+
+    public async Task<ListResultDto<UserDto>> GetOfficials()
+    {
+        var officialRoleIds = await _roleRepository.GetAll()
+            .Where(role => role.Name == StaticRoleNames.Tenants.Official || role.Name == StaticRoleNames.Tenants.Offical)
+            .Select(role => role.Id)
+            .ToListAsync();
+
+        if (officialRoleIds.Count == 0)
+        {
+            return new ListResultDto<UserDto>(new List<UserDto>());
+        }
+
+        var officials = await Repository.GetAllIncluding(user => user.Roles)
+            .Where(user => user.IsActive && user.Roles.Any(role => officialRoleIds.Contains(role.RoleId)))
+            .OrderBy(user => user.Name)
+            .ThenBy(user => user.Surname)
+            .ToListAsync();
+
+        return new ListResultDto<UserDto>(officials.Select(MapToEntityDto).ToList());
     }
 
     public async Task ChangeLanguage(ChangeUserLanguageDto input)

@@ -30,4 +30,6 @@ public class IncidentPredictionRequestDto
 
     [Required]
     public DateTime ReportedAt { get; set; }
+
+    public string CrimeCategory { get; set; }
 }

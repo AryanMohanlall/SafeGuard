@@ -28,6 +28,7 @@ export interface IRegisterInput {
   userName: string;
   emailAddress: string;
   password: string;
+  roleName: 'Citizen' | 'Official';
 }
 
 export const INITIAL_STATE: IAuthStateContext = {

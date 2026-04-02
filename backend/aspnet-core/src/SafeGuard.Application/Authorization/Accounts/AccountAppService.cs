@@ -8,6 +8,8 @@ namespace SafeGuard.Authorization.Accounts;
 
 public class AccountAppService : SafeGuardAppServiceBase, IAccountAppService
 {
+    private const int DefaultTenantId = 1;
+
     // from: http://regexlib.com/REDetails.aspx?regexp_id=1923
     public const string PasswordRegex = "(?=^.{8,}$)(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?!.*\\s)[0-9a-zA-Z!@#$%^&*()]*$";
 
@@ -39,7 +41,7 @@ public class AccountAppService : SafeGuardAppServiceBase, IAccountAppService
     {
         // ABP middleware does not resolve tenant context for unauthenticated requests.
         // Fall back to tenant 1 (Default tenant) so registration works without authentication.
-        var tenantId = AbpSession.TenantId ?? 1;
+        var tenantId = DefaultTenantId;
         using (AbpSession.Use(tenantId, null))
         {
             var user = await _userRegistrationManager.RegisterAsync(
@@ -48,6 +50,7 @@ public class AccountAppService : SafeGuardAppServiceBase, IAccountAppService
                 input.EmailAddress,
                 input.UserName,
                 input.Password,
+                input.RoleName,
                 true // Assumed email address is always confirmed. Change this if you want to implement email confirmation.
             );
 

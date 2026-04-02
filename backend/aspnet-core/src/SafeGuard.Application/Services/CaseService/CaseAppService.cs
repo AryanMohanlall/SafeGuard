@@ -43,6 +43,7 @@ public class CaseAppService
     {
         // Auto-generate CaseNumber before mapping
         var caseEntity = ObjectMapper.Map<Domains.Case.Case>(input);
+        caseEntity.Id = Guid.NewGuid();
         caseEntity.CaseNumber = await GenerateCaseNumberAsync();
         caseEntity.LastActivityAt = DateTime.UtcNow;
 
@@ -155,8 +156,9 @@ public class CaseAppService
     private async Task<string> GenerateCaseNumberAsync()
     {
         var year = DateTime.UtcNow.Year;
+        var prefix = $"CAS-{year}-";
         var count = await Repository.GetAll()
-            .Where(c => c.OpenedAt.Year == year)
+            .Where(c => c.CaseNumber.StartsWith(prefix))
             .CountAsync();
         return $"CAS-{year}-{(count + 1):D5}";
     }

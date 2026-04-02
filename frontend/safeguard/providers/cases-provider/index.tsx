@@ -23,6 +23,7 @@ export const CaseProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, dispatch] = useReducer(CaseReducer, INITIAL_STATE);
 
   const BASE = '/api/services/app/case';
+  const DEFAULT_FETCH_PARAMS = { skipCount: 0, maxResultCount: 1000 };
 
   const fetchAll = async (params?: Record<string, unknown>) => {
     dispatch(fetchAllPending());
@@ -50,9 +51,11 @@ export const CaseProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const res = await instance.post(`${BASE}/Create`, input);
       dispatch(createSuccess(res.data.result));
-      await fetchAll();
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+      return res.data.result;
+    } catch (error) {
       dispatch(createError());
+      throw error;
     }
   };
 
@@ -61,9 +64,11 @@ export const CaseProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const res = await instance.put(`${BASE}/Update`, { ...input, id });
       dispatch(updateSuccess(res.data.result));
-      await fetchAll();
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+      return res.data.result;
+    } catch (error) {
       dispatch(updateError());
+      throw error;
     }
   };
 
@@ -72,9 +77,10 @@ export const CaseProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await instance.delete(`${BASE}/Delete`, { params: { id } });
       dispatch(deleteSuccess());
-      await fetchAll();
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+    } catch (error) {
       dispatch(deleteError());
+      throw error;
     }
   };
 
@@ -83,9 +89,11 @@ export const CaseProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const res = await instance.post(`${BASE}/TransitionStatus`, { id, toStatus, reason });
       dispatch(transitionSuccess(res.data.result));
-      await fetchAll();
-    } catch {
+      await fetchAll(DEFAULT_FETCH_PARAMS);
+      return res.data.result;
+    } catch (error) {
       dispatch(transitionError());
+      throw error;
     }
   };
 

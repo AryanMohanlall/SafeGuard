@@ -129,14 +129,31 @@ public class IncidentClusteringAppService : SafeGuardAppServiceBase, IIncidentCl
         var groupId = suggestion?.GroupId ?? $"cluster-{clusterId}";
         var clusterNodeId = $"cluster-node-{clusterId}";
         var suggestionNodeId = $"suggestion-node-{clusterId}";
+        var dominantCategory = incidents
+            .Select(incident => IncidentFeatureTextNormalizer.DeriveCategory(incident.Title))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .GroupBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(group => group.Count())
+            .ThenBy(group => group.Key)
+            .Select(group => group.Key)
+            .FirstOrDefault() ?? "uncategorized";
+        var dominantObject = incidents
+            .SelectMany(incident => IncidentFeatureTextNormalizer.ParseDetectedObjects(incident.DetectedObjects))
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .GroupBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(group => group.Count())
+            .ThenBy(group => group.Key)
+            .Select(group => group.Key)
+            .FirstOrDefault() ?? "mixed objects";
+        var narrative = IncidentClusterNarrativeBuilder.Build(incidents, dominantCategory, dominantObject);
 
         nodes.Add(new IncidentGraphNodeDto
         {
             Id = clusterNodeId,
-            Label = $"Cluster {clusterId}",
+            Label = narrative.ClusterLabel,
             Subtitle = suggestion == null
-                ? $"{incidents.Count} incidents · no case suggestion yet"
-                : $"{incidents.Count} incidents",
+                ? $"{incidents.Count} incidents - {narrative.ClusterSubtitle} - no case suggestion yet"
+                : $"{incidents.Count} incidents - {narrative.ClusterSubtitle}",
             Type = "cluster",
             GroupId = groupId,
             ClusterId = clusterId,

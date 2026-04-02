@@ -47,6 +47,7 @@ namespace SafeGuard.Web.Host.Startup
             AuthConfigurer.Configure(services, _appConfiguration);
 
             services.AddSignalR();
+            services.AddHttpClient();
 
             // Configure CORS for angular2 UI
             services.AddCors(

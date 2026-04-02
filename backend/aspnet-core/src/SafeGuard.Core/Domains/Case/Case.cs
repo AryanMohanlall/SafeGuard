@@ -48,6 +48,7 @@ public class Case : FullAuditedEntity<Guid>
 
     // Navigation
     public ICollection<Incidents.Incident> Incidents { get; set; }
+    public ICollection<Dispatches.Dispatch> Dispatches { get; set; }
     public ICollection<Evidence.Evidence> EvidenceItems { get; set; }
     public ICollection<CaseNote> Notes { get; set; }
     public ICollection<CaseStatusHistory> StatusHistory { get; set; }
