@@ -478,7 +478,7 @@ const IncidentsPage = () => {
               <Tag color="green" icon={<RobotOutlined />} />
             </Tooltip>
           )}
-          {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>â€”</span>}
+          {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>-</span>}
         </Space>
       ),
     },
@@ -812,7 +812,7 @@ const IncidentsPage = () => {
                     onClick={() => loadAudio(activeIncident.id)}
                     style={{ alignSelf: 'flex-start' }}
                   >
-                    {audioLoading ? 'Loadingâ€¦' : `Load Â· ${activeIncident.audioFileName}`}
+                    {audioLoading ? 'Loading...' : `Load - ${activeIncident.audioFileName}`}
                   </Button>
                 )}
               </div>
@@ -833,7 +833,7 @@ const IncidentsPage = () => {
                     onClick={() => loadImage(activeIncident.id)}
                     style={{ alignSelf: 'flex-start' }}
                   >
-                    {imageLoading ? 'Loadingâ€¦' : `Load Â· ${activeIncident.imageFileName}`}
+                    {imageLoading ? 'Loading...' : `Load - ${activeIncident.imageFileName}`}
                   </Button>
                 )}
               </div>
@@ -850,7 +850,7 @@ const IncidentsPage = () => {
                       key={`${obj.name}-${i}`}
                       color={obj.source === 'object' ? 'blue' : 'default'}
                     >
-                      {obj.name} Â· {Math.round(obj.confidence * 100)}%
+                      {obj.name} - {Math.round(obj.confidence * 100)}%
                     </Tag>
                   ))}
                 </Space>
