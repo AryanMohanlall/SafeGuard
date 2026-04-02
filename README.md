@@ -6,8 +6,9 @@ SafeGuard replaces these pain points with a fully digitised, interoperable platf
 
 | Planning | Source |
 |-------------|--------|
-| Domain Model | [Domain Model](https://drive.google.com/file/d/1IjZNRNzhnP6KCjeGb82MKlG7Tz2Q0QOt/view?usp=sharing) |
-| UI design    | [Figma Design](https://www.figma.com/design/cIioMsogRR4RvnB3EOxlof/SafeGuard?node-id=0-1&t=yvPa9YwD7HmCwZQk-1) |
+| Domain Model | [Drawio](https://drive.google.com/file/d/1IjZNRNzhnP6KCjeGb82MKlG7Tz2Q0QOt/view?usp=sharing)  [Lucid Chart](https://lucid.app/lucidchart/3763e170-761d-4660-b8b9-c2d0937cc5c1/edit?viewport_loc=-1521%2C2208%2C4068%2C1948%2CfwZn4bwXoePRd&invitationId=inv_4f4f9ef8-0bbe-4007-8fc6-89e1e1b91ef8)|
+| UI design    | [Figma Design Draft](https://www.figma.com/design/cIioMsogRR4RvnB3EOxlof/SafeGuard?node-id=0-1&t=yvPa9YwD7HmCwZQk-1) |
+| UI design | [Figma Design](https://www.figma.com/make/XFvK2UYg6CQS1pqClI3Sz2/Designs-Request?t=I9OR6YL4KqvuTf9b-1&preview-route=%2Fdashboard)
 
 ---
 ## Key Features
