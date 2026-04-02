@@ -4,21 +4,21 @@ export const useStyles = createStyles(({ css, token }) => ({
   page: css`
     display: flex;
     gap: 0;
-    min-height: calc(100vh - 64px);
+    height: 100%;
     margin: -24px;
     background: ${token.colorBgLayout};
 
     @media (max-width: 991px) {
       flex-direction: column;
-      min-height: auto;
+      height: auto;
     }
   `,
 
   panel: css`
-    min-height: calc(100vh - 64px);
+    height: 100%;
 
     @media (max-width: 991px) {
-      min-height: auto;
+      height: auto;
     }
   `,
 
@@ -55,7 +55,7 @@ export const useStyles = createStyles(({ css, token }) => ({
     display: flex;
     flex-direction: column;
     gap: 16px;
-    height: calc(100vh - 64px);
+    height: 100%;
     overflow-y: auto;
     padding: 20px;
 
@@ -234,8 +234,8 @@ export const useStyles = createStyles(({ css, token }) => ({
 
   mapSurface: css`
     position: relative;
-    height: calc(100vh - 64px);
-    min-height: calc(100vh - 64px);
+    height: 100%;
+    min-height: 0;
     overflow: hidden;
 
     :global(.safeguard-alerts-leaflet) {
@@ -304,5 +304,13 @@ export const useStyles = createStyles(({ css, token }) => ({
     border-width: 1px;
     border-style: solid;
     border-radius: ${token.borderRadiusSM}px;
+  `,
+
+  mapLoading: css`
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: ${token.colorTextTertiary};
   `,
 }));

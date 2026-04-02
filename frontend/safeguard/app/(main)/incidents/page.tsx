@@ -36,6 +36,7 @@ import {
   FileTextOutlined,
   PlusOutlined,
   RobotOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
@@ -50,7 +51,7 @@ const IncidentMap = dynamic(() => import('../../../components/Map/IncidentMap'),
 
 const BASE = '/api/services/app/incident';
 
-// Module-level set — survives navigation within the session without persistence.
+// Module-level set â€” survives navigation within the session without persistence.
 const dismissedBanners = new Set<string>();
 
 function base64ToObjectUrl(b64: string, contentType: string): string {
@@ -72,7 +73,6 @@ interface IncidentFormValues {
   longitude?: number | null;
   anonymous: boolean;
   occurredAt: dayjs.Dayjs;
-  reportedAt: dayjs.Dayjs;
 }
 
 function deriveIncidentPriority(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' {
@@ -145,6 +145,7 @@ const IncidentsPage = () => {
   const [activeIncident, setActiveIncident] = useState<IIncident | null>(null);
   const [anonymous, setAnonymous] = useState(false);
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const pageSize = 10;
 
   const [sortByAI, setSortByAI] = useState(false);
@@ -152,15 +153,16 @@ const IncidentsPage = () => {
   const [viewMode, setViewMode] = useState<'table' | 'map'>('table');
   const [mapItems, setMapItems] = useState<IIncident[]>([]);
   const [mapLoading, setMapLoading] = useState(false);
+  const [deletingIncidentId, setDeletingIncidentId] = useState<string | null>(null);
 
   // Track dismissed banners for this session (re-render when set changes).
   const [, forceUpdate] = useState(0);
 
-  const loadMapItems = async () => {
+  const loadMapItems = async (keyword = searchTerm) => {
     setMapLoading(true);
     try {
       const res = await getAxiosInstance().get(`${BASE}/GetAll`, {
-        params: { skipCount: 0, maxResultCount: 10000 },
+        params: { skipCount: 0, maxResultCount: 10000, keyword },
       });
       setMapItems(res.data.result.items);
     } catch {
@@ -192,11 +194,12 @@ const IncidentsPage = () => {
     }
   }, [activeIncident?.detectedObjects]);
 
-  const fetchPage = (p: number, sort = sortByAI) => {
+  const fetchPage = (p: number, sort = sortByAI, keyword = searchTerm) => {
     fetchAll({
       skipCount: (p - 1) * pageSize,
       maxResultCount: pageSize,
       sortByCaseLikelihood: sort,
+      keyword,
     });
   };
 
@@ -208,12 +211,21 @@ const IncidentsPage = () => {
 
   const handleSortToggle = (val: boolean) => {
     setSortByAI(val);
-    fetchPage(page, val);
+    fetchPage(page, val, searchTerm);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    fetchPage(1, sortByAI, value);
+    if (viewMode === 'map') {
+      void loadMapItems(value);
+    }
   };
 
   const openCreate = () => {
     form.resetFields();
-    form.setFieldsValue({ reportedAt: dayjs(), anonymous: false });
+    form.setFieldsValue({ anonymous: false });
     setAnonymous(false);
     setActiveIncident(null);
     setDrawerMode('create');
@@ -229,7 +241,6 @@ const IncidentsPage = () => {
       longitude: incident.longitude,
       anonymous: incident.anonymous,
       occurredAt: dayjs(incident.occurredAt),
-      reportedAt: dayjs(incident.reportedAt),
     });
     setAnonymous(incident.anonymous);
     setActiveIncident(incident);
@@ -290,49 +301,102 @@ const IncidentsPage = () => {
   };
 
   const handleSubmit = async (values: IncidentFormValues) => {
-    if (drawerMode === 'create') {
-      const input: ICreateIncidentInput = {
-        title: values.title,
-        description: values.description,
-        location: values.location,
-        latitude: values.latitude ?? null,
-        longitude: values.longitude ?? null,
-        caseId: null,
-        anonymous: values.anonymous ?? false,
-        occurredAt: values.occurredAt.toISOString(),
-        reportedAt: values.reportedAt.toISOString(),
-      };
-      create(input);
-      message.success('Incident created.');
-    } else if (drawerMode === 'edit' && activeIncident) {
-      const input: IUpdateIncidentInput = {
-        id: activeIncident.id,
-        title: values.title,
-        description: values.description,
-        location: values.location,
-        latitude: values.latitude ?? null,
-        longitude: values.longitude ?? null,
-        caseId: activeIncident.caseId,
-        anonymous: values.anonymous ?? false,
-        occurredAt: values.occurredAt.toISOString(),
-        reportedAt: values.reportedAt.toISOString(),
-      };
-      update(activeIncident.id, input);
-      message.success('Incident updated.');
+    try {
+      if (drawerMode === 'create') {
+        const input: ICreateIncidentInput = {
+          title: values.title,
+          description: values.description,
+          location: values.location,
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
+          caseId: null,
+          anonymous: values.anonymous ?? false,
+          occurredAt: values.occurredAt.toISOString(),
+          reportedAt: new Date().toISOString(),
+        };
+        await create(input);
+        message.success('Incident created.');
+      } else if (drawerMode === 'edit' && activeIncident) {
+        const input: IUpdateIncidentInput = {
+          id: activeIncident.id,
+          title: values.title,
+          description: values.description,
+          location: values.location,
+          latitude: values.latitude ?? null,
+          longitude: values.longitude ?? null,
+          caseId: activeIncident.caseId,
+          anonymous: values.anonymous ?? false,
+          occurredAt: values.occurredAt.toISOString(),
+          reportedAt: activeIncident.reportedAt,
+        };
+        await update(activeIncident.id, input);
+        message.success('Incident updated.');
+      }
+      closeDrawer();
+      if (viewMode === 'map') {
+        await loadMapItems(searchTerm);
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof error.response === 'object' &&
+        error.response !== null &&
+        'data' in error.response &&
+        typeof error.response.data === 'object' &&
+        error.response.data !== null &&
+        'error' in error.response.data &&
+        typeof error.response.data.error === 'object' &&
+        error.response.data.error !== null &&
+        'message' in error.response.data.error &&
+        typeof error.response.data.error.message === 'string'
+          ? error.response.data.error.message
+          : drawerMode === 'create'
+            ? 'Failed to create incident.'
+            : 'Failed to update incident.';
+
+      message.error(errorMessage);
     }
-    closeDrawer();
-    fetchPage(page);
   };
 
-  const handleDelete = (id: string) => {
-    remove(id);
-    message.success('Incident deleted.');
-    fetchPage(page);
+  const handleDelete = async (id: string) => {
+    if (deletingIncidentId === id) return;
+
+    setDeletingIncidentId(id);
+    try {
+      await remove(id);
+      message.success('Incident deleted.');
+      if (viewMode === 'map') {
+        await loadMapItems(searchTerm);
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof error.response === 'object' &&
+        error.response !== null &&
+        'data' in error.response &&
+        typeof error.response.data === 'object' &&
+        error.response.data !== null &&
+        'error' in error.response.data &&
+        typeof error.response.data.error === 'object' &&
+        error.response.data.error !== null &&
+        'message' in error.response.data.error &&
+        typeof error.response.data.error.message === 'string'
+          ? error.response.data.error.message
+          : 'Failed to delete incident.';
+
+      message.error(errorMessage);
+    } finally {
+      setDeletingIncidentId(null);
+    }
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchPage(newPage);
+    fetchPage(newPage, sortByAI, searchTerm);
   };
 
   const handleOpenCase = async (incident: IIncident) => {
@@ -355,6 +419,7 @@ const IncidentsPage = () => {
           skipCount: (page - 1) * pageSize,
           maxResultCount: pageSize,
           sortByCaseLikelihood: sortByAI,
+          keyword: searchTerm,
         }),
       ]);
     } catch (error: unknown) {
@@ -467,7 +532,7 @@ const IncidentsPage = () => {
               <Tag color="green" icon={<RobotOutlined />} />
             </Tooltip>
           )}
-          {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>—</span>}
+          {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>-</span>}
         </Space>
       ),
     },
@@ -512,11 +577,17 @@ const IncidentsPage = () => {
             description="This action cannot be undone."
             onConfirm={() => handleDelete(record.id)}
             okText="Delete"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, loading: deletingIncidentId === record.id }}
             cancelText="Cancel"
           >
             <Tooltip title="Delete">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                loading={deletingIncidentId === record.id}
+              />
             </Tooltip>
           </Popconfirm>
         </div>
@@ -552,6 +623,14 @@ const IncidentsPage = () => {
       <div className={styles.card}>
         <div className={styles.toolbar}>
           <div className={styles.toolbarMain}>
+            <Input
+              allowClear
+              value={searchTerm}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+              placeholder="Search incidents"
+              className={styles.searchInput}
+            />
             <Switch
               checked={sortByAI}
               onChange={handleSortToggle}
@@ -564,7 +643,7 @@ const IncidentsPage = () => {
             onChange={(v) => {
               const mode = v as 'table' | 'map';
               setViewMode(mode);
-              if (mode === 'map') loadMapItems();
+              if (mode === 'map') loadMapItems(searchTerm);
             }}
             options={[
               { value: 'table', icon: <BarsOutlined />, label: 'Table' },
@@ -625,10 +704,15 @@ const IncidentsPage = () => {
                           description="This action cannot be undone."
                           onConfirm={() => handleDelete(incident.id)}
                           okText="Delete"
-                          okButtonProps={{ danger: true }}
+                          okButtonProps={{ danger: true, loading: deletingIncidentId === incident.id }}
                           cancelText="Cancel"
                         >
-                          <Button size="small" danger icon={<DeleteOutlined />}>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            loading={deletingIncidentId === incident.id}
+                          >
                             Delete
                           </Button>
                         </Popconfirm>
@@ -679,7 +763,7 @@ const IncidentsPage = () => {
         title={drawerTitle}
         open={drawerOpen}
         onClose={closeDrawer}
-        width={isMobile ? '100%' : 520}
+        styles={{ wrapper: { width: isMobile ? '100%' : 520 } }}
         footer={
           drawerMode !== 'view' ? (
             <div className={styles.drawerFooter}>
@@ -701,7 +785,7 @@ const IncidentsPage = () => {
               <Alert
                 type="warning"
                 showIcon
-                message="AI assessment — High likelihood of case"
+                title="AI assessment - High likelihood of case"
                 description={
                   <>
                     This incident has a{' '}
@@ -770,12 +854,6 @@ const IncidentsPage = () => {
                 {dayjs(activeIncident.occurredAt).format('DD MMM YYYY HH:mm')}
               </p>
             </div>
-            <div className={styles.detailField}>
-              <p className={styles.detailLabel}>Reported At</p>
-              <p className={styles.detailValue}>
-                {dayjs(activeIncident.reportedAt).format('DD MMM YYYY HH:mm')}
-              </p>
-            </div>
             {activeIncidentAi != null && (
               <div className={styles.detailField}>
                 <p className={styles.detailLabel}>AI Case Likelihood</p>
@@ -799,7 +877,7 @@ const IncidentsPage = () => {
                     onClick={() => loadAudio(activeIncident.id)}
                     style={{ alignSelf: 'flex-start' }}
                   >
-                    {audioLoading ? 'Loading…' : `Load · ${activeIncident.audioFileName}`}
+                    {audioLoading ? 'Loading...' : `Load - ${activeIncident.audioFileName}`}
                   </Button>
                 )}
               </div>
@@ -820,7 +898,7 @@ const IncidentsPage = () => {
                     onClick={() => loadImage(activeIncident.id)}
                     style={{ alignSelf: 'flex-start' }}
                   >
-                    {imageLoading ? 'Loading…' : `Load · ${activeIncident.imageFileName}`}
+                    {imageLoading ? 'Loading...' : `Load - ${activeIncident.imageFileName}`}
                   </Button>
                 )}
               </div>
@@ -837,7 +915,7 @@ const IncidentsPage = () => {
                       key={`${obj.name}-${i}`}
                       color={obj.source === 'object' ? 'blue' : 'default'}
                     >
-                      {obj.name} · {Math.round(obj.confidence * 100)}%
+                      {obj.name} - {Math.round(obj.confidence * 100)}%
                     </Tag>
                   ))}
                 </Space>
@@ -935,18 +1013,11 @@ const IncidentsPage = () => {
                   format="YYYY-MM-DD HH:mm"
                   placeholder="Select date and time"
                   className={styles.datePickerFull}
+                  classNames={{ popup: { root: styles.datePickerPopup } }}
+                  getPopupContainer={(triggerNode) => triggerNode.parentElement ?? document.body}
+                  placement={isMobile ? 'bottomRight' : undefined}
+                  inputReadOnly={isMobile}
                   disabledDate={(d) => d.isAfter(dayjs())}
-                />
-              </Form.Item>
-              <Form.Item
-                name="reportedAt"
-                label="Reported At"
-                rules={[{ required: true, message: 'Required.' }]}
-              >
-                <DatePicker
-                  showTime
-                  format="YYYY-MM-DD HH:mm"
-                  className={styles.datePickerFull}
                 />
               </Form.Item>
             </div>

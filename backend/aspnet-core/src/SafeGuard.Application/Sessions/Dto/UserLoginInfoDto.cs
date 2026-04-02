@@ -1,6 +1,7 @@
 ﻿using Abp.Application.Services.Dto;
 using Abp.AutoMapper;
 using SafeGuard.Authorization.Users;
+using System.Collections.Generic;
 
 namespace SafeGuard.Sessions.Dto;
 
@@ -14,4 +15,6 @@ public class UserLoginInfoDto : EntityDto<long>
     public string UserName { get; set; }
 
     public string EmailAddress { get; set; }
+
+    public List<string> RoleNames { get; set; } = new();
 }

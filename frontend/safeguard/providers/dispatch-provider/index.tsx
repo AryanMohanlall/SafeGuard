@@ -89,6 +89,7 @@ export const DispatchProvider = ({ children }: { children: React.ReactNode }) =>
       .replace(/^Bearer\s+/i, '');
 
     const connection = new signalR.HubConnectionBuilder()
+      .configureLogging(signalR.LogLevel.None)
       .withUrl(`${apiUrl}/alertHub`, {
         accessTokenFactory: () => token ?? '',
       })

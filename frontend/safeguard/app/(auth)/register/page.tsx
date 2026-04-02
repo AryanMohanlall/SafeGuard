@@ -33,7 +33,7 @@ const stats = [
   { value: '256-bit', label: 'Encryption' },
 ];
 
-export default function RegisterPage() {
+const RegisterPage = () => {
   const { styles } = useStyles();
   const [form] = Form.useForm<RegisterFormValues>();
   const [messageApi, contextHolder] = message.useMessage();
@@ -73,7 +73,7 @@ export default function RegisterPage() {
         {/* ── Left branding panel ── */}
         <div className={styles.leftPanel}>
           <div className={styles.leftPanelInner}>
-            <SafetyOutlined style={{ fontSize: 56, color: '#60a5fa', marginBottom: 20 }} />
+            <SafetyOutlined className={styles.brandIcon} />
             <h1 className={styles.brandTitle}>SafeGuard</h1>
             <p className={styles.brandTagline}>
               Join thousands of law enforcement professionals, legal experts, and
@@ -96,7 +96,7 @@ export default function RegisterPage() {
           <div className={styles.formWrapper}>
             {/* Mobile brand mark */}
             <div className={styles.mobileBrand}>
-              <SafetyOutlined style={{ fontSize: 28, color: '#2563eb' }} />
+              <SafetyOutlined className={styles.mobileBrandIcon} />
               <span className={styles.mobileBrandTitle}>SafeGuard</span>
             </div>
 
@@ -120,7 +120,7 @@ export default function RegisterPage() {
                   rules={[{ required: true, message: 'Required.' }]}
                 >
                   <Input
-                    prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
+                    prefix={<UserOutlined className={styles.inputPrefixIcon} />}
                     placeholder="Jane"
                     autoComplete="given-name"
                   />
@@ -147,7 +147,7 @@ export default function RegisterPage() {
                 ]}
               >
                 <Input
-                  prefix={<MailOutlined style={{ color: '#94a3b8' }} />}
+                  prefix={<MailOutlined className={styles.inputPrefixIcon} />}
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
@@ -158,11 +158,11 @@ export default function RegisterPage() {
                 label="Account role"
                 rules={[{ required: true, message: 'Please choose a role.' }]}
               >
-                <Radio.Group optionType="button" buttonStyle="solid" style={{ width: '100%' }}>
-                  <Radio.Button value="Citizen" style={{ width: '50%', textAlign: 'center' }}>
+                <Radio.Group optionType="button" buttonStyle="solid" className={styles.radioGroup}>
+                  <Radio.Button value="Citizen" className={styles.radioButton}>
                     Citizen
                   </Radio.Button>
-                  <Radio.Button value="Official" style={{ width: '50%', textAlign: 'center' }}>
+                  <Radio.Button value="Official" className={styles.radioButton}>
                     Official
                   </Radio.Button>
                 </Radio.Group>
@@ -177,7 +177,7 @@ export default function RegisterPage() {
                 ]}
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: '#94a3b8' }} />}
+                  prefix={<LockOutlined className={styles.inputPrefixIcon} />}
                   placeholder="Min. 8 characters"
                   autoComplete="new-password"
                   iconRender={(visible) =>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
                 ]}
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: '#94a3b8' }} />}
+                  prefix={<LockOutlined className={styles.inputPrefixIcon} />}
                   placeholder="Re-enter password"
                   autoComplete="new-password"
                   iconRender={(visible) =>
@@ -212,7 +212,7 @@ export default function RegisterPage() {
                 />
               </Form.Item>
 
-              <Form.Item style={{ marginBottom: 0 }}>
+              <Form.Item className={styles.formItemLast}>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -233,4 +233,6 @@ export default function RegisterPage() {
       </div>
     </>
   );
-}
+};
+
+export default RegisterPage;

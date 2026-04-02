@@ -37,7 +37,7 @@ const TYPE_LABELS: Record<string, string> = {
   case: 'Case',
 };
 
-export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGraphProps) {
+export const IncidentSuggestionGraph = ({ nodes, edges }: IncidentSuggestionGraphProps) => {
   const { styles } = useStyles();
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{ pointerId: number; x: number; y: number; left: number; top: number } | null>(null);
@@ -543,12 +543,12 @@ export function IncidentSuggestionGraph({ nodes, edges }: IncidentSuggestionGrap
       <Drawer
         title={selectedNode ? `${TYPE_LABELS[selectedNode.type] ?? selectedNode.type} Details` : 'Node Details'}
         placement="right"
-        size={420}
+        styles={{ wrapper: { width: 'min(420px, calc(100vw - 8px))' } }}
         open={Boolean(selectedNode)}
         onClose={() => setSelectedNodeId(null)}
       >
         {selectedNode ? (
-          <Space direction="vertical" size="large" className={styles.detailsStack}>
+          <Space orientation="vertical" size="large" className={styles.detailsStack}>
             <div>
               <Typography.Title level={4} className={styles.detailsTitle}>
                 {selectedNode.label}

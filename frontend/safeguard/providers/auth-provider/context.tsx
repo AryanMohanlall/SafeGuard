@@ -6,6 +6,7 @@ export interface IUser {
   userId: number;
   accessToken: string;
   expireInSeconds: number;
+  roleNames: string[];
 }
 
 export interface IAuthStateContext {
@@ -13,6 +14,7 @@ export interface IAuthStateContext {
   isSuccess: boolean;
   isError: boolean;
   isAuthenticated: boolean;
+  isReady: boolean;
   user?: IUser;
 }
 
@@ -36,6 +38,7 @@ export const INITIAL_STATE: IAuthStateContext = {
   isSuccess: false,
   isError: false,
   isAuthenticated: false,
+  isReady: false,
 };
 
 export const AuthStateContext = createContext<IAuthStateContext>(INITIAL_STATE);

@@ -25,13 +25,12 @@ interface LoginFormValues {
 }
 
 const features = [
-  { icon: <SafetyOutlined />, label: 'Blockchain-secured evidence chain of custody' },
   { icon: <AimOutlined />,    label: 'AI-powered crime prediction and GIS heatmaps' },
   { icon: <TeamOutlined />,   label: 'Real-time multi-agency coordination hub' },
   { icon: <GlobalOutlined />, label: 'End-to-end court readiness tooling' },
 ];
 
-export default function LoginPage() {
+const LoginPage = () => {
   const { styles } = useStyles();
   const [form] = Form.useForm<LoginFormValues>();
   const [messageApi, contextHolder] = message.useMessage();
@@ -62,7 +61,7 @@ export default function LoginPage() {
         {/* ── Left branding panel ── */}
         <div className={styles.leftPanel}>
           <div className={styles.leftPanelInner}>
-            <SafetyOutlined style={{ fontSize: 56, color: '#60a5fa', marginBottom: 20 }} />
+            <SafetyOutlined className={styles.brandIcon} />
             <h1 className={styles.brandTitle}>SafeGuard</h1>
             <p className={styles.brandTagline}>
               Digitising the Justice System — connecting victims, law enforcement,
@@ -85,7 +84,7 @@ export default function LoginPage() {
           <div className={styles.formWrapper}>
             {/* Mobile brand mark */}
             <div className={styles.mobileBrand}>
-              <SafetyOutlined style={{ fontSize: 28, color: '#2563eb' }} />
+              <SafetyOutlined className={styles.mobileBrandIcon} />
               <span className={styles.mobileBrandTitle}>SafeGuard</span>
             </div>
 
@@ -110,7 +109,7 @@ export default function LoginPage() {
                 ]}
               >
                 <Input
-                  prefix={<MailOutlined style={{ color: '#94a3b8' }} />}
+                  prefix={<MailOutlined className={styles.inputPrefixIcon} />}
                   placeholder="you@example.com"
                   autoComplete="email"
                 />
@@ -118,18 +117,11 @@ export default function LoginPage() {
 
               <Form.Item
                 name="password"
-                label={
-                  <span className={styles.passwordLabel}>
-                    Password
-                    <Link href="/forgot-password" style={{ fontSize: 13 }}>
-                      Forgot password?
-                    </Link>
-                  </span>
-                }
+                label="Password"
                 rules={[{ required: true, message: 'Please enter your password.' }]}
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: '#94a3b8' }} />}
+                  prefix={<LockOutlined className={styles.inputPrefixIcon} />}
                   placeholder="••••••••"
                   autoComplete="current-password"
                   iconRender={(visible) =>
@@ -138,11 +130,7 @@ export default function LoginPage() {
                 />
               </Form.Item>
 
-              <Form.Item name="remember" valuePropName="checked" initialValue={false}>
-                <Checkbox>Remember me</Checkbox>
-              </Form.Item>
-
-              <Form.Item style={{ marginBottom: 0 }}>
+              <Form.Item className={styles.formItemLast}>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -163,4 +151,6 @@ export default function LoginPage() {
       </div>
     </>
   );
-}
+};
+
+export default LoginPage;

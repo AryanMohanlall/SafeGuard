@@ -1,12 +1,12 @@
 import { createStyles } from 'antd-style';
 
-export const useStyles = createStyles(({ css }) => ({
+export const useStyles = createStyles(({ css, token }) => ({
   graphContainer: css`
     position: relative;
-    border: 1px solid #e2e8f0;
-    border-radius: 24px;
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
     background:
-      radial-gradient(circle at top left, rgba(191, 219, 254, 0.45), transparent 30%),
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 30%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98));
     overflow: hidden;
     width: 100%;
@@ -17,9 +17,9 @@ export const useStyles = createStyles(({ css }) => ({
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    gap: ${token.marginSM}px;
+    padding: ${token.paddingSM}px ${token.padding}px;
+    border-bottom: 1px solid ${token.colorBorderSecondary};
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(10px);
 
@@ -32,6 +32,10 @@ export const useStyles = createStyles(({ css }) => ({
   zoomLabel: css`
     min-width: 72px;
     font-weight: 700;
+
+    @media (max-width: 576px) {
+      min-width: 64px;
+    }
   `,
 
   graphViewport: css`
@@ -39,7 +43,7 @@ export const useStyles = createStyles(({ css }) => ({
     overflow: auto;
     min-height: 560px;
     max-height: 72vh;
-    padding: 20px;
+    padding: ${token.paddingLG}px;
     cursor: grab;
     touch-action: none;
     background:
@@ -50,7 +54,12 @@ export const useStyles = createStyles(({ css }) => ({
 
     @media (max-width: 768px) {
       min-height: 440px;
-      padding: 14px;
+      max-height: 65vh;
+      padding: ${token.paddingSM}px;
+    }
+
+    @media (max-width: 576px) {
+      min-height: 380px;
     }
   `,
 
@@ -73,8 +82,8 @@ export const useStyles = createStyles(({ css }) => ({
 
   nodeCard: css`
     position: absolute;
-    padding: 12px 14px;
-    border-radius: 16px;
+    padding: ${token.paddingSM}px ${token.paddingSM}px;
+    border-radius: ${token.borderRadiusLG}px;
     border: 2px solid;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(10px);
@@ -130,38 +139,42 @@ export const useStyles = createStyles(({ css }) => ({
 
   minimapShell: css`
     position: absolute;
-    right: 14px;
-    bottom: 14px;
+    right: ${token.marginSM}px;
+    bottom: ${token.marginSM}px;
     width: fit-content;
-    padding: 10px;
-    border: 1px solid rgba(226, 232, 240, 0.95);
-    border-radius: 16px;
+    padding: ${token.paddingXS}px;
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
     backdrop-filter: blur(12px);
     z-index: 2;
 
     @media (max-width: 768px) {
-      right: 10px;
-      bottom: 10px;
-      transform: scale(0.92);
+      right: ${token.marginXS}px;
+      bottom: ${token.marginXS}px;
+      transform: scale(0.82);
       transform-origin: bottom right;
+    }
+
+    @media (max-width: 576px) {
+      display: none;
     }
   `,
 
   minimapHeader: css`
-    margin-bottom: 8px;
+    margin-bottom: ${token.marginXS}px;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #475569;
+    color: ${token.colorTextSecondary};
   `,
 
   minimap: css`
     overflow: hidden;
-    border-radius: 10px;
-    border: 1px solid rgba(203, 213, 225, 0.9);
+    border-radius: ${token.borderRadius}px;
+    border: 1px solid ${token.colorBorder};
     background:
       linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
       linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
@@ -194,8 +207,15 @@ export const useStyles = createStyles(({ css }) => ({
 
   detailsMeta: css`
     .ant-descriptions-item-label {
-      color: #64748b;
+      color: ${token.colorTextSecondary};
       width: 112px;
+    }
+
+    @media (max-width: 576px) {
+      .ant-descriptions-item-label,
+      .ant-descriptions-item-content {
+        overflow-wrap: anywhere;
+      }
     }
   `,
 
@@ -207,9 +227,9 @@ export const useStyles = createStyles(({ css }) => ({
   `,
 
   incidentList: css`
-    margin-top: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    margin-top: ${token.marginSM}px;
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG}px;
     overflow: hidden;
   `,
 
@@ -217,29 +237,33 @@ export const useStyles = createStyles(({ css }) => ({
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: ${token.marginSM}px;
+    padding: ${token.paddingSM}px ${token.padding}px;
     cursor: pointer;
     transition: background 0.18s ease;
 
     &:hover {
-      background: #f8fafc;
+      background: ${token.colorFillAlter};
+    }
+
+    @media (max-width: 576px) {
+      flex-direction: column;
     }
   `,
 
   incidentListItemActive: css`
-    background: #eff6ff;
+    background: ${token.colorPrimaryBg};
   `,
 
   incidentListTitle: css`
     font-size: 14px;
     font-weight: 700;
-    color: #0f172a;
+    color: ${token.colorTextHeading};
   `,
 
   incidentListSubtitle: css`
-    margin-top: 4px;
+    margin-top: ${token.marginXXS}px;
     font-size: 12px;
-    color: #64748b;
+    color: ${token.colorTextSecondary};
   `,
 }));

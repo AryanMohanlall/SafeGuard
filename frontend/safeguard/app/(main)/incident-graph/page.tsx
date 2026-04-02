@@ -16,7 +16,7 @@ const { Paragraph, Text } = Typography;
 
 export default function IncidentGraphPage() {
   const { styles } = useStyles();
-  const { graph, isPending, isRegenerating } = useIncidentClusteringState();
+  const { graph, isPending } = useIncidentClusteringState();
   const { fetchGraph, regenerateModel } = useIncidentClusteringAction();
   const csvPath = '';
 
@@ -81,40 +81,37 @@ export default function IncidentGraphPage() {
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.pageHeader}>
-        <div>
+        <div className={styles.pageHeaderContent}>
           <h1 className={styles.pageTitle}>Incident Link Graph</h1>
           <Paragraph className={styles.pageSubtitle}>
             KMeans groups incidents using location, time, title-derived category, and detected objects. Suggested cases are then scored in business logic so investigators can review patterns before creating a real case.
           </Paragraph>
         </div>
-        <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={isPending}>
-            Refresh graph
-          </Button>
+        <Space wrap className={styles.pageActions}>
           <Button
-            type="primary"
-            icon={<ShareAltOutlined />}
-            onClick={handleRetrain}
-            loading={isRegenerating}
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={isPending}
+            className={styles.actionButton}
           >
-            Regenerate from CSV
+            Refresh graph
           </Button>
         </Space>
       </div>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} className={styles.statsRow}>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className={styles.statCard}>
             <Statistic title="Incidents analysed" value={graph?.incidentCount ?? 0} prefix={<ApartmentOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className={styles.statCard}>
             <Statistic title="Suggestion clusters" value={graph?.clusterCount ?? 0} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card>
+          <Card className={styles.statCard}>
             <Statistic title="Suggested cases" value={graph?.suggestionCount ?? 0} />
           </Card>
         </Col>
@@ -129,7 +126,7 @@ export default function IncidentGraphPage() {
         <IncidentSuggestionGraph nodes={graph?.nodes ?? []} edges={graph?.edges ?? []} />
       </Card>
 
-      <Card title="Suggested Cases">
+      <Card title="Suggested Cases" className={styles.tableCard}>
         <Table<ISuggestedIncidentCase>
           rowKey="id"
           loading={isPending}

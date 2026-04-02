@@ -49,6 +49,20 @@ const TREND_FILTER_OPTIONS: { label: string; value: TrendFilterKey }[] = [
   { label: 'With media', value: 'media' },
 ];
 
+const TREND_RANGE_OPTIONS_MOBILE: { label: string; value: TrendRangeKey }[] = [
+  { label: '7d', value: '7d' },
+  { label: '30d', value: '30d' },
+  { label: '90d', value: '90d' },
+  { label: '12m', value: '365d' },
+  { label: 'All', value: 'all' },
+];
+
+const TREND_FILTER_OPTIONS_MOBILE: { label: string; value: TrendFilterKey }[] = [
+  { label: 'All', value: 'all' },
+  { label: 'Anon', value: 'anonymous' },
+  { label: 'Media', value: 'media' },
+];
+
 const BASE = '/api/services/app/incident';
 
 function MapLoading() {
@@ -143,7 +157,7 @@ function filterTrendIncidents(incidents: IIncident[], filter: TrendFilterKey) {
   return incidents;
 }
 
-export default function Dashboard() {
+const Dashboard = () => {
   const { styles } = useStyles();
   const { token } = theme.useToken();
   const screens = Grid.useBreakpoint();
@@ -305,6 +319,8 @@ export default function Dashboard() {
   const trendLabel = TREND_RANGE_OPTIONS.find((option) => option.value === trendRange)?.label ?? '30 days';
   const trendFilterLabel = TREND_FILTER_OPTIONS.find((option) => option.value === trendFilter)?.label ?? 'All incidents';
   const angledTicks = trendRange === '365d' || trendRange === 'all';
+  const trendFilterOptions = isMobile ? TREND_FILTER_OPTIONS_MOBILE : TREND_FILTER_OPTIONS;
+  const trendRangeOptions = isMobile ? TREND_RANGE_OPTIONS_MOBILE : TREND_RANGE_OPTIONS;
 
   return (
     <div className={styles.pageWrapper}>
@@ -412,7 +428,7 @@ export default function Dashboard() {
             <Statistic
               title="Total incidents"
               value={totalCount}
-              prefix={<AlertOutlined style={{ color: '#2563eb' }} />}
+              prefix={<AlertOutlined className={styles.iconPrimary} />}
               styles={{ content: { color: '#0f172a' } }}
             />
           </Card>
@@ -422,7 +438,7 @@ export default function Dashboard() {
             <Statistic
               title="With GPS location"
               value={withGps}
-              prefix={<EnvironmentOutlined style={{ color: '#10b981' }} />}
+              prefix={<EnvironmentOutlined className={styles.iconSuccess} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -433,7 +449,7 @@ export default function Dashboard() {
             <Statistic
               title="Anonymous reports"
               value={anonymousCount}
-              prefix={<EyeInvisibleOutlined style={{ color: '#f59e0b' }} />}
+              prefix={<EyeInvisibleOutlined className={styles.iconWarning} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -444,7 +460,7 @@ export default function Dashboard() {
             <Statistic
               title="With media"
               value={withMedia}
-              prefix={<FileImageOutlined style={{ color: '#0f766e' }} />}
+              prefix={<FileImageOutlined className={styles.iconInfo} />}
               styles={{ content: { color: '#0f172a' } }}
               suffix={statSuffix}
             />
@@ -468,45 +484,50 @@ export default function Dashboard() {
               </div>
               <div className={styles.chartControls}>
                 <Segmented
-                  options={TREND_FILTER_OPTIONS}
+                  options={trendFilterOptions}
                   value={trendFilter}
                   onChange={(value) => setTrendFilter(value as TrendFilterKey)}
                   size={isMobile ? 'small' : 'middle'}
+                  block={isMobile}
                 />
                 <Segmented
-                  options={TREND_RANGE_OPTIONS}
+                  options={trendRangeOptions}
                   value={trendRange}
                   onChange={(value) => setTrendRange(value as TrendRangeKey)}
                   size={isMobile ? 'small' : 'middle'}
+                  block={isMobile}
                 />
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
-              <BarChart data={trendData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={isMobile ? 'preserveStartEnd' : angledTicks ? 0 : 4}
-                  angle={angledTicks ? -18 : 0}
-                  textAnchor={angledTicks ? 'end' : 'middle'}
-                  height={angledTicks ? 56 : 30}
-                />
-                <YAxis
-                  allowDecimals={false}
-                  tick={{ fontSize: 11, fill: '#94a3b8' }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
-                  cursor={{ fill: '#f1f5f9' }}
-                />
-                <Bar dataKey="count" name="Incidents" fill="#2563eb" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className={styles.chartCanvas}>
+              <ResponsiveContainer width="100%" height={isMobile ? 240 : 280}>
+                <BarChart data={trendData} margin={{ top: 4, right: isMobile ? 4 : 8, left: isMobile ? -32 : -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={isMobile ? 'preserveStartEnd' : angledTicks ? 0 : 4}
+                    angle={angledTicks ? -18 : 0}
+                    textAnchor={angledTicks ? 'end' : 'middle'}
+                    height={angledTicks ? 56 : 30}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    width={isMobile ? 24 : 32}
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
+                    cursor={{ fill: '#f1f5f9' }}
+                  />
+                  <Bar dataKey="count" name="Incidents" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
         </Col>
 
@@ -613,4 +634,6 @@ export default function Dashboard() {
       </Card>
     </div>
   );
-}
+};
+
+export default Dashboard;

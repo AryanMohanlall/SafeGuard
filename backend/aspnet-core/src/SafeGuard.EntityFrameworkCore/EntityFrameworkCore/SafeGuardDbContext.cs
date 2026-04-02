@@ -6,6 +6,7 @@ using SafeGuard.Domains.Blockchain;
 using SafeGuard.Domains.Case;
 using SafeGuard.Domains.Dispatches;
 using SafeGuard.Domains.Incidents;
+using SafeGuard.Domains.Monitor;
 using SafeGuard.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
 using CaseEntity = SafeGuard.Domains.Case.Case;
@@ -22,6 +23,7 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
     public DbSet<CaseNote> CaseNotes { get; set; }
     public DbSet<CaseStatusHistory> CaseStatusHistories { get; set; }
     public DbSet<Dispatch> Dispatches { get; set; }
+    public DbSet<LiveStream> LiveStreams { get; set; }
 
     public DbSet<EvidenceEntity> Evidences { get; set; }
     public DbSet<ChainOfCustodyEntity> ChainOfCustodies { get; set; }
@@ -109,6 +111,13 @@ public class SafeGuardDbContext : AbpZeroDbContext<Tenant, Role, User, SafeGuard
                   .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
             entity.Property(d => d.ClearedAt)
                   .HasConversion(v => v, v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+        });
+
+        modelBuilder.Entity<LiveStream>(entity =>
+        {
+            entity.HasIndex(stream => stream.IsActive);
+            entity.HasIndex(stream => stream.SortOrder);
+            entity.HasIndex(stream => stream.Name);
         });
 
         modelBuilder.Entity<LedgerEntry>(entity =>

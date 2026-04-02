@@ -4,6 +4,7 @@ export const useStyles = createStyles(({ css }) => ({
   pageWrapper: css`
     max-width: 1400px;
     margin: 0 auto;
+    min-width: 0;
   `,
 
   pageHeader: css`
@@ -13,6 +14,139 @@ export const useStyles = createStyles(({ css }) => ({
     flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 24px;
+  `,
+
+  managementCard: css`
+    margin-bottom: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(37, 99, 235, 0.12);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+
+    :global(.ant-card-body) {
+      min-width: 0;
+    }
+  `,
+
+  managementStack: css`
+    width: 100%;
+  `,
+
+  managementForm: css`
+    width: 100%;
+    min-width: 0;
+
+    :global(.ant-form-item) {
+      min-width: 0;
+      margin-bottom: 16px;
+    }
+
+    :global(.ant-form-item-control),
+    :global(.ant-form-item-control-input),
+    :global(.ant-form-item-control-input-content) {
+      min-width: 0;
+    }
+
+    :global(.ant-input),
+    :global(.ant-input-affix-wrapper),
+    :global(.ant-input-number),
+    :global(.ant-select),
+    :global(.ant-select-selector) {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    :global(.ant-select-selection-item),
+    :global(.ant-select-selection-placeholder),
+    :global(.ant-input) {
+      overflow-wrap: anywhere;
+    }
+  `,
+
+  formHint: css`
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: #64748b;
+  `,
+
+  formGrid: css`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+    min-width: 0;
+
+    > * {
+      min-width: 0;
+    }
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  formItemWide: css`
+    grid-column: span 2;
+
+    @media (max-width: 900px) {
+      grid-column: span 1;
+    }
+  `,
+
+  numberInput: css`
+    width: 100%;
+  `,
+
+  submitButton: css`
+    width: fit-content;
+
+    @media (max-width: 640px) {
+      width: 100%;
+    }
+  `,
+
+  streamList: css`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  `,
+
+  streamListItem: css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+
+    @media (max-width: 768px) {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    @media (max-width: 640px) {
+      padding: 12px;
+    }
+  `,
+
+  streamMeta: css`
+    min-width: 0;
+    width: 100%;
+  `,
+
+  streamName: css`
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+  `,
+
+  streamInfo: css`
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
+    word-break: break-word;
   `,
 
   pageTitle: css`
@@ -167,6 +301,13 @@ export const useStyles = createStyles(({ css }) => ({
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    @media (max-width: 640px) {
+      padding: 12px 14px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
   `,
 
   expandedTitle: css`

@@ -1,11 +1,12 @@
 import { createStyles } from 'antd-style';
 
-export const useStyles = createStyles(({ css }) => ({
+export const useStyles = createStyles(({ css, token }) => ({
   pageWrapper: css`
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 48px);
+    height: 100%;
+    min-width: 0;
   `,
 
   pageHeader: css`
@@ -13,22 +14,59 @@ export const useStyles = createStyles(({ css }) => ({
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: ${token.marginSM}px;
+    margin-bottom: ${token.marginMD}px;
     flex-shrink: 0;
+  `,
+
+  pageHeaderContent: css`
+    min-width: 0;
+  `,
+
+  pageHeaderAction: css`
+    @media (max-width: 576px) {
+      width: 100%;
+    }
+  `,
+
+  pageHeaderTools: css`
+    display: flex;
+    align-items: center;
+    gap: ${token.marginSM}px;
+    flex-wrap: wrap;
+    width: min(100%, 420px);
+    justify-content: flex-end;
+
+    @media (max-width: 576px) {
+      width: 100%;
+    }
+  `,
+
+  searchInput: css`
+    min-width: 220px;
+    flex: 1;
+
+    @media (max-width: 576px) {
+      width: 100%;
+      min-width: 0;
+    }
   `,
 
   pageTitle: css`
     font-size: 24px;
     font-weight: 700;
-    color: #0f172a;
+    color: ${token.colorTextHeading};
     margin: 0;
+
+    @media (max-width: 480px) {
+      font-size: 20px;
+    }
   `,
 
   pageSubtitle: css`
-    font-size: 14px;
-    color: #64748b;
-    margin-top: 4px;
+    font-size: ${token.fontSize}px;
+    color: ${token.colorTextSecondary};
+    margin-top: ${token.marginXXS}px;
     margin-bottom: 0;
   `,
 
@@ -36,31 +74,51 @@ export const useStyles = createStyles(({ css }) => ({
   board: css`
     display: flex;
     gap: 14px;
-    overflow-x: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     align-items: flex-start;
     flex: 1;
-    padding-bottom: 16px;
+    padding-bottom: ${token.paddingMD}px;
+    -webkit-overflow-scrolling: touch;
+
+    /* Hide scrollbar on desktop, show on mobile for discoverability */
+    scrollbar-width: thin;
+    scrollbar-color: ${token.colorBorderSecondary} transparent;
+    &::-webkit-scrollbar { height: 6px; }
+    &::-webkit-scrollbar-thumb { background: ${token.colorBorderSecondary}; border-radius: 3px; }
+
+    @media (max-width: 767px) {
+      margin-inline: calc(${token.marginSM}px * -1);
+      padding-inline: ${token.paddingSM}px;
+      padding-bottom: ${token.paddingSM}px;
+      scroll-snap-type: x proximity;
+    }
   `,
 
   column: css`
     flex: 1 1 0;
-    min-width: 0;
+    min-width: 220px;
     display: flex;
     flex-direction: column;
-    background: #f1f5f9;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    background: ${token.colorFillAlter};
+    border-radius: ${token.borderRadiusLG}px;
+    border: 1px solid ${token.colorBorderSecondary};
     max-height: 100%;
     overflow: hidden;
+
+    @media (max-width: 767px) {
+      flex: 0 0 min(82vw, 300px);
+      scroll-snap-align: start;
+    }
   `,
 
   columnHeader: css`
     padding: 10px 14px 8px;
-    border-radius: 12px 12px 0 0;
+    border-radius: ${token.borderRadiusLG}px ${token.borderRadiusLG}px 0 0;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 8px;
+    gap: ${token.marginXS}px;
     flex-shrink: 0;
   `,
 
@@ -103,33 +161,33 @@ export const useStyles = createStyles(({ css }) => ({
     flex: 1;
 
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: ${token.colorBorderSecondary} transparent;
     &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+    &::-webkit-scrollbar-thumb { background: ${token.colorBorderSecondary}; border-radius: 2px; }
   `,
 
   columnEmpty: css`
     text-align: center;
-    padding: 24px 12px;
-    color: #94a3b8;
-    font-size: 12px;
+    padding: ${token.paddingLG}px ${token.paddingSM}px;
+    color: ${token.colorTextTertiary};
+    font-size: ${token.fontSizeSM}px;
   `,
 
   /* ── Case cards ───────────────────────────────────── */
   caseCard: css`
-    background: #fff;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-    padding: 12px 14px;
+    background: ${token.colorBgContainer};
+    border-radius: ${token.borderRadius}px;
+    border: 1px solid ${token.colorBorderSecondary};
+    padding: ${token.paddingSM}px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: ${token.marginXS}px;
     cursor: pointer;
-    transition: box-shadow 0.18s, border-color 0.18s, transform 0.12s;
+    transition: box-shadow ${token.motionDurationSlow}, border-color ${token.motionDurationSlow}, transform 0.12s;
 
     &:hover {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09);
-      border-color: #94a3b8;
+      box-shadow: ${token.boxShadow};
+      border-color: ${token.colorBorderSecondary};
       transform: translateY(-1px);
     }
   `,
@@ -138,20 +196,20 @@ export const useStyles = createStyles(({ css }) => ({
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 6px;
+    gap: ${token.marginXS}px;
   `,
 
   caseNumber: css`
     font-size: 10px;
     font-weight: 600;
-    color: #64748b;
+    color: ${token.colorTextSecondary};
     letter-spacing: 0.05em;
   `,
 
   caseTitle: css`
-    font-size: 13px;
+    font-size: ${token.fontSizeSM}px;
     font-weight: 600;
-    color: #0f172a;
+    color: ${token.colorText};
     margin: 0;
     line-height: 1.4;
   `,
@@ -159,31 +217,169 @@ export const useStyles = createStyles(({ css }) => ({
   caseMeta: css`
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: ${token.marginXS}px;
     flex-wrap: wrap;
   `,
 
   caseDate: css`
     font-size: 10px;
-    color: #94a3b8;
+    color: ${token.colorTextTertiary};
   `,
 
   /* ── Drawer ───────────────────────────────────────── */
   drawerSection: css`
-    margin-bottom: 20px;
+    margin-bottom: ${token.marginMD}px;
+  `,
+
+  drawerSectionSpacer: css`
+    margin-top: ${token.marginLG}px;
   `,
 
   drawerLabel: css`
     font-size: 11px;
     font-weight: 600;
-    color: #94a3b8;
+    color: ${token.colorTextTertiary};
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    margin-bottom: 4px;
+    margin-bottom: ${token.marginXXS}px;
   `,
 
   drawerValue: css`
-    font-size: 14px;
-    color: #0f172a;
+    font-size: ${token.fontSize}px;
+    color: ${token.colorText};
+    overflow-wrap: anywhere;
+  `,
+
+  drawerTagGroup: css`
+    display: flex;
+    gap: ${token.marginXS}px;
+    flex-wrap: wrap;
+  `,
+
+  drawerList: css`
+    display: grid;
+    gap: 10px;
+  `,
+
+  drawerTransitions: css`
+    display: flex;
+    gap: ${token.marginXS}px;
+    flex-wrap: wrap;
+  `,
+
+  drawerActionButton: css`
+    @media (max-width: 576px) {
+      width: 100%;
+    }
+  `,
+
+  drawerActionGroup: css`
+    display: flex;
+    gap: ${token.marginXS}px;
+    flex-wrap: wrap;
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+    }
+  `,
+
+  incidentCard: css`
+    border: 1px solid ${token.colorBorderSecondary};
+    background: ${token.colorBgContainer};
+    border-radius: ${token.borderRadius}px;
+    padding: 10px 12px;
+  `,
+
+  incidentCardHeader: css`
+    display: flex;
+    justify-content: space-between;
+    gap: ${token.marginXS}px;
+    margin-bottom: ${token.marginXXS}px;
+    align-items: flex-start;
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+    }
+  `,
+
+  incidentCardTitle: css`
+    font-weight: 600;
+    color: ${token.colorText};
+  `,
+
+  incidentCardLocation: css`
+    font-size: ${token.fontSizeSM}px;
+    color: ${token.colorTextSecondary};
+  `,
+
+  incidentCardDate: css`
+    font-size: ${token.fontSizeSM}px;
+    color: ${token.colorTextTertiary};
+    margin-top: ${token.marginXXS}px;
+  `,
+
+  evidenceCard: css`
+    border: 1px solid ${token.colorBorderSecondary};
+    background: ${token.colorBgContainer};
+    border-radius: ${token.borderRadius}px;
+    padding: ${token.paddingSM}px 14px;
+  `,
+
+  evidenceCardHeader: css`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: ${token.marginXS}px;
+    flex-wrap: wrap;
+    margin-bottom: ${token.marginXS}px;
+  `,
+
+  evidenceCardTitle: css`
+    font-weight: 600;
+    color: ${token.colorText};
+    overflow-wrap: anywhere;
+  `,
+
+  evidenceTagGroup: css`
+    display: flex;
+    gap: ${token.marginXXS}px;
+    flex-wrap: wrap;
+  `,
+
+  evidenceMeta: css`
+    font-size: ${token.fontSizeSM}px;
+    color: ${token.colorTextSecondary};
+    display: grid;
+    gap: ${token.marginXXS}px;
+
+    code {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  `,
+
+  evidenceBlockchainRef: css`
+    display: inline-flex;
+    align-items: center;
+    gap: ${token.marginXXS}px;
+  `,
+
+  boardLoading: css`
+    text-align: center;
+    padding: 60px;
+  `,
+
+  formTwoColumn: css`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 ${token.margin}px;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  caseModalForm: css`
+    margin-top: ${token.margin}px;
   `,
 }));

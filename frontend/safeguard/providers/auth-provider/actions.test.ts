@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   AuthStateEnums,
+  sessionPending,
+  sessionSuccess,
+  sessionError,
   loginPending,
   loginSuccess,
   loginError,
@@ -12,9 +15,27 @@ import {
   logoutError,
 } from './actions';
 
-const mockUser = { userId: 7, accessToken: 'tok_xyz', expireInSeconds: 7200 };
+const mockUser = { userId: 7, accessToken: 'tok_xyz', expireInSeconds: 7200, roleNames: ['Official'] };
 
 describe('Auth action creators', () => {
+  it('sessionPending has correct type', () => {
+    expect(sessionPending().type).toBe(AuthStateEnums.SESSION_PENDING);
+  });
+
+  it('sessionSuccess payload marks auth as ready and authenticated', () => {
+    const { payload } = sessionSuccess(mockUser);
+    expect(payload.isReady).toBe(true);
+    expect(payload.isAuthenticated).toBe(true);
+    expect(payload.user).toEqual(mockUser);
+  });
+
+  it('sessionError payload marks auth as ready without a user', () => {
+    const { payload } = sessionError();
+    expect(payload.isReady).toBe(true);
+    expect(payload.isAuthenticated).toBe(false);
+    expect(payload.user).toBeUndefined();
+  });
+
   // ── loginPending ─────────────────────────────────────────────
   it('loginPending has correct type', () => {
     expect(loginPending().type).toBe(AuthStateEnums.LOGIN_PENDING);
