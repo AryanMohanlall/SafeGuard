@@ -12,6 +12,7 @@ import {
   ShrinkOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons';
+import { getAxiosInstance } from '@/utils/axiosInstance';
 import { useStyles } from './styles/style';
 
 interface Camera {
@@ -22,6 +23,32 @@ interface Camera {
   sourceUrl: string;
   streamUrl: string;
   thumbnailUrl: string;
+}
+
+function readCameraList(payload: unknown): Camera[] {
+  if (Array.isArray(payload)) {
+    return payload as Camera[];
+  }
+
+  if (typeof payload !== 'object' || payload === null) {
+    return [];
+  }
+
+  if ('cameras' in payload && Array.isArray(payload.cameras)) {
+    return payload.cameras as Camera[];
+  }
+
+  if (
+    'result' in payload &&
+    typeof payload.result === 'object' &&
+    payload.result !== null &&
+    'cameras' in payload.result &&
+    Array.isArray(payload.result.cameras)
+  ) {
+    return payload.result.cameras as Camera[];
+  }
+
+  return [];
 }
 
 interface StreamPlayerProps {
@@ -122,6 +149,7 @@ function CameraSkeleton() {
 
 export default function MonitorPage() {
   const { styles } = useStyles();
+  const apiBase = getAxiosInstance().defaults.baseURL?.replace(/\/$/, '') ?? '';
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,26 +163,50 @@ export default function MonitorPage() {
         setIsLoading(true);
         setLoadError(null);
 
-        const response = await fetch('/api/monitor/streams', { cache: 'no-store' });
-
-        if (!response.ok) {
-          throw new Error('Unable to load camera feeds.');
-        }
-
-        const data = (await response.json()) as { cameras: Camera[] };
+        const response = await getAxiosInstance().get('/api/monitor/streams', {
+          headers: { 'Cache-Control': 'no-store' },
+        });
+        const nextCameras = readCameraList(response.data);
 
         if (!isMounted) {
           return;
         }
 
-        setCameras(data.cameras);
-        setExpandedId((current) => current ?? data.cameras[0]?.id ?? null);
+        if (nextCameras.length === 0) {
+          throw new Error('No camera feeds were returned by the API.');
+        }
+
+        setCameras(
+          nextCameras.map((camera) => ({
+            ...camera,
+            streamUrl: camera.streamUrl.startsWith('http') || !apiBase
+              ? camera.streamUrl
+              : `${apiBase}${camera.streamUrl}`,
+          })),
+        );
+        setExpandedId((current) => current ?? nextCameras[0]?.id ?? null);
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        setLoadError(error instanceof Error ? error.message : 'Unable to load camera feeds.');
+        const message =
+          typeof error === 'object' &&
+          error !== null &&
+          'response' in error &&
+          typeof error.response === 'object' &&
+          error.response !== null &&
+          'data' in error.response &&
+          typeof error.response.data === 'object' &&
+          error.response.data !== null &&
+          'message' in error.response.data &&
+          typeof error.response.data.message === 'string'
+            ? error.response.data.message
+            : error instanceof Error
+              ? error.message
+              : 'Unable to load camera feeds.';
+
+        setLoadError(message);
       } finally {
         if (isMounted) {
           setIsLoading(false);

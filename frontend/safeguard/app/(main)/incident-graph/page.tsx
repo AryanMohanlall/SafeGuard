@@ -16,7 +16,7 @@ const { Paragraph, Text } = Typography;
 
 export default function IncidentGraphPage() {
   const { styles } = useStyles();
-  const { graph, isPending, isRegenerating } = useIncidentClusteringState();
+  const { graph, isPending } = useIncidentClusteringState();
   const { fetchGraph, regenerateModel } = useIncidentClusteringAction();
   const csvPath = '';
 
@@ -95,15 +95,6 @@ export default function IncidentGraphPage() {
             className={styles.actionButton}
           >
             Refresh graph
-          </Button>
-          <Button
-            type="primary"
-            icon={<ShareAltOutlined />}
-            onClick={handleRetrain}
-            loading={isRegenerating}
-            className={styles.actionButton}
-          >
-            Regenerate from CSV
           </Button>
         </Space>
       </div>
