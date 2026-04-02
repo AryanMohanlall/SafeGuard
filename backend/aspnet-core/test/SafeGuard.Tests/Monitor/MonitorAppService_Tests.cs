@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
+using SafeGuard.Domains.Monitor;
 using SafeGuard.Services.MonitorService;
 using Shouldly;
 using Xunit;
@@ -17,6 +18,7 @@ namespace SafeGuard.Tests.Monitor
         public async Task GetStreamsAsync_ShouldReturnResolvedCamerasWithProxiedUrls()
         {
             var factory = Substitute.For<IHttpClientFactory>();
+            var repository = Substitute.For<Abp.Domain.Repositories.IRepository<LiveStream, Guid>>();
             factory.CreateClient().Returns(_ => CreateHttpClient(request =>
             {
                 request.RequestUri.ShouldNotBeNull();
@@ -27,8 +29,56 @@ namespace SafeGuard.Tests.Monitor
                     Content = new StringContent(BuildEarthCamHtml())
                 };
             }));
+            repository.GetAllListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<LiveStream, bool>>>())
+                .Returns(Task.FromResult<System.Collections.Generic.List<LiveStream>>(new System.Collections.Generic.List<LiveStream>
+                {
+                    new LiveStream
+                    {
+                        Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                        Name = "Mulberry Street",
+                        Location = "Manhattan, New York, USA",
+                        SourceName = "EarthCam",
+                        SourceUrl = "https://www.earthcam.com/usa/newyork/littleitaly/?cam=littleitaly",
+                        CamKey = "littleitaly",
+                        IsActive = true,
+                        SortOrder = 1,
+                    },
+                    new LiveStream
+                    {
+                        Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                        Name = "Bourbon Street",
+                        Location = "New Orleans, Louisiana, USA",
+                        SourceName = "EarthCam",
+                        SourceUrl = "https://www.earthcam.com/usa/louisiana/neworleans/bourbonstreet/?cam=bourbonstreet",
+                        CamKey = "bourbonstreet",
+                        IsActive = true,
+                        SortOrder = 2,
+                    },
+                    new LiveStream
+                    {
+                        Id = Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                        Name = "Abbey Road Crossing",
+                        Location = "London, England, UK",
+                        SourceName = "EarthCam",
+                        SourceUrl = "https://www.earthcam.com/world/england/london/abbeyroad/?cam=abbeyroad_uk",
+                        CamKey = "abbeyroad_uk",
+                        IsActive = true,
+                        SortOrder = 3,
+                    },
+                    new LiveStream
+                    {
+                        Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
+                        Name = "Temple Bar",
+                        Location = "Dublin, Ireland",
+                        SourceName = "EarthCam",
+                        SourceUrl = "https://www.earthcam.com/world/ireland/dublin/?cam=templebar",
+                        CamKey = "templebar",
+                        IsActive = true,
+                        SortOrder = 4,
+                    },
+                }));
 
-            var service = new MonitorAppService(factory);
+            var service = new MonitorAppService(factory, repository);
 
             var cameras = await service.GetStreamsAsync();
 
@@ -58,9 +108,10 @@ namespace SafeGuard.Tests.Monitor
             });
 
             var factory = Substitute.For<IHttpClientFactory>();
+            var repository = Substitute.For<Abp.Domain.Repositories.IRepository<LiveStream, Guid>>();
             factory.CreateClient().Returns(client);
 
-            var service = new MonitorAppService(factory);
+            var service = new MonitorAppService(factory, repository);
 
             var result = await service.ProxyAsync(target, referer);
             var body = Encoding.UTF8.GetString(result.Body);
@@ -75,7 +126,8 @@ namespace SafeGuard.Tests.Monitor
         public async Task ProxyAsync_ShouldRejectDisallowedHosts()
         {
             var factory = Substitute.For<IHttpClientFactory>();
-            var service = new MonitorAppService(factory);
+            var repository = Substitute.For<Abp.Domain.Repositories.IRepository<LiveStream, Guid>>();
+            var service = new MonitorAppService(factory, repository);
 
             var result = await service.ProxyAsync(
                 "https://example.com/playlist.m3u8",

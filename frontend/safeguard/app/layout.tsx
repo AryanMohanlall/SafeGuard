@@ -8,6 +8,7 @@ import { DispatchProvider } from "@/providers/dispatch-provider";
 import { EvidenceProvider } from "@/providers/evidence-provider";
 import { IncidentClusteringProvider } from "@/providers/incident-clustering-provider";
 import { IncidentProvider } from "@/providers/incidents-provider";
+import { LiveStreamProvider } from "@/providers/live-streams-provider";
 import "./globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -68,7 +69,9 @@ export default function RootLayout({
                 <IncidentProvider>
                   <EvidenceProvider>
                     <CaseProvider>
-                      <DispatchProvider>{children}</DispatchProvider>
+                      <DispatchProvider>
+                        <LiveStreamProvider>{children}</LiveStreamProvider>
+                      </DispatchProvider>
                     </CaseProvider>
                   </EvidenceProvider>
                 </IncidentProvider>

@@ -15,6 +15,89 @@ export const useStyles = createStyles(({ css }) => ({
     margin-bottom: 24px;
   `,
 
+  managementCard: css`
+    margin-bottom: 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(37, 99, 235, 0.12);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  `,
+
+  managementStack: css`
+    width: 100%;
+  `,
+
+  managementForm: css`
+    width: 100%;
+  `,
+
+  formHint: css`
+    margin: 0 0 16px;
+    font-size: 12px;
+    color: #64748b;
+  `,
+
+  formGrid: css`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 16px;
+
+    @media (max-width: 900px) {
+      grid-template-columns: 1fr;
+    }
+  `,
+
+  formItemWide: css`
+    grid-column: span 2;
+
+    @media (max-width: 900px) {
+      grid-column: span 1;
+    }
+  `,
+
+  numberInput: css`
+    width: 100%;
+  `,
+
+  streamList: css`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  `,
+
+  streamListItem: css`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+
+    @media (max-width: 768px) {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  `,
+
+  streamMeta: css`
+    min-width: 0;
+  `,
+
+  streamName: css`
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+  `,
+
+  streamInfo: css`
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
+    word-break: break-word;
+  `,
+
   pageTitle: css`
     font-size: 24px;
     font-weight: 700;

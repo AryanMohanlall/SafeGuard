@@ -8,21 +8,14 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Abp.Application.Services;
+using Abp.Domain.Repositories;
+using SafeGuard.Domains.Monitor;
 using SafeGuard.Services.MonitorService.Dto;
 
 namespace SafeGuard.Services.MonitorService
 {
     public class MonitorAppService : ApplicationService, IMonitorAppService
     {
-        private sealed class CameraSeed
-        {
-            public string Id { get; set; }
-            public string PageUrl { get; set; }
-            public string CamKey { get; set; }
-            public string FallbackName { get; set; }
-            public string FallbackLocation { get; set; }
-        }
-
         private sealed class EarthCamPayload
         {
             public Dictionary<string, EarthCamCamera> Cam { get; set; } =
@@ -40,42 +33,6 @@ namespace SafeGuard.Services.MonitorService
         private static readonly Regex JsonBasePattern =
             new Regex(@"var json_base\s*=\s*(\{[\s\S]*?\});", RegexOptions.Compiled);
 
-        private static readonly IReadOnlyList<CameraSeed> CameraSeeds = new List<CameraSeed>
-        {
-            new CameraSeed
-            {
-                Id = "mulberry-street",
-                PageUrl = "https://www.earthcam.com/usa/newyork/littleitaly/?cam=littleitaly",
-                CamKey = "littleitaly",
-                FallbackName = "Mulberry Street",
-                FallbackLocation = "Manhattan, New York, USA",
-            },
-            new CameraSeed
-            {
-                Id = "bourbon-street",
-                PageUrl = "https://www.earthcam.com/usa/louisiana/neworleans/bourbonstreet/?cam=bourbonstreet",
-                CamKey = "bourbonstreet",
-                FallbackName = "Bourbon Street",
-                FallbackLocation = "New Orleans, Louisiana, USA",
-            },
-            new CameraSeed
-            {
-                Id = "abbey-road",
-                PageUrl = "https://www.earthcam.com/world/england/london/abbeyroad/?cam=abbeyroad_uk",
-                CamKey = "abbeyroad_uk",
-                FallbackName = "Abbey Road Crossing",
-                FallbackLocation = "London, England, UK",
-            },
-            new CameraSeed
-            {
-                Id = "temple-bar",
-                PageUrl = "https://www.earthcam.com/world/ireland/dublin/?cam=templebar",
-                CamKey = "templebar",
-                FallbackName = "Temple Bar",
-                FallbackLocation = "Dublin, Ireland",
-            },
-        };
-
         private static readonly HashSet<string> AllowedVideoHosts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "videos-3.earthcam.com",
@@ -92,15 +49,24 @@ namespace SafeGuard.Services.MonitorService
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
 
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IRepository<LiveStream, Guid> _liveStreamRepository;
 
-        public MonitorAppService(IHttpClientFactory httpClientFactory)
+        public MonitorAppService(
+            IHttpClientFactory httpClientFactory,
+            IRepository<LiveStream, Guid> liveStreamRepository)
         {
             _httpClientFactory = httpClientFactory;
+            _liveStreamRepository = liveStreamRepository;
         }
 
         public async Task<IReadOnlyList<MonitorCameraDto>> GetStreamsAsync()
         {
-            var results = await Task.WhenAll(CameraSeeds.Select(ResolveCameraSafelyAsync));
+            var configuredStreams = (await _liveStreamRepository.GetAllListAsync(stream => stream.IsActive))
+                .OrderBy(stream => stream.SortOrder)
+                .ThenBy(stream => stream.Name)
+                .ToList();
+
+            var results = await Task.WhenAll(configuredStreams.Select(ResolveCameraSafelyAsync));
 
             return results
                 .Where(camera => camera != null)
@@ -194,11 +160,11 @@ namespace SafeGuard.Services.MonitorService
             }
         }
 
-        private async Task<MonitorCameraDto> ResolveCameraSafelyAsync(CameraSeed seed)
+        private async Task<MonitorCameraDto> ResolveCameraSafelyAsync(LiveStream stream)
         {
             try
             {
-                return await ResolveCameraAsync(seed);
+                return await ResolveCameraAsync(stream);
             }
             catch
             {
@@ -206,16 +172,16 @@ namespace SafeGuard.Services.MonitorService
             }
         }
 
-        private async Task<MonitorCameraDto> ResolveCameraAsync(CameraSeed seed)
+        private async Task<MonitorCameraDto> ResolveCameraAsync(LiveStream stream)
         {
             using (var client = CreateClient())
             {
-                var html = await client.GetStringAsync(seed.PageUrl);
+                var html = await client.GetStringAsync(stream.SourceUrl);
                 var match = JsonBasePattern.Match(html);
 
                 if (!match.Success)
                 {
-                    throw new InvalidOperationException(string.Format("Unable to read stream metadata for {0}.", seed.FallbackName));
+                    throw new InvalidOperationException(string.Format("Unable to read stream metadata for {0}.", stream.Name));
                 }
 
                 var payload = JsonSerializer.Deserialize<EarthCamPayload>(match.Groups[1].Value, new JsonSerializerOptions
@@ -224,20 +190,20 @@ namespace SafeGuard.Services.MonitorService
                 });
 
                 EarthCamCamera camera;
-                if (payload == null || payload.Cam == null || !payload.Cam.TryGetValue(seed.CamKey, out camera) || string.IsNullOrWhiteSpace(camera == null ? null : camera.Stream))
+                if (payload == null || payload.Cam == null || !payload.Cam.TryGetValue(stream.CamKey, out camera) || string.IsNullOrWhiteSpace(camera == null ? null : camera.Stream))
                 {
-                    throw new InvalidOperationException(string.Format("No live stream available for {0}.", seed.FallbackName));
+                    throw new InvalidOperationException(string.Format("No live stream available for {0}.", stream.Name));
                 }
 
                 return new MonitorCameraDto
                 {
-                    Id = seed.Id,
-                    Name = FallbackIfBlank(camera.Name, seed.FallbackName),
-                    Location = FallbackIfBlank(camera.Location, seed.FallbackLocation),
-                    SourceName = "EarthCam",
-                    SourceUrl = seed.PageUrl,
-                    StreamUrl = BuildProxyUrl(Decode(camera.Stream), seed.PageUrl),
-                    ThumbnailUrl = Decode(camera.Thumbnail_512),
+                    Id = stream.Id.ToString(),
+                    Name = FallbackIfBlank(camera.Name, stream.Name),
+                    Location = FallbackIfBlank(camera.Location, stream.Location),
+                    SourceName = FallbackIfBlank(stream.SourceName, "EarthCam"),
+                    SourceUrl = stream.SourceUrl,
+                    StreamUrl = BuildProxyUrl(Decode(camera.Stream), stream.SourceUrl),
+                    ThumbnailUrl = FallbackIfBlank(Decode(camera.Thumbnail_512), stream.ThumbnailUrl),
                 };
             }
         }
