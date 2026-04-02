@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { mockAuthenticatedSession } from './helpers/auth';
 
 const mockIncidents = [
   {
@@ -56,6 +57,7 @@ const mockEmpty = {
 
 test.describe('Incidents page', () => {
   test.beforeEach(async ({ page }) => {
+    await mockAuthenticatedSession(page);
     await page.route('**/incident/GetAll**', route =>
       route.fulfill({ json: mockGetAll })
     );

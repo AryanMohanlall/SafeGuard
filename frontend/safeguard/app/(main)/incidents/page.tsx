@@ -948,7 +948,7 @@ const IncidentsPage = () => {
                   format="YYYY-MM-DD HH:mm"
                   placeholder="Select date and time"
                   className={styles.datePickerFull}
-                  popupClassName={styles.datePickerPopup}
+                  classNames={{ popup: { root: styles.datePickerPopup } }}
                   getPopupContainer={(triggerNode) => triggerNode.parentElement ?? document.body}
                   placement={isMobile ? 'bottomRight' : undefined}
                   inputReadOnly={isMobile}

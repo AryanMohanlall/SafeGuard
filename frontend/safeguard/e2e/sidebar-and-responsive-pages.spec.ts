@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { mockAuthenticatedSession } from './helpers/auth';
 
 const mockCases = [
   {
@@ -110,8 +111,14 @@ const mockGraph = {
 };
 
 const routeProtectedAppApis = async (page: import('@playwright/test').Page) => {
+  await mockAuthenticatedSession(page);
   await page.route('**/api/**', async (route) => {
     const url = route.request().url();
+
+    if (url.includes('/api/services/app/Session/GetCurrentLoginInformations')) {
+      await route.fallback();
+      return;
+    }
 
     if (url.includes('/api/services/app/case/GetAll')) {
       await route.fulfill({ json: { result: { items: mockCases, totalCount: mockCases.length } } });

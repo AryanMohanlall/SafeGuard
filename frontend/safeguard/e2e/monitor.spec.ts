@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { mockAuthenticatedSession } from './helpers/auth';
 
 const mockCameras = [
   {
@@ -23,6 +24,7 @@ const mockCameras = [
 
 test.describe('Monitor page', () => {
   test('renders live feeds from the monitor api and switches expanded camera', async ({ page }) => {
+    await mockAuthenticatedSession(page);
     await page.route('**/api/services/app/LiveStream/GetAll**', route =>
       route.fulfill({
         json: {
@@ -66,6 +68,7 @@ test.describe('Monitor page', () => {
   });
 
   test('adds and deletes a configured live stream', async ({ page }) => {
+    await mockAuthenticatedSession(page);
     let streams = [
       {
         id: 'stream-1',
@@ -126,6 +129,7 @@ test.describe('Monitor page', () => {
   });
 
   test('shows an error banner when the monitor api fails', async ({ page }) => {
+    await mockAuthenticatedSession(page);
     await page.route('**/api/services/app/LiveStream/GetAll**', route =>
       route.fulfill({ json: { result: { items: [], totalCount: 0 } } }),
     );
