@@ -118,14 +118,7 @@ const LoginPage = () => {
 
               <Form.Item
                 name="password"
-                label={
-                  <span className={styles.passwordLabel}>
-                    Password
-                    <Link href="/forgot-password" className={styles.forgotPasswordLink}>
-                      Forgot password?
-                    </Link>
-                  </span>
-                }
+                label="Password"
                 rules={[{ required: true, message: 'Please enter your password.' }]}
               >
                 <Input.Password
@@ -136,10 +129,6 @@ const LoginPage = () => {
                     visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
                   }
                 />
-              </Form.Item>
-
-              <Form.Item name="remember" valuePropName="checked" initialValue={false}>
-                <Checkbox>Remember me</Checkbox>
               </Form.Item>
 
               <Form.Item style={{ marginBottom: 0 }}>

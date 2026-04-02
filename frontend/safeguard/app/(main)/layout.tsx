@@ -1,6 +1,6 @@
 'use client';
 
-import { Layout, theme } from 'antd';
+import { Layout } from 'antd';
 import { Sidebar } from '@/components/Sidebar';
 import { withAuth } from '@/hoc/withAuth';
 import { AlertProvider } from '@/providers/alert-provider';
@@ -16,7 +16,6 @@ const { Content } = Layout;
 
 const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { styles } = useStyles();
-  const { token } = theme.useToken();
 
   return (
     <AlertProvider>
@@ -25,9 +24,9 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
           <EvidenceProvider>
             <CaseProvider>
               <DispatchProvider>
-                <Layout style={{ minHeight: '100vh' }}>
+                <Layout className={styles.outerLayout}>
                   <Sidebar />
-                  <Layout style={{ background: token.colorBgLayout }}>
+                  <Layout className={styles.innerLayout}>
                     <Content className={styles.content}>
                       {children}
                     </Content>

@@ -5,7 +5,7 @@ export const useStyles = createStyles(({ css, token }) => ({
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 48px);
+    height: 100%;
   `,
 
   pageHeader: css`

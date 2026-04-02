@@ -679,7 +679,7 @@ const IncidentsPage = () => {
         title={drawerTitle}
         open={drawerOpen}
         onClose={closeDrawer}
-        width={isMobile ? '100%' : 520}
+        styles={{ wrapper: { width: isMobile ? '100%' : 520 } }}
         footer={
           drawerMode !== 'view' ? (
             <div className={styles.drawerFooter}>
