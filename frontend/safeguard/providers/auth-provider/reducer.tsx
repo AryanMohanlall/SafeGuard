@@ -4,6 +4,9 @@ import { AuthStateEnums } from './actions';
 
 export const AuthReducer = handleActions<IAuthStateContext, IAuthStateContext>(
   {
+    [AuthStateEnums.SESSION_PENDING]:  (state, { payload }) => ({ ...state, ...payload }),
+    [AuthStateEnums.SESSION_SUCCESS]:  (state, { payload }) => ({ ...state, ...payload }),
+    [AuthStateEnums.SESSION_ERROR]:    (state, { payload }) => ({ ...state, ...payload }),
     [AuthStateEnums.LOGIN_PENDING]:    (state, { payload }) => ({ ...state, ...payload }),
     [AuthStateEnums.LOGIN_SUCCESS]:    (state, { payload }) => ({ ...state, ...payload }),
     [AuthStateEnums.LOGIN_ERROR]:      (state, { payload }) => ({ ...state, ...payload }),

@@ -28,6 +28,7 @@ public class SessionAppService_Tests : SafeGuardTestBase
         output.User.ShouldNotBe(null);
         output.User.Name.ShouldBe(currentUser.Name);
         output.User.Surname.ShouldBe(currentUser.Surname);
+        output.User.RoleNames.ShouldNotBeEmpty();
 
         output.Tenant.ShouldBe(null);
     }
@@ -44,6 +45,7 @@ public class SessionAppService_Tests : SafeGuardTestBase
 
         output.User.ShouldNotBe(null);
         output.User.Name.ShouldBe(currentUser.Name);
+        output.User.RoleNames.ShouldNotBeEmpty();
 
         output.Tenant.ShouldNotBe(null);
         output.Tenant.Name.ShouldBe(currentTenant.Name);

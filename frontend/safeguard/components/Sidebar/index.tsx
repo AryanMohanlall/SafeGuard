@@ -14,7 +14,8 @@ import {
   VideoCameraOutlined,
   WarningOutlined,
 } from '@ant-design/icons';
-import { useAuthAction } from '@/providers/auth-provider';
+import { useAuthAction, useAuthState } from '@/providers/auth-provider';
+import { hasOfficialRole } from '@/hoc/withAuth';
 import { useStyles } from './styles';
 
 const { Sider } = Layout;
@@ -22,11 +23,11 @@ const { Sider } = Layout;
 const navItems = [
   { key: '/dashboard',      icon: <DashboardOutlined />,  label: 'Dashboard'      },
   { key: '/incidents',      icon: <WarningOutlined />,    label: 'Incidents'      },
-  { key: '/cases',          icon: <FolderOutlined />,     label: 'Cases'          },
-  { key: '/incident-graph', icon: <ApartmentOutlined />,  label: 'Incident Graph' },
-  { key: '/alerts',         icon: <BellOutlined />,       label: 'Alerts'         },
+  { key: '/cases',          icon: <FolderOutlined />,     label: 'Cases', officialOnly: true },
+  { key: '/incident-graph', icon: <ApartmentOutlined />,  label: 'Incident Graph', officialOnly: true },
+  { key: '/alerts',         icon: <BellOutlined />,       label: 'Alerts', officialOnly: true },
   { key: '/report',         icon: <FileAddOutlined />,    label: 'Report'         },
-  { key: '/monitor',        icon: <VideoCameraOutlined />, label: 'Monitor'       },
+  { key: '/monitor',        icon: <VideoCameraOutlined />, label: 'Monitor', officialOnly: true },
 ];
 
 export const Sidebar = () => {
@@ -34,10 +35,12 @@ export const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuthAction();
+  const { user } = useAuthState();
   const { styles, cx } = useStyles();
+  const visibleNavItems = navItems.filter((item) => !item.officialOnly || hasOfficialRole(user?.roleNames));
 
   const selectedKey =
-    navItems.find((item) => pathname.startsWith(item.key))?.key ?? '/dashboard';
+    visibleNavItems.find((item) => pathname.startsWith(item.key))?.key ?? '/dashboard';
 
   const handleLogout = () => {
     logout();
@@ -63,7 +66,7 @@ export const Sidebar = () => {
         theme="dark"
         mode="inline"
         selectedKeys={[selectedKey]}
-        items={navItems}
+        items={visibleNavItems}
         onClick={({ key }) => router.push(key)}
         className={styles.menu}
       />

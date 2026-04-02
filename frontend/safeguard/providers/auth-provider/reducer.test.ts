@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { AuthReducer } from './reducer';
 import { INITIAL_STATE } from './context';
 import {
+  sessionPending,
+  sessionSuccess,
+  sessionError,
   loginPending,
   loginSuccess,
   loginError,
@@ -13,12 +16,31 @@ import {
   logoutError,
 } from './actions';
 
-const mockUser = { userId: 42, accessToken: 'tok_abc', expireInSeconds: 3600 };
+const mockUser = { userId: 42, accessToken: 'tok_abc', expireInSeconds: 3600, roleNames: ['Official'] };
 
 describe('AuthReducer', () => {
   it('returns initial state for unknown action', () => {
     const state = AuthReducer(INITIAL_STATE, { type: '@@UNKNOWN', payload: {} } as never);
     expect(state).toEqual(INITIAL_STATE);
+  });
+
+  it('SESSION_PENDING keeps auth unresolved', () => {
+    const state = AuthReducer(INITIAL_STATE, sessionPending());
+    expect(state.isPending).toBe(true);
+    expect(state.isReady).toBe(false);
+  });
+
+  it('SESSION_SUCCESS stores the session user and marks auth ready', () => {
+    const state = AuthReducer(INITIAL_STATE, sessionSuccess(mockUser));
+    expect(state.isAuthenticated).toBe(true);
+    expect(state.isReady).toBe(true);
+    expect(state.user).toEqual(mockUser);
+  });
+
+  it('SESSION_ERROR marks auth ready without authenticating', () => {
+    const state = AuthReducer(INITIAL_STATE, sessionError());
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isReady).toBe(true);
   });
 
   // ── Login ──────────────────────────────────────────────────────
