@@ -73,7 +73,6 @@ interface IncidentFormValues {
   longitude?: number | null;
   anonymous: boolean;
   occurredAt: dayjs.Dayjs;
-  reportedAt: dayjs.Dayjs;
 }
 
 function deriveIncidentPriority(incident: IIncident): 'HIGH' | 'MEDIUM' | 'LOW' {
@@ -225,7 +224,7 @@ const IncidentsPage = () => {
 
   const openCreate = () => {
     form.resetFields();
-    form.setFieldsValue({ reportedAt: dayjs(), anonymous: false });
+    form.setFieldsValue({ anonymous: false });
     setAnonymous(false);
     setActiveIncident(null);
     setDrawerMode('create');
@@ -241,7 +240,6 @@ const IncidentsPage = () => {
       longitude: incident.longitude,
       anonymous: incident.anonymous,
       occurredAt: dayjs(incident.occurredAt),
-      reportedAt: dayjs(incident.reportedAt),
     });
     setAnonymous(incident.anonymous);
     setActiveIncident(incident);
@@ -312,7 +310,7 @@ const IncidentsPage = () => {
         caseId: null,
         anonymous: values.anonymous ?? false,
         occurredAt: values.occurredAt.toISOString(),
-        reportedAt: values.reportedAt.toISOString(),
+        reportedAt: new Date().toISOString(),
       };
       create(input);
       message.success('Incident created.');
@@ -327,7 +325,7 @@ const IncidentsPage = () => {
         caseId: activeIncident.caseId,
         anonymous: values.anonymous ?? false,
         occurredAt: values.occurredAt.toISOString(),
-        reportedAt: values.reportedAt.toISOString(),
+        reportedAt: activeIncident.reportedAt,
       };
       update(activeIncident.id, input);
       message.success('Incident updated.');
@@ -791,12 +789,6 @@ const IncidentsPage = () => {
                 {dayjs(activeIncident.occurredAt).format('DD MMM YYYY HH:mm')}
               </p>
             </div>
-            <div className={styles.detailField}>
-              <p className={styles.detailLabel}>Reported At</p>
-              <p className={styles.detailValue}>
-                {dayjs(activeIncident.reportedAt).format('DD MMM YYYY HH:mm')}
-              </p>
-            </div>
             {activeIncidentAi != null && (
               <div className={styles.detailField}>
                 <p className={styles.detailLabel}>AI Case Likelihood</p>
@@ -956,18 +948,11 @@ const IncidentsPage = () => {
                   format="YYYY-MM-DD HH:mm"
                   placeholder="Select date and time"
                   className={styles.datePickerFull}
+                  popupClassName={styles.datePickerPopup}
+                  getPopupContainer={(triggerNode) => triggerNode.parentElement ?? document.body}
+                  placement={isMobile ? 'bottomRight' : undefined}
+                  inputReadOnly={isMobile}
                   disabledDate={(d) => d.isAfter(dayjs())}
-                />
-              </Form.Item>
-              <Form.Item
-                name="reportedAt"
-                label="Reported At"
-                rules={[{ required: true, message: 'Required.' }]}
-              >
-                <DatePicker
-                  showTime
-                  format="YYYY-MM-DD HH:mm"
-                  className={styles.datePickerFull}
                 />
               </Form.Item>
             </div>

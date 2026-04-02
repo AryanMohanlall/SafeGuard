@@ -24,7 +24,6 @@ interface IncidentFormValues {
   location: string;
   anonymous: boolean;
   occurredAt: dayjs.Dayjs;
-  reportedAt: dayjs.Dayjs;
 }
 
 type GeoStatus = 'idle' | 'requesting' | 'granted' | 'denied';
@@ -211,7 +210,7 @@ const IncidentPage = () => {
       location: values.location,
       anonymous: values.anonymous ?? false,
       occurredAt: values.occurredAt.toISOString(),
-      reportedAt: values.reportedAt.toISOString(),
+      reportedAt: new Date().toISOString(),
       latitude: coords?.latitude ?? null,
       longitude: coords?.longitude ?? null,
       audioFile: audioBase64,
@@ -246,7 +245,7 @@ const IncidentPage = () => {
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ anonymous: false, reportedAt: dayjs() }}
+          initialValues={{ anonymous: false }}
           onFinish={handleSubmit}
           requiredMark={false}
         >
@@ -415,17 +414,7 @@ const IncidentPage = () => {
                 className={styles.datePickerFull}
                 size="large"
                 disabledDate={(d) => d.isAfter(dayjs())}
-              />
-            </Form.Item>
-
-            <Form.Item name="reportedAt" label="Date & Time Reported">
-              <DatePicker
-                showTime
-                format="YYYY-MM-DD HH:mm"
-                className={styles.datePickerFull}
-                size="large"
-                disabled
-              />
+               />
             </Form.Item>
           </div>
 

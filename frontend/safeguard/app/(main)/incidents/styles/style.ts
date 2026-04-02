@@ -170,6 +170,32 @@ export const useStyles = createStyles(() => ({
   datePickerFull: {
     width: '100%',
   },
+  datePickerPopup: {
+    '@media (max-width: 480px)': {
+      '.ant-picker-panel-container': {
+        width: 'calc(100vw - 32px)',
+        maxWidth: 320,
+      },
+      '.ant-picker-panel': {
+        width: '100%',
+      },
+      '.ant-picker-date-panel': {
+        width: '100%',
+      },
+      '.ant-picker-content': {
+        width: '100%',
+      },
+      '.ant-picker-time-panel-column': {
+        flex: '1 1 0',
+      },
+      '.ant-picker-cell': {
+        paddingInline: 0,
+      },
+      '.ant-picker-cell-inner': {
+        minWidth: 32,
+      },
+    },
+  },
   anonymousRow: {
     display: 'flex',
     alignItems: 'center',
