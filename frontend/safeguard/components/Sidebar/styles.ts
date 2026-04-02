@@ -50,6 +50,10 @@ export const useStyles = createStyles(({ token, css }) => ({
   logoutSection: css`
     padding: 18px 16px 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+    @media (max-width: 991px) {
+      padding: 12px 0 16px;
+    }
   `,
 
   logoutButton: css`
@@ -60,24 +64,43 @@ export const useStyles = createStyles(({ token, css }) => ({
     align-items: center;
     justify-content: flex-start;
     gap: 12px;
-    padding: 12px 14px !important;
+    padding: 12px 18px 12px 24px !important;
     border-radius: ${token.borderRadiusLG}px;
-    border: 1px solid rgba(248, 113, 113, 0.22);
+    border: none;
     background:
       linear-gradient(135deg, rgba(185, 28, 28, 0.18), rgba(239, 68, 68, 0.08)),
       rgba(255, 255, 255, 0.03) !important;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    color: #fff !important;
+    color: #e41d1d !important;
     transition:
       transform ${token.motionDurationMid},
       border-color ${token.motionDurationMid},
       background ${token.motionDurationMid},
       box-shadow ${token.motionDurationMid};
 
+    .ant-btn-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-inline-end: 0;
+      line-height: 1;
+    }
+
+    .ant-btn-icon + span {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    @media (max-width: 991px) {
+      min-height: 44px;
+      gap: 10px;
+      padding: 8px 12px 8px 18px !important;
+      border-radius: ${token.borderRadius}px;
+    }
+
     &:hover,
     &:focus-visible {
       color: #fff !important;
-      border-color: rgba(248, 113, 113, 0.45);
       background:
         linear-gradient(135deg, rgba(185, 28, 28, 0.28), rgba(239, 68, 68, 0.16)),
         rgba(255, 255, 255, 0.05) !important;
@@ -91,16 +114,48 @@ export const useStyles = createStyles(({ token, css }) => ({
   logoutButtonCollapsed: css`
     justify-content: center;
     padding-inline: 0 !important;
+
+    @media (max-width: 991px) {
+      width: 48px;
+      min-height: 40px;
+      margin: 0 auto;
+      padding: 0 !important;
+      border-radius: ${token.borderRadius}px;
+      background: transparent !important;
+      box-shadow: none;
+
+      &:hover,
+      &:focus-visible {
+        background: rgba(37, 99, 235, 0.18) !important;
+        transform: none;
+        box-shadow: none;
+      }
+    }
   `,
 
   logoutIcon: css`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     font-size: 18px;
+    line-height: 1;
     color: #fca5a5;
     flex-shrink: 0;
-    padding: 10px;
+    padding: 0;
     border-radius: ${token.borderRadius}px;
     background: rgba(127, 29, 29, 0.45);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    @media (max-width: 991px) {
+      width: 14px;
+      height: 14px;
+      font-size: 16px;
+      color: rgba(255, 0, 0, 0.65);
+      background: transparent;
+      box-shadow: none;
+    }
   `,
 
   logoutTextWrap: css`
@@ -115,11 +170,20 @@ export const useStyles = createStyles(({ token, css }) => ({
     font-weight: 700;
     color: #fff;
     white-space: nowrap;
+
+    @media (max-width: 991px) {
+      font-size: 13px;
+      line-height: 1.2;
+    }
   `,
 
   logoutHint: css`
     font-size: 11px;
     color: rgba(252, 165, 165, 0.82);
     white-space: nowrap;
+
+    @media (max-width: 991px) {
+      display: none;
+    }
   `,
 }));

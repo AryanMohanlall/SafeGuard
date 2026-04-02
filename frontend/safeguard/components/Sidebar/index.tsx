@@ -79,7 +79,6 @@ export const Sidebar = () => {
             {!collapsed && (
               <span className={styles.logoutTextWrap}>
                 <span className={styles.logoutText}>Log Out</span>
-                <span className={styles.logoutHint}>End secure session</span>
               </span>
             )}
           </Button>
