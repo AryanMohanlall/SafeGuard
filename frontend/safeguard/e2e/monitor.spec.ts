@@ -34,15 +34,10 @@ test.describe('Monitor page', () => {
     await expect(page.getByText('2 live')).toBeVisible();
     await expect(page.getByText('Open source feed')).toBeVisible();
 
-    await page
-      .locator('div')
-      .filter({ has: page.getByText('Abbey Road Crossing', { exact: true }).first() })
-      .getByRole('button')
-      .first()
-      .click();
+    await page.locator('button').filter({ has: page.locator('[aria-label="expand-alt"]') }).last().click();
 
-    await expect(page.locator('text=Abbey Road Crossing').first()).toBeVisible();
-    await expect(page.locator('text=London, England, UK').first()).toBeVisible();
+    await expect(page.getByText('Abbey Road Crossing', { exact: true }).nth(1)).toBeVisible();
+    await expect(page.getByText('London, England, UK', { exact: true }).nth(1)).toBeVisible();
   });
 
   test('shows an error banner when the monitor api fails', async ({ page }) => {

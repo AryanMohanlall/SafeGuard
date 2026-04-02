@@ -31,6 +31,7 @@ export const AlertProvider = ({ children }: { children: React.ReactNode }) => {
     dispatch(connectPending());
 
     const connection = new signalR.HubConnectionBuilder()
+      .configureLogging(signalR.LogLevel.None)
       .withUrl(`${apiUrl}/alertHub`, {
         accessTokenFactory: () => token ?? "",
       })

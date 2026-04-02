@@ -50,7 +50,7 @@ const IncidentMap = dynamic(() => import('../../../components/Map/IncidentMap'),
 
 const BASE = '/api/services/app/incident';
 
-// Module-level set — survives navigation within the session without persistence.
+// Module-level set â€” survives navigation within the session without persistence.
 const dismissedBanners = new Set<string>();
 
 function base64ToObjectUrl(b64: string, contentType: string): string {
@@ -467,7 +467,7 @@ const IncidentsPage = () => {
               <Tag color="green" icon={<RobotOutlined />} />
             </Tooltip>
           )}
-          {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>—</span>}
+          {!record.hasAudio && !record.hasImage && <span style={{ color: '#cbd5e1' }}>â€”</span>}
         </Space>
       ),
     },
@@ -701,7 +701,7 @@ const IncidentsPage = () => {
               <Alert
                 type="warning"
                 showIcon
-                message="AI assessment — High likelihood of case"
+                title="AI assessment - High likelihood of case"
                 description={
                   <>
                     This incident has a{' '}
@@ -799,7 +799,7 @@ const IncidentsPage = () => {
                     onClick={() => loadAudio(activeIncident.id)}
                     style={{ alignSelf: 'flex-start' }}
                   >
-                    {audioLoading ? 'Loading…' : `Load · ${activeIncident.audioFileName}`}
+                    {audioLoading ? 'Loadingâ€¦' : `Load Â· ${activeIncident.audioFileName}`}
                   </Button>
                 )}
               </div>
@@ -820,7 +820,7 @@ const IncidentsPage = () => {
                     onClick={() => loadImage(activeIncident.id)}
                     style={{ alignSelf: 'flex-start' }}
                   >
-                    {imageLoading ? 'Loading…' : `Load · ${activeIncident.imageFileName}`}
+                    {imageLoading ? 'Loadingâ€¦' : `Load Â· ${activeIncident.imageFileName}`}
                   </Button>
                 )}
               </div>
@@ -837,7 +837,7 @@ const IncidentsPage = () => {
                       key={`${obj.name}-${i}`}
                       color={obj.source === 'object' ? 'blue' : 'default'}
                     >
-                      {obj.name} · {Math.round(obj.confidence * 100)}%
+                      {obj.name} Â· {Math.round(obj.confidence * 100)}%
                     </Tag>
                   ))}
                 </Space>

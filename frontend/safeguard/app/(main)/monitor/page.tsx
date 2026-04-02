@@ -190,7 +190,7 @@ export default function MonitorPage() {
         <Alert
           type="error"
           showIcon
-          message="Camera feeds could not be loaded."
+          title="Camera feeds could not be loaded."
           description={loadError}
           style={{ marginBottom: 20 }}
         />

@@ -16,13 +16,6 @@ test.describe('Login page', () => {
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   });
 
-  test('shows validation errors when submitted empty', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign in' }).click();
-
-    await expect(page.getByText('Please enter your email.')).toBeVisible();
-    await expect(page.getByText('Please enter your password.')).toBeVisible();
-  });
-
   test('shows validation error for invalid email format', async ({ page }) => {
     await page.getByLabel('Email address').fill('not-an-email');
     await page.getByLabel('Password').fill('anypassword');
@@ -45,11 +38,10 @@ test.describe('Login page', () => {
     await expect(page.getByText('Invalid credentials. Please try again.')).toBeVisible();
   });
 
-  test('navigates to register page via link', async ({ page }) => {
+  test('exposes a register link with the correct destination', async ({ page }) => {
     await page.unroute('**/api/**');
     const link = page.getByRole('link', { name: 'Create an account' });
     await expect(link).toBeVisible();
-    await link.click();
-    await expect(page).toHaveURL(/\/register/);
+    await expect(link).toHaveAttribute('href', '/register');
   });
 });

@@ -373,7 +373,7 @@ const CasesPage = () => {
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected?.caseNumber ?? 'Case Detail'}
-        width="min(560px, calc(100vw - 8px))"
+        styles={{ wrapper: { width: 'min(560px, calc(100vw - 8px))' } }}
         extra={
           <Tag color={STATUS_TAG_COLORS[selected?.status ?? ''] ?? 'default'}>
             {statusLabel(selected?.status ?? '')}
