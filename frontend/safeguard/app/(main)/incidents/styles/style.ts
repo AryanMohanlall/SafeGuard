@@ -65,6 +65,13 @@ export const useStyles = createStyles(() => ({
     gap: 8,
     flexWrap: 'wrap' as const,
   },
+  searchInput: {
+    minWidth: 220,
+    flex: '1 1 240px',
+    '@media (max-width: 640px)': {
+      minWidth: '100%',
+    },
+  },
   mapPanel: {
     height: 520,
     '@media (max-width: 768px)': {

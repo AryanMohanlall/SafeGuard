@@ -9,10 +9,11 @@ import {
 } from '@hello-pangea/dnd';
 import {
   Button, Drawer, Form, Input, Modal,
-  Select, Spin, Tag, message,
+  Popconfirm, Select, Spin, Tag, message,
 } from 'antd';
 import {
   CalendarOutlined,
+  DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
   FileProtectOutlined,
@@ -20,6 +21,7 @@ import {
   FolderOutlined,
   LinkOutlined,
   PlusOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useCaseAction, useCaseState } from '@/providers/cases-provider';
 import type { ICase, ICreateCaseInput, IUpdateCaseInput } from '@/providers/cases-provider/context';
@@ -173,8 +175,9 @@ function KanbanColumn({
 // ── Main page ──────────────────────────────────────────────────
 const CasesPage = () => {
   const { styles } = useStyles();
+  const [messageApi, contextHolder] = message.useMessage();
   const { items, isPending } = useCaseState();
-  const { fetchAll, create, update, transitionStatus } = useCaseAction();
+  const { fetchAll, create, update, remove, transitionStatus } = useCaseAction();
   const { items: evidenceItems, isPending: evidencePending } = useEvidenceState();
   const { fetchAll: fetchAllEvidence } = useEvidenceAction();
   const { items: incidentItems } = useIncidentState();
@@ -187,6 +190,7 @@ const CasesPage = () => {
   const [transitionModal, setTransitionModal] = useState(false);
   const [pendingDrop, setPendingDrop] = useState<{ caseItem: ICase; toStatus: string } | null>(null);
   const [submittingCase, setSubmittingCase] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [form] = Form.useForm<ICreateCaseInput>();
 
   const getRequestErrorMessage = (error: unknown, fallback: string) => {
@@ -223,7 +227,21 @@ const CasesPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
-  const casesForStage = (key: string) => items.filter((c) => c.status === key);
+  const filteredItems = items.filter((caseItem) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    return [
+      caseItem.caseNumber,
+      caseItem.title,
+      caseItem.summary ?? '',
+      caseItem.category ?? '',
+      caseItem.severity,
+      caseItem.status,
+    ].some((value) => value.toLowerCase().includes(query));
+  });
+
+  const casesForStage = (key: string) => filteredItems.filter((c) => c.status === key);
   const selectedIncidentDetails = selected
     ? getIncidentDetailsForCase(selected, incidentItems)
     : [];
@@ -276,21 +294,21 @@ const CasesPage = () => {
 
         await update(editingCase.id, input);
         setSelected(null);
-        message.success('Case updated.');
+        messageApi.success('Case updated.');
       } else {
         await create({
           ...values,
           incidentIds: values.incidentIds ?? [],
           openedAt: new Date().toISOString(),
         });
-        message.success('Case created.');
+        messageApi.success('Case created.');
       }
 
       form.resetFields();
       setEditingCase(null);
       setCaseModalOpen(false);
     } catch (error: unknown) {
-      message.error(
+      messageApi.error(
         getRequestErrorMessage(
           error,
           caseModalMode === 'create' ? 'Failed to create case.' : 'Failed to update case.'
@@ -335,20 +353,41 @@ const CasesPage = () => {
     ? PIPELINE_STAGES.filter((s) => s.key !== selected.status)
     : [];
 
+  const handleDeleteCase = async (caseId: string) => {
+    try {
+      await remove(caseId);
+      setSelected(null);
+      messageApi.success('Case deleted.');
+    } catch (error: unknown) {
+      messageApi.error(getRequestErrorMessage(error, 'Failed to delete case.'));
+    }
+  };
+
   return (
     <div className={styles.pageWrapper}>
+      {contextHolder}
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderContent}>
           <h1 className={styles.pageTitle}>Case Management</h1>
         </div>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={openCreateModal}
-          className={styles.pageHeaderAction}
-        >
-          New Case
-        </Button>
+        <div className={styles.pageHeaderTools}>
+          <Input
+            allowClear
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            prefix={<SearchOutlined />}
+            placeholder="Search cases"
+            className={styles.searchInput}
+          />
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={openCreateModal}
+            className={styles.pageHeaderAction}
+          >
+            New Case
+          </Button>
+        </div>
       </div>
 
       {isPending ? (
@@ -528,13 +567,31 @@ const CasesPage = () => {
 
             <div className={`${styles.drawerSection} ${styles.drawerSectionSpacer}`}>
               <p className={styles.drawerLabel}>Case Actions</p>
-              <Button
-                icon={<EditOutlined />}
-                onClick={() => openEditModal(selected)}
-                className={styles.drawerActionButton}
-              >
-                Edit Case
-              </Button>
+              <div className={styles.drawerActionGroup}>
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={() => openEditModal(selected)}
+                  className={styles.drawerActionButton}
+                >
+                  Edit Case
+                </Button>
+                <Popconfirm
+                  title="Delete case?"
+                  description="This action cannot be undone."
+                  okText="Delete"
+                  okButtonProps={{ danger: true }}
+                  cancelText="Cancel"
+                  onConfirm={() => handleDeleteCase(selected.id)}
+                >
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    className={styles.drawerActionButton}
+                  >
+                    Delete Case
+                  </Button>
+                </Popconfirm>
+              </div>
             </div>
 
             <div className={`${styles.drawerSection} ${styles.drawerSectionSpacer}`}>

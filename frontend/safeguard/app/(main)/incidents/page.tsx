@@ -36,6 +36,7 @@ import {
   FileTextOutlined,
   PlusOutlined,
   RobotOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useStyles } from './styles/style';
@@ -145,6 +146,7 @@ const IncidentsPage = () => {
   const [activeIncident, setActiveIncident] = useState<IIncident | null>(null);
   const [anonymous, setAnonymous] = useState(false);
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const pageSize = 10;
 
   const [sortByAI, setSortByAI] = useState(false);
@@ -156,11 +158,11 @@ const IncidentsPage = () => {
   // Track dismissed banners for this session (re-render when set changes).
   const [, forceUpdate] = useState(0);
 
-  const loadMapItems = async () => {
+  const loadMapItems = async (keyword = searchTerm) => {
     setMapLoading(true);
     try {
       const res = await getAxiosInstance().get(`${BASE}/GetAll`, {
-        params: { skipCount: 0, maxResultCount: 10000 },
+        params: { skipCount: 0, maxResultCount: 10000, keyword },
       });
       setMapItems(res.data.result.items);
     } catch {
@@ -192,11 +194,12 @@ const IncidentsPage = () => {
     }
   }, [activeIncident?.detectedObjects]);
 
-  const fetchPage = (p: number, sort = sortByAI) => {
+  const fetchPage = (p: number, sort = sortByAI, keyword = searchTerm) => {
     fetchAll({
       skipCount: (p - 1) * pageSize,
       maxResultCount: pageSize,
       sortByCaseLikelihood: sort,
+      keyword,
     });
   };
 
@@ -208,7 +211,16 @@ const IncidentsPage = () => {
 
   const handleSortToggle = (val: boolean) => {
     setSortByAI(val);
-    fetchPage(page, val);
+    fetchPage(page, val, searchTerm);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    fetchPage(1, sortByAI, value);
+    if (viewMode === 'map') {
+      void loadMapItems(value);
+    }
   };
 
   const openCreate = () => {
@@ -321,18 +333,18 @@ const IncidentsPage = () => {
       message.success('Incident updated.');
     }
     closeDrawer();
-    fetchPage(page);
+    fetchPage(page, sortByAI, searchTerm);
   };
 
   const handleDelete = (id: string) => {
     remove(id);
     message.success('Incident deleted.');
-    fetchPage(page);
+    fetchPage(page, sortByAI, searchTerm);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchPage(newPage);
+    fetchPage(newPage, sortByAI, searchTerm);
   };
 
   const handleOpenCase = async (incident: IIncident) => {
@@ -355,6 +367,7 @@ const IncidentsPage = () => {
           skipCount: (page - 1) * pageSize,
           maxResultCount: pageSize,
           sortByCaseLikelihood: sortByAI,
+          keyword: searchTerm,
         }),
       ]);
     } catch (error: unknown) {
@@ -552,6 +565,14 @@ const IncidentsPage = () => {
       <div className={styles.card}>
         <div className={styles.toolbar}>
           <div className={styles.toolbarMain}>
+            <Input
+              allowClear
+              value={searchTerm}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+              placeholder="Search incidents"
+              className={styles.searchInput}
+            />
             <Switch
               checked={sortByAI}
               onChange={handleSortToggle}
@@ -564,7 +585,7 @@ const IncidentsPage = () => {
             onChange={(v) => {
               const mode = v as 'table' | 'map';
               setViewMode(mode);
-              if (mode === 'map') loadMapItems();
+              if (mode === 'map') loadMapItems(searchTerm);
             }}
             options={[
               { value: 'table', icon: <BarsOutlined />, label: 'Table' },

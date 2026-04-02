@@ -29,6 +29,29 @@ export const useStyles = createStyles(({ css, token }) => ({
     }
   `,
 
+  pageHeaderTools: css`
+    display: flex;
+    align-items: center;
+    gap: ${token.marginSM}px;
+    flex-wrap: wrap;
+    width: min(100%, 420px);
+    justify-content: flex-end;
+
+    @media (max-width: 576px) {
+      width: 100%;
+    }
+  `,
+
+  searchInput: css`
+    min-width: 220px;
+    flex: 1;
+
+    @media (max-width: 576px) {
+      width: 100%;
+      min-width: 0;
+    }
+  `,
+
   pageTitle: css`
     font-size: 24px;
     font-weight: 700;
@@ -247,6 +270,16 @@ export const useStyles = createStyles(({ css, token }) => ({
   drawerActionButton: css`
     @media (max-width: 576px) {
       width: 100%;
+    }
+  `,
+
+  drawerActionGroup: css`
+    display: flex;
+    gap: ${token.marginXS}px;
+    flex-wrap: wrap;
+
+    @media (max-width: 576px) {
+      flex-direction: column;
     }
   `,
 
