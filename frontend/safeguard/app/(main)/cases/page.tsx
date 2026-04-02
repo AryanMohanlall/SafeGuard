@@ -337,17 +337,20 @@ const CasesPage = () => {
 
   return (
     <div className={styles.pageWrapper}>
-      {/* Header */}
       <div className={styles.pageHeader}>
-        <div>
+        <div className={styles.pageHeaderContent}>
           <h1 className={styles.pageTitle}>Case Management</h1>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={openCreateModal}
+          className={styles.pageHeaderAction}
+        >
           New Case
         </Button>
       </div>
 
-      {/* Kanban board */}
       {isPending ? (
         <div className={styles.boardLoading}><Spin size="large" /></div>
       ) : (
@@ -370,7 +373,7 @@ const CasesPage = () => {
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected?.caseNumber ?? 'Case Detail'}
-        width="min(560px, 100vw)"
+        width="min(560px, calc(100vw - 8px))"
         extra={
           <Tag color={STATUS_TAG_COLORS[selected?.status ?? ''] ?? 'default'}>
             {statusLabel(selected?.status ?? '')}
@@ -523,14 +526,18 @@ const CasesPage = () => {
               </div>
             )}
 
-            <div className={styles.drawerSection} style={{ marginTop: 24 }}>
+            <div className={`${styles.drawerSection} ${styles.drawerSectionSpacer}`}>
               <p className={styles.drawerLabel}>Case Actions</p>
-              <Button icon={<EditOutlined />} onClick={() => openEditModal(selected)}>
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => openEditModal(selected)}
+                className={styles.drawerActionButton}
+              >
                 Edit Case
               </Button>
             </div>
 
-            <div className={styles.drawerSection} style={{ marginTop: 24 }}>
+            <div className={`${styles.drawerSection} ${styles.drawerSectionSpacer}`}>
               <p className={styles.drawerLabel}>Move to stage</p>
               <div className={styles.drawerTransitions}>
                 {availableTransitions.map((s) => (
@@ -588,9 +595,9 @@ const CasesPage = () => {
         onOk={() => form.submit()}
         confirmLoading={submittingCase}
         okText={caseModalMode === 'create' ? 'Create' : 'Save Changes'}
-        width={540}
+        width="min(540px, calc(100vw - 24px))"
       >
-        <Form form={form} layout="vertical" onFinish={handleCaseSubmit} style={{ marginTop: 16 }}>
+        <Form form={form} layout="vertical" onFinish={handleCaseSubmit} className={styles.caseModalForm}>
           <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>
             <Input placeholder="Brief case title" />
           </Form.Item>

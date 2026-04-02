@@ -212,7 +212,7 @@ const RegisterPage = () => {
                 />
               </Form.Item>
 
-              <Form.Item style={{ marginBottom: 0 }}>
+              <Form.Item className={styles.formItemLast}>
                 <Button
                   type="primary"
                   htmlType="submit"

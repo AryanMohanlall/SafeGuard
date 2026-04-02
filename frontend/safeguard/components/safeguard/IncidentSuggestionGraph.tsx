@@ -543,7 +543,7 @@ export const IncidentSuggestionGraph = ({ nodes, edges }: IncidentSuggestionGrap
       <Drawer
         title={selectedNode ? `${TYPE_LABELS[selectedNode.type] ?? selectedNode.type} Details` : 'Node Details'}
         placement="right"
-        size={420}
+        width="min(420px, calc(100vw - 8px))"
         open={Boolean(selectedNode)}
         onClose={() => setSelectedNodeId(null)}
       >

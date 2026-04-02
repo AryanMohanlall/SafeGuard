@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ConfigProvider, Layout, Menu, Tooltip } from 'antd';
+import { Button, Layout, Menu, Tooltip } from 'antd';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   ApartmentOutlined,
@@ -18,10 +18,6 @@ import { useAuthAction } from '@/providers/auth-provider';
 import { useStyles } from './styles';
 
 const { Sider } = Layout;
-
-const NAV_BG = '#0a0f1e';
-const NAV_ACTIVE = '#2563eb';
-const NAV_HOVER = 'rgba(37, 99, 235, 0.18)';
 
 const navItems = [
   { key: '/dashboard',      icon: <DashboardOutlined />,  label: 'Dashboard'      },
@@ -49,58 +45,46 @@ export const Sidebar = () => {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        components: {
-          Menu: {
-            darkItemBg: NAV_BG,
-            darkSubMenuItemBg: '#0d1a3a',
-            darkItemSelectedBg: NAV_ACTIVE,
-            darkItemHoverBg: NAV_HOVER,
-          },
-          Layout: {
-            siderBg: NAV_BG,
-            triggerBg: '#0d1a3a',
-          },
-        },
-      }}
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
+      breakpoint="lg"
+      onBreakpoint={(broken) => setCollapsed(broken)}
+      width={220}
+      className={styles.sider}
     >
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        breakpoint="lg"
-        onBreakpoint={(broken) => setCollapsed(broken)}
-        width={220}
-        className={styles.sider}
-      >
-        {/* Brand */}
-        <div className={cx(styles.brandWrap, collapsed && styles.brandWrapCollapsed)}>
-          <SafetyOutlined className={styles.brandIcon} />
-          {!collapsed && <span className={styles.brandText}>SafeGuard</span>}
-        </div>
+      <div className={cx(styles.brandWrap, collapsed && styles.brandWrapCollapsed)}>
+        <SafetyOutlined className={styles.brandIcon} />
+        {!collapsed && <span className={styles.brandText}>SafeGuard</span>}
+      </div>
 
-        {/* Nav */}
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={navItems}
-          onClick={({ key }) => router.push(key)}
-          className={styles.menu}
-        />
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={[selectedKey]}
+        items={navItems}
+        onClick={({ key }) => router.push(key)}
+        className={styles.menu}
+      />
 
-        {/* Logout */}
-        <div
-          className={cx(styles.logoutWrap, collapsed && styles.logoutWrapCollapsed)}
-          onClick={handleLogout}
-        >
-          <Tooltip title={collapsed ? 'Logout' : ''} placement="right">
-            <LogoutOutlined className={styles.logoutIcon} />
-          </Tooltip>
-          {!collapsed && <span className={styles.logoutText}>Logout</span>}
-        </div>
-      </Sider>
-    </ConfigProvider>
+      <div className={styles.logoutSection}>
+        <Tooltip title={collapsed ? 'Log out' : ''} placement="right">
+          <Button
+            type="text"
+            icon={<LogoutOutlined className={styles.logoutIcon} />}
+            onClick={handleLogout}
+            className={cx(styles.logoutButton, collapsed && styles.logoutButtonCollapsed)}
+          >
+            {!collapsed && (
+              <span className={styles.logoutTextWrap}>
+                <span className={styles.logoutText}>Log Out</span>
+                <span className={styles.logoutHint}>End secure session</span>
+              </span>
+            )}
+          </Button>
+        </Tooltip>
+      </div>
+    </Sider>
   );
 };

@@ -25,7 +25,6 @@ interface LoginFormValues {
 }
 
 const features = [
-  { icon: <SafetyOutlined />, label: 'Blockchain-secured evidence chain of custody' },
   { icon: <AimOutlined />,    label: 'AI-powered crime prediction and GIS heatmaps' },
   { icon: <TeamOutlined />,   label: 'Real-time multi-agency coordination hub' },
   { icon: <GlobalOutlined />, label: 'End-to-end court readiness tooling' },
@@ -131,7 +130,7 @@ const LoginPage = () => {
                 />
               </Form.Item>
 
-              <Form.Item style={{ marginBottom: 0 }}>
+              <Form.Item className={styles.formItemLast}>
                 <Button
                   type="primary"
                   htmlType="submit"
