@@ -82,6 +82,13 @@ export const useStyles = createStyles(({ token, css }) => ({
       transition: color ${token.motionDurationMid};
     }
 
+    :global(.ant-menu-item .ant-menu-item-icon .anticon),
+    :global(.ant-menu-item .ant-menu-item-icon svg) {
+      color: #2563eb !important;
+      fill: currentColor;
+      stroke: currentColor;
+    }
+
     :global(.ant-menu-item:hover) {
       background: rgba(226, 232, 240, 0.86) !important;
       color: #020617 !important;
@@ -90,6 +97,13 @@ export const useStyles = createStyles(({ token, css }) => ({
     :global(.ant-menu-item:hover .ant-menu-item-icon) {
       color: #1d4ed8 !important;
       background: rgba(191, 219, 254, 0.95);
+    }
+
+    :global(.ant-menu-item:hover .ant-menu-item-icon .anticon),
+    :global(.ant-menu-item:hover .ant-menu-item-icon svg) {
+      color: #1d4ed8 !important;
+      fill: currentColor;
+      stroke: currentColor;
     }
 
     :global(.ant-menu-item-selected) {
@@ -103,6 +117,13 @@ export const useStyles = createStyles(({ token, css }) => ({
     :global(.ant-menu-item-selected .ant-menu-item-icon) {
       color: #1d4ed8 !important;
       background: rgba(219, 234, 254, 0.96);
+    }
+
+    :global(.ant-menu-item-selected .ant-menu-item-icon .anticon),
+    :global(.ant-menu-item-selected .ant-menu-item-icon svg) {
+      color: #1d4ed8 !important;
+      fill: currentColor;
+      stroke: currentColor;
     }
   `,
 

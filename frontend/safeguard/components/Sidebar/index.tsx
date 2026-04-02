@@ -64,7 +64,7 @@ export const Sidebar = () => {
       </div>
 
       <Menu
-        theme="dark"
+        theme="light"
         mode="inline"
         selectedKeys={[selectedKey]}
         items={menuItems}
