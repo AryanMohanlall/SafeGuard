@@ -548,7 +548,7 @@ export const IncidentSuggestionGraph = ({ nodes, edges }: IncidentSuggestionGrap
         onClose={() => setSelectedNodeId(null)}
       >
         {selectedNode ? (
-          <Space direction="vertical" size="large" className={styles.detailsStack}>
+          <Space orientation="vertical" size="large" className={styles.detailsStack}>
             <div>
               <Typography.Title level={4} className={styles.detailsTitle}>
                 {selectedNode.label}
