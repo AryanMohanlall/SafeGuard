@@ -13,8 +13,9 @@ export const useStyles = createStyles(({ token, css }) => ({
   leftPanel: css`
     flex: 0 0 45%;
     background:
-      radial-gradient(circle at top, rgba(147, 197, 253, 0.22), transparent 26%),
-      linear-gradient(160deg, #eaf3fb 0%, #d6e5f3 48%, #eff6ff 100%);
+      radial-gradient(circle at top, rgba(96, 165, 250, 0.16), transparent 20%),
+      radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.42), transparent 34%),
+      linear-gradient(165deg, #64748b 0%, #334155 46%, #94a3b8 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -47,7 +48,7 @@ export const useStyles = createStyles(({ token, css }) => ({
     font-size: 36px;
     font-weight: 700;
     font-family: var(--font-display), sans-serif;
-    color: ${token.colorTextHeading};
+    color: #ffffff;
     margin: 0;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -55,7 +56,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   brandTagline: css`
     font-size: ${token.fontSize}px;
-    color: ${token.colorTextSecondary};
+    color: rgba(255, 255, 255, 0.82);
     text-align: center;
     margin-top: ${token.marginSM}px;
     line-height: 1.7;
@@ -65,7 +66,7 @@ export const useStyles = createStyles(({ token, css }) => ({
   divider: css`
     width: 40px;
     height: 3px;
-    background: linear-gradient(90deg, #60a5fa, #cbd5e1);
+    background: linear-gradient(90deg, #2563eb, #475569);
     border-radius: 2px;
     margin: 28px 0;
   `,
@@ -79,10 +80,10 @@ export const useStyles = createStyles(({ token, css }) => ({
   `,
 
   statCard: css`
-    background: rgba(255, 255, 255, 0.76);
+    background: rgba(255, 255, 255, 0.88);
     border-radius: ${token.borderRadiusLG}px;
     padding: ${token.padding}px ${token.paddingMD}px;
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    border: 1px solid rgba(100, 116, 139, 0.18);
   `,
 
   statValue: css`
@@ -94,7 +95,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   statLabel: css`
     font-size: ${token.fontSizeSM}px;
-    color: ${token.colorTextSecondary};
+    color: rgba(20, 19, 19, 0.8);
     margin-top: ${token.marginXXS}px;
   `,
 
@@ -105,7 +106,8 @@ export const useStyles = createStyles(({ token, css }) => ({
     justify-content: center;
     padding: 48px 32px;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 248, 252, 0.96));
+      radial-gradient(circle at top right, rgba(71, 85, 105, 0.18), transparent 24%),
+      linear-gradient(180deg, rgba(174, 186, 199, 0.98), rgba(148, 163, 184, 0.98));
     min-height: 100dvh;
     overflow-y: auto;
 
@@ -123,10 +125,12 @@ export const useStyles = createStyles(({ token, css }) => ({
     width: 100%;
     max-width: 420px;
     padding: ${token.paddingXS}px 0;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid ${token.colorBorderSecondary};
+    background: rgba(248, 250, 252, 0.97);
+    border: 1px solid rgba(71, 85, 105, 0.26);
     border-radius: ${token.borderRadiusLG + 4}px;
-    box-shadow: ${token.boxShadowSecondary};
+    box-shadow:
+      0 22px 50px rgba(15, 23, 42, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
     padding: ${token.paddingXL}px;
 
     @media (max-width: 480px) {
@@ -156,7 +160,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   formSubtitle: css`
     font-size: ${token.fontSize}px;
-    color: ${token.colorTextSecondary};
+    color: #475569;
     margin-top: ${token.marginXS}px;
     margin-bottom: 0;
   `,
@@ -199,6 +203,7 @@ export const useStyles = createStyles(({ token, css }) => ({
     text-align: center;
     margin-top: ${token.marginMD}px;
     font-size: ${token.fontSize}px;
+    color: #475569;
   `,
 
   mobileBrand: css`
