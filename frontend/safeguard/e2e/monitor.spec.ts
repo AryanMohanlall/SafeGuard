@@ -60,8 +60,9 @@ test.describe('Monitor page', () => {
 
     await page.locator('button').filter({ has: page.locator('[aria-label="expand-alt"]') }).last().click();
 
-    await expect(page.getByText('Abbey Road Crossing', { exact: true }).nth(1)).toBeVisible();
-    await expect(page.getByText('London, England, UK', { exact: true }).nth(1)).toBeVisible();
+    await expect(page.getByText('Abbey Road Crossing', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('London, England, UK', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Abbey Road Crossing', { exact: true })).toHaveCount(1);
   });
 
   test('adds and deletes a configured live stream', async ({ page }) => {

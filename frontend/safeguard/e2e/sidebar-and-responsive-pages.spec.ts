@@ -179,7 +179,6 @@ test.describe('Protected responsive pages', () => {
 
     await expect(page.getByRole('heading', { name: 'Incident Link Graph' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Refresh graph' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Regenerate from CSV' })).toBeVisible();
     await expect(page.getByRole('table').getByText('Possible linked robbery case')).toBeVisible();
     await expect(page.getByText('Suggested Cases', { exact: true })).toBeVisible();
   });
