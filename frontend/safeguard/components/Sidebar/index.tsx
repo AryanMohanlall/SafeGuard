@@ -38,6 +38,7 @@ export const Sidebar = () => {
   const { user } = useAuthState();
   const { styles, cx } = useStyles();
   const visibleNavItems = navItems.filter((item) => !item.officialOnly || hasOfficialRole(user?.roleNames));
+  const menuItems = visibleNavItems.map(({ officialOnly: _officialOnly, ...item }) => item);
 
   const selectedKey =
     visibleNavItems.find((item) => pathname.startsWith(item.key))?.key ?? '/dashboard';
@@ -66,7 +67,7 @@ export const Sidebar = () => {
         theme="dark"
         mode="inline"
         selectedKeys={[selectedKey]}
-        items={visibleNavItems}
+        items={menuItems}
         onClick={({ key }) => router.push(key)}
         className={styles.menu}
       />

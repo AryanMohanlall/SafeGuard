@@ -46,20 +46,67 @@ export default function RootLayout({
           <ConfigProvider
             theme={{
               token: {
-                colorPrimary: "#2563eb",
-                borderRadius: 8,
-                fontFamily: "inherit",
+                colorPrimary: '#4f8df7',
+                colorInfo: '#4f8df7',
+                colorSuccess: '#0f766e',
+                colorWarning: '#d97706',
+                colorError: '#dc2626',
+                colorBgBase: '#e8eef5',
+                colorBgLayout: '#dbe4ee',
+                colorBgContainer: 'rgba(255, 255, 255, 0.72)',
+                colorText: '#0f172a',
+                colorTextSecondary: '#334155',
+                colorTextTertiary: '#64748b',
+                colorBorder: 'rgba(100, 116, 139, 0.2)',
+                colorBorderSecondary: 'rgba(148, 163, 184, 0.22)',
+                colorFillSecondary: 'rgba(226, 232, 240, 0.68)',
+                colorFillTertiary: 'rgba(241, 245, 249, 0.74)',
+                borderRadius: 12,
+                borderRadiusLG: 18,
+                boxShadow: '0 18px 40px rgba(15, 23, 42, 0.14)',
+                boxShadowSecondary: '0 12px 28px rgba(15, 23, 42, 0.1)',
+                fontFamily: 'inherit',
               },
               components: {
-                Menu: {
-                  darkItemBg: "#0a0f1e",
-                  darkSubMenuItemBg: "#0d1a3a",
-                  darkItemSelectedBg: "#2563eb",
-                  darkItemHoverBg: "rgba(37, 99, 235, 0.18)",
+                Button: {
+                  borderRadius: 12,
+                  primaryShadow: '0 12px 24px rgba(79, 141, 247, 0.24)',
+                },
+                Card: {
+                  borderRadiusLG: 18,
+                  colorBgContainer: 'rgba(255, 255, 255, 0.66)',
+                },
+                Drawer: {
+                  colorBgElevated: 'rgba(247, 250, 252, 0.82)',
+                },
+                Input: {
+                  activeBorderColor: '#4f8df7',
+                  hoverBorderColor: '#7aa7f8',
+                  colorBgContainer: 'rgba(255, 255, 255, 0.7)',
                 },
                 Layout: {
-                  siderBg: "#0a0f1e",
-                  triggerBg: "#0d1a3a",
+                  bodyBg: '#dbe4ee',
+                  siderBg: 'rgba(185, 198, 214, 0.8)',
+                  triggerBg: 'rgba(177, 191, 209, 0.92)',
+                },
+                Menu: {
+                  itemBg: 'transparent',
+                  itemColor: '#1e293b',
+                  itemHoverColor: '#020617',
+                  itemHoverBg: 'rgba(226, 232, 240, 0.82)',
+                  itemSelectedColor: '#0f172a',
+                  itemSelectedBg: 'rgba(207, 219, 234, 0.92)',
+                  activeBarBorderWidth: 0,
+                  iconSize: 18,
+                },
+                Segmented: {
+                  trackBg: 'rgba(203, 213, 225, 0.72)',
+                  itemSelectedBg: 'rgba(255, 255, 255, 0.82)',
+                },
+                Table: {
+                  headerBg: 'rgba(226, 232, 240, 0.7)',
+                  headerColor: '#1e293b',
+                  borderColor: 'rgba(148, 163, 184, 0.22)',
                 },
               },
             }}

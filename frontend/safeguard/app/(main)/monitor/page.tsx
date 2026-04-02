@@ -463,7 +463,13 @@ export default function MonitorPage() {
               Presets are curated EarthCam shortcuts, with South Africa listed first. You can still edit any field manually.
             </p>
 
-            <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={isMutatingStreams}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<PlusOutlined />}
+              loading={isMutatingStreams}
+              className={styles.submitButton}
+            >
               Add Stream
             </Button>
           </Form>

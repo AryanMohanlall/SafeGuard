@@ -4,6 +4,7 @@ export const useStyles = createStyles(({ css }) => ({
   pageWrapper: css`
     max-width: 1400px;
     margin: 0 auto;
+    min-width: 0;
   `,
 
   pageHeader: css`
@@ -20,6 +21,10 @@ export const useStyles = createStyles(({ css }) => ({
     border-radius: 16px;
     border: 1px solid rgba(37, 99, 235, 0.12);
     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+
+    :global(.ant-card-body) {
+      min-width: 0;
+    }
   `,
 
   managementStack: css`
@@ -28,6 +33,34 @@ export const useStyles = createStyles(({ css }) => ({
 
   managementForm: css`
     width: 100%;
+    min-width: 0;
+
+    :global(.ant-form-item) {
+      min-width: 0;
+      margin-bottom: 16px;
+    }
+
+    :global(.ant-form-item-control),
+    :global(.ant-form-item-control-input),
+    :global(.ant-form-item-control-input-content) {
+      min-width: 0;
+    }
+
+    :global(.ant-input),
+    :global(.ant-input-affix-wrapper),
+    :global(.ant-input-number),
+    :global(.ant-select),
+    :global(.ant-select-selector) {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    :global(.ant-select-selection-item),
+    :global(.ant-select-selection-placeholder),
+    :global(.ant-input) {
+      overflow-wrap: anywhere;
+    }
   `,
 
   formHint: css`
@@ -40,6 +73,11 @@ export const useStyles = createStyles(({ css }) => ({
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0 16px;
+    min-width: 0;
+
+    > * {
+      min-width: 0;
+    }
 
     @media (max-width: 900px) {
       grid-template-columns: 1fr;
@@ -56,6 +94,14 @@ export const useStyles = createStyles(({ css }) => ({
 
   numberInput: css`
     width: 100%;
+  `,
+
+  submitButton: css`
+    width: fit-content;
+
+    @media (max-width: 640px) {
+      width: 100%;
+    }
   `,
 
   streamList: css`
@@ -78,10 +124,15 @@ export const useStyles = createStyles(({ css }) => ({
       align-items: flex-start;
       flex-direction: column;
     }
+
+    @media (max-width: 640px) {
+      padding: 12px;
+    }
   `,
 
   streamMeta: css`
     min-width: 0;
+    width: 100%;
   `,
 
   streamName: css`
@@ -250,6 +301,13 @@ export const useStyles = createStyles(({ css }) => ({
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+    @media (max-width: 640px) {
+      padding: 12px 14px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
   `,
 
   expandedTitle: css`

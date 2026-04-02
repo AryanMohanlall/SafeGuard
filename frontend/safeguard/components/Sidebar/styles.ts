@@ -1,12 +1,15 @@
 import { createStyles } from 'antd-style';
 
-const NAV_BG = '#0a0f1e';
-
 export const useStyles = createStyles(({ token, css }) => ({
   sider: css`
-    background: ${NAV_BG};
+    background:
+      linear-gradient(180deg, rgba(222, 230, 239, 0.88) 0%, rgba(196, 207, 220, 0.92) 100%);
     display: flex;
     flex-direction: column;
+    border-right: 1px solid rgba(100, 116, 139, 0.22);
+    box-shadow: 12px 0 30px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   `,
 
   brandWrap: css`
@@ -14,8 +17,8 @@ export const useStyles = createStyles(({ token, css }) => ({
     align-items: center;
     gap: 10px;
     padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.18);
+    margin: 0 12px 4px;
     user-select: none;
   `,
 
@@ -26,7 +29,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   brandIcon: css`
     font-size: 22px;
-    color: #60a5fa;
+    color: ${token.colorPrimary};
     flex-shrink: 0;
   `,
 
@@ -34,22 +37,78 @@ export const useStyles = createStyles(({ token, css }) => ({
     font-size: 18px;
     font-weight: 700;
     font-family: var(--font-display), sans-serif;
-    color: #fff;
+    color: ${token.colorTextHeading};
     letter-spacing: 1.5px;
     text-transform: uppercase;
     white-space: nowrap;
   `,
 
   menu: css`
-    background: ${NAV_BG};
+    background: transparent;
     border-right: 0;
-    margin-top: 4px;
+    margin: 8px 12px 0;
     flex: 1;
+
+    :global(.ant-menu-item) {
+      margin-inline: 0;
+      margin-block: 6px;
+      width: 100%;
+      border-radius: ${token.borderRadiusLG}px;
+      min-height: 46px;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+    }
+
+    :global(.ant-menu-item .ant-menu-title-content) {
+      font-weight: 600;
+      color: inherit;
+    }
+
+    :global(.ant-menu-item .ant-menu-item-icon) {
+      color: #2563eb !important;
+      font-size: 18px;
+      width: 30px;
+      height: 30px;
+      min-width: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(37, 99, 235, 0.14);
+      box-shadow:
+        inset 0 1px 0 rgba(147, 197, 253, 0.55),
+        0 1px 2px rgba(15, 23, 42, 0.08);
+      transition: color ${token.motionDurationMid};
+    }
+
+    :global(.ant-menu-item:hover) {
+      background: rgba(226, 232, 240, 0.86) !important;
+      color: #020617 !important;
+    }
+
+    :global(.ant-menu-item:hover .ant-menu-item-icon) {
+      color: #1d4ed8 !important;
+      background: rgba(191, 219, 254, 0.95);
+    }
+
+    :global(.ant-menu-item-selected) {
+      background: linear-gradient(135deg, rgba(207, 219, 234, 0.96) 0%, rgba(228, 236, 245, 0.96) 100%) !important;
+      color: #020617 !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 10px 20px rgba(71, 85, 105, 0.14);
+    }
+
+    :global(.ant-menu-item-selected .ant-menu-item-icon) {
+      color: #1d4ed8 !important;
+      background: rgba(219, 234, 254, 0.96);
+    }
   `,
 
   logoutSection: css`
     padding: 18px 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-top: 1px solid rgba(100, 116, 139, 0.18);
 
     @media (max-width: 991px) {
       padding: 12px 0 16px;
@@ -68,10 +127,12 @@ export const useStyles = createStyles(({ token, css }) => ({
     border-radius: ${token.borderRadiusLG}px;
     border: none;
     background:
-      linear-gradient(135deg, rgba(185, 28, 28, 0.18), rgba(239, 68, 68, 0.08)),
-      rgba(255, 255, 255, 0.03) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    color: #e41d1d !important;
+      linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(255, 255, 255, 0.64)),
+      rgba(255, 255, 255, 0.6) !important;
+    box-shadow:
+      0 8px 18px rgba(148, 163, 184, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    color: #b91c1c !important;
     transition:
       transform ${token.motionDurationMid},
       border-color ${token.motionDurationMid},
@@ -100,14 +161,14 @@ export const useStyles = createStyles(({ token, css }) => ({
 
     &:hover,
     &:focus-visible {
-      color: #fff !important;
+      color: #991b1b !important;
       background:
-        linear-gradient(135deg, rgba(185, 28, 28, 0.28), rgba(239, 68, 68, 0.16)),
-        rgba(255, 255, 255, 0.05) !important;
+        linear-gradient(135deg, rgba(254, 226, 226, 0.92), rgba(255, 255, 255, 0.95)),
+        #ffffff !important;
       transform: translateY(-1px);
       box-shadow:
-        0 10px 24px rgba(15, 23, 42, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        0 12px 24px rgba(148, 163, 184, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
     }
   `,
 
@@ -126,7 +187,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
       &:hover,
       &:focus-visible {
-        background: rgba(37, 99, 235, 0.18) !important;
+        background: ${token.colorPrimaryBg} !important;
         transform: none;
         box-shadow: none;
       }
@@ -141,18 +202,18 @@ export const useStyles = createStyles(({ token, css }) => ({
     height: 32px;
     font-size: 18px;
     line-height: 1;
-    color: #fca5a5;
+    color: #ef4444;
     flex-shrink: 0;
     padding: 0;
     border-radius: ${token.borderRadius}px;
-    background: rgba(127, 29, 29, 0.45);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: rgba(254, 226, 226, 0.95);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 
     @media (max-width: 991px) {
       width: 14px;
       height: 14px;
       font-size: 16px;
-      color: rgba(255, 0, 0, 0.65);
+      color: rgba(220, 38, 38, 0.75);
       background: transparent;
       box-shadow: none;
     }
@@ -168,7 +229,7 @@ export const useStyles = createStyles(({ token, css }) => ({
   logoutText: css`
     font-size: 14px;
     font-weight: 700;
-    color: #fff;
+    color: ${token.colorTextHeading};
     white-space: nowrap;
 
     @media (max-width: 991px) {
@@ -179,7 +240,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   logoutHint: css`
     font-size: 11px;
-    color: rgba(252, 165, 165, 0.82);
+    color: ${token.colorTextTertiary};
     white-space: nowrap;
 
     @media (max-width: 991px) {

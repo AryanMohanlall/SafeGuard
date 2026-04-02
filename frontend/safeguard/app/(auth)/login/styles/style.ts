@@ -12,13 +12,15 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   leftPanel: css`
     flex: 0 0 45%;
-    background: linear-gradient(160deg, #0a0f1e 0%, #0d2149 45%, #0a0f1e 100%);
+    background:
+      radial-gradient(circle at top, rgba(147, 197, 253, 0.22), transparent 26%),
+      linear-gradient(160deg, #eaf3fb 0%, #d6e5f3 48%, #eff6ff 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 64px 48px;
-    color: #fff;
+    color: ${token.colorTextHeading};
     position: relative;
     overflow: hidden;
 
@@ -37,7 +39,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   brandIcon: css`
     font-size: 56px;
-    color: #60a5fa;
+    color: ${token.colorPrimary};
     margin-bottom: ${token.marginLG}px;
   `,
 
@@ -45,7 +47,7 @@ export const useStyles = createStyles(({ token, css }) => ({
     font-size: 36px;
     font-weight: 700;
     font-family: var(--font-display), sans-serif;
-    color: #fff;
+    color: ${token.colorTextHeading};
     margin: 0;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -53,7 +55,7 @@ export const useStyles = createStyles(({ token, css }) => ({
 
   brandTagline: css`
     font-size: ${token.fontSize}px;
-    color: rgba(255, 255, 255, 0.5);
+    color: ${token.colorTextSecondary};
     text-align: center;
     margin-top: ${token.marginSM}px;
     line-height: 1.7;
@@ -63,7 +65,7 @@ export const useStyles = createStyles(({ token, css }) => ({
   divider: css`
     width: 40px;
     height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    background: linear-gradient(90deg, #60a5fa, #cbd5e1);
     border-radius: 2px;
     margin: 28px 0;
   `,
@@ -79,7 +81,7 @@ export const useStyles = createStyles(({ token, css }) => ({
     display: flex;
     align-items: center;
     gap: ${token.marginSM}px;
-    color: rgba(255, 255, 255, 0.75);
+    color: ${token.colorTextSecondary};
     font-size: ${token.fontSize}px;
   `,
 
@@ -87,12 +89,12 @@ export const useStyles = createStyles(({ token, css }) => ({
     width: 32px;
     height: 32px;
     border-radius: ${token.borderRadiusLG}px;
-    background: rgba(59, 130, 246, 0.15);
+    background: rgba(59, 130, 246, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #60a5fa;
+    color: ${token.colorPrimary};
     font-size: 15px;
   `,
 
@@ -102,7 +104,8 @@ export const useStyles = createStyles(({ token, css }) => ({
     align-items: center;
     justify-content: center;
     padding: 48px 32px;
-    background: ${token.colorBgLayout};
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 248, 252, 0.96));
     min-height: 100dvh;
 
     @media (max-width: 1024px) {
@@ -122,9 +125,15 @@ export const useStyles = createStyles(({ token, css }) => ({
   formWrapper: css`
     width: 100%;
     max-width: 420px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid ${token.colorBorderSecondary};
+    border-radius: ${token.borderRadiusLG + 4}px;
+    box-shadow: ${token.boxShadowSecondary};
+    padding: ${token.paddingXL}px;
 
     @media (max-width: 480px) {
       max-width: 100%;
+      padding: ${token.paddingLG}px;
     }
   `,
 

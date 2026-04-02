@@ -176,9 +176,39 @@ export const useStyles = createStyles(({ css, token }) => ({
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
+    min-width: 0;
 
     @media (max-width: 768px) {
       justify-content: flex-start;
+      width: 100%;
+    }
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      align-items: stretch;
+
+      :global(.ant-segmented) {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      :global(.ant-segmented-group) {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+      }
+
+      :global(.ant-segmented-item) {
+        min-width: 0;
+        flex: 1 1 0;
+      }
+
+      :global(.ant-segmented-item-label) {
+        white-space: normal;
+        line-height: 1.25;
+        padding-inline: 10px;
+      }
     }
   `,
 
@@ -188,6 +218,7 @@ export const useStyles = createStyles(({ css, token }) => ({
     align-items: flex-start;
     gap: 12px;
     margin-bottom: 18px;
+    min-width: 0;
 
     @media (max-width: 768px) {
       flex-direction: column;
@@ -200,6 +231,17 @@ export const useStyles = createStyles(({ css, token }) => ({
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+  `,
+
+  chartCanvas: css`
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+
+    @media (max-width: 640px) {
+      margin-inline: -4px;
+    }
   `,
 
   chartTitle: css`
